@@ -1,0 +1,4 @@
+Proteins	40242
+Peptides	3792396
+Spectra	11332
+Matches	2890590
