@@ -139,9 +139,11 @@ public class ReviewFigure {
         HashMap<String, Integer> nMatchesMap = new HashMap<String, Integer>();
         ArrayList<Double> ms1Deviations = new ArrayList<Double>();
         ArrayList<Double> scores = new ArrayList<Double>();
+        ArrayList<String> categories = new ArrayList<String>();
 
         while (pi.hasNext()) {
             Protein protein = pi.getNextProtein();
+            String accession = protein.getAccession();
             //Protein protein = sequenceFactory.getProtein("P11021");
             String sequence = protein.getSequence();
             ArrayList<Peptide> peptides = proteinSequenceIterator.getPeptides(sequence, digestionPreferences, massMin, massMax);
@@ -177,6 +179,13 @@ public class ReviewFigure {
                         } else {
                             nMatchesMap.put(spectrumTitle, matchesForSpectrum + 1);
                         }
+                        String category;
+                        if (sequenceFactory.isDecoyAccession(accession)) {
+                            category = "Decoy";
+                        } else {
+                            category = "Target";
+                        }
+                        categories.add(category);
                     }
                 }
             }
@@ -207,12 +216,28 @@ public class ReviewFigure {
 
         File matchesFile = new File("C:\\Github\\onyase\\R\\matches.txt");
         bw = new BufferedWriter(new FileWriter(matchesFile));
-        bw.write("MS1_deviation" + SEPARATOR + "MS2_Score");
+        bw.write("MS1_deviation" + SEPARATOR + "MS2_Score" + SEPARATOR + "Category");
         bw.newLine();
         for (int i = 0 ; i < ms1Deviations.size() ; i++) {
             Double ms1Deviation = ms1Deviations.get(i);
             Double score = scores.get(i);
-            bw.write(ms1Deviation + SEPARATOR + score);
+            String category = categories.get(i);
+            bw.write(ms1Deviation + SEPARATOR + score + SEPARATOR + category);
+            bw.newLine();
+        }
+        bw.close();
+
+        File nMatchesFile = new File("C:\\Github\\onyase\\R\\nMatches.txt");
+        bw = new BufferedWriter(new FileWriter(nMatchesFile));
+        bw.write("Title" + SEPARATOR + "Retention Time" + SEPARATOR + "m/z" + SEPARATOR + "nMatches");
+        bw.newLine();
+        for (String spectrumTitle : spectrumFactory.getSpectrumTitles(fileName)) {
+            Precursor precursor = spectrumFactory.getPrecursor(fileName, spectrumTitle);
+            Integer matchesForSpectrum = nMatchesMap.get(spectrumTitle);
+            if (matchesForSpectrum == null) {
+                matchesForSpectrum = 0;
+            }
+            bw.write(spectrumTitle + SEPARATOR + precursor.getMz() + SEPARATOR + precursor.getRtInMinutes()+ SEPARATOR + matchesForSpectrum);
             bw.newLine();
         }
         bw.close();
