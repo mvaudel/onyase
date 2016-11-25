@@ -136,8 +136,9 @@ public class ReviewFigure {
         SequenceFactory.ProteinIterator pi = sequenceFactory.getProteinIterator(false);
         long nMatches = 0, nSequences = 0;
 
-        HashMap<String, ArrayList<Double>> ms1DeviationMap = new HashMap<String, ArrayList<Double>>();
-        HashMap<String, ArrayList<Double>> scoresMap = new HashMap<String, ArrayList<Double>>();
+        HashMap<String, Integer> nMatchesMap = new HashMap<String, Integer>();
+        ArrayList<Double> ms1Deviations = new ArrayList<Double>();
+        ArrayList<Double> scores = new ArrayList<Double>();
 
         while (pi.hasNext()) {
             Protein protein = pi.getNextProtein();
@@ -148,7 +149,6 @@ public class ReviewFigure {
 
             for (Peptide peptide : peptides) {
 
-                String peptideKey = peptide.getSequence();
                 Double peptideMass = peptide.getMass();
                 for (int charge = minCharge; charge <= maxCharge; charge++) {
                     PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
@@ -163,26 +163,20 @@ public class ReviewFigure {
                         AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences();
                         SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                         Double score = fastXcorr.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, peptideSpectrumAnnotator);
-
-                        ArrayList<Double> spectrumScores = scoresMap.get(spectrumTitle);
-                        if (spectrumScores == null) {
-                            spectrumScores = new ArrayList<Double>();
-                            scoresMap.put(spectrumTitle, spectrumScores);
-                        }
-                        spectrumScores.add(score);
-
+                        scores.add(score);
                         Double ms1Deviation;
                         if (searchParameters.isPrecursorAccuracyTypePpm()) {
                             ms1Deviation = 1000000 * (mz - precursor.getMz()) / precursor.getMz();
                         } else {
                             ms1Deviation = mz - precursor.getMz();
                         }
-                        ArrayList<Double> spectrumDeviations = ms1DeviationMap.get(spectrumTitle);
-                        if (spectrumDeviations == null) {
-                            spectrumDeviations = new ArrayList<Double>();
-                            ms1DeviationMap.put(spectrumTitle, spectrumDeviations);
+                        ms1Deviations.add(ms1Deviation);
+                        Integer matchesForSpectrum = nMatchesMap.get(spectrumTitle);
+                        if (matchesForSpectrum == null) {
+                            nMatchesMap.put(spectrumTitle, 1);
+                        } else {
+                            nMatchesMap.put(spectrumTitle, matchesForSpectrum + 1);
                         }
-                        spectrumDeviations.add(ms1Deviation);
                     }
                 }
             }
@@ -213,32 +207,12 @@ public class ReviewFigure {
 
         File matchesFile = new File("C:\\Github\\onyase\\R\\matches.txt");
         bw = new BufferedWriter(new FileWriter(matchesFile));
-        for (String spectrumTitle : spectrumFactory.getSpectrumTitles(fileName)) {
-            bw.write(spectrumTitle);
-            bw.write(SEPARATOR);
-            ArrayList<Double> mzDeviations = ms1DeviationMap.get(spectrumTitle);
-            if (mzDeviations == null) {
-                bw.write(SEPARATOR);
-            } else {
-                StringBuilder mzDeviationsTxt = new StringBuilder();
-                for (Double mzDeviation : mzDeviations) {
-                    if (mzDeviationsTxt.length() > 0) {
-                        mzDeviationsTxt.append(",");
-                    }
-                    mzDeviationsTxt.append(mzDeviation);
-                }
-                bw.write(mzDeviationsTxt.toString());
-                bw.write(SEPARATOR);
-                ArrayList<Double> scores = scoresMap.get(spectrumTitle);
-                StringBuilder scoresTxt = new StringBuilder();
-                for (Double score : scores) {
-                    if (scoresTxt.length() > 0) {
-                        scoresTxt.append(",");
-                    }
-                    scoresTxt.append(score);
-                }
-                bw.write(scoresTxt.toString());
-            }
+        bw.write("MS1_deviation" + SEPARATOR + "MS2_Score");
+        bw.newLine();
+        for (int i = 0 ; i < ms1Deviations.size() ; i++) {
+            Double ms1Deviation = ms1Deviations.get(i);
+            Double score = scores.get(i);
+            bw.write(ms1Deviation + SEPARATOR + score);
             bw.newLine();
         }
         bw.close();
