@@ -247,7 +247,7 @@ public class ReviewFigure {
             boolean scored = false;
             if (spectrumHyperScores.size() > 1) {
                 boolean debug = spectrumTitle.contains("7074.7074");
-                HashMap<Double, Double> eValues = hyperScore.getEValueHistogram(spectrumHyperScores, debug);
+                HashMap<Double, Double> eValues = hyperScore.getEValueHistogram(spectrumHyperScores);
                 if (eValues != null) {
                     scored = true;
                     eValuesMap.put(spectrumTitle, eValues);
@@ -291,8 +291,6 @@ public class ReviewFigure {
                 }
             }
         }
-
-        hyperScore.close();
 
         duration.end();
         System.out.println("Proteins: " + sequenceFactory.getNSequences() + ", Peptides: " + nSequences + ", Spectra: " + spectrumFactory.getNSpectra() + ", Matches: " + nMatches);
