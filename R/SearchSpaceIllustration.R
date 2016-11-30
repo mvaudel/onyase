@@ -1,18 +1,18 @@
 library(ggplot2)
 
-matches <- read.table(file="matches.txt", sep = "\t", header = T, stringsAsFactors = F)
-knownScores[knownScores$eValue == "null", "eValue"] <- NA
-knownScores$eValue <- as.numeric(knownScores$eValue)
+matches <- read.table(file="matches.txt", header = T, stringsAsFactors = F)
+matches[matches$eValue == "null", "eValue"] <- NA
+matches$eValue <- as.numeric(matches$eValue)
 
-knownScores <- read.table(file="scoresComparison.txt", sep = "\t", header = T, stringsAsFactors = F)
+knownScores <- read.table(file="scoresComparison.txt", header = T, stringsAsFactors = F)
 knownScores[knownScores$New.score == "null","New.score"] <- NA
 knownScores[knownScores$New.eValue == "null","New.eValue"] <- NA
 knownScores$New.score <- as.numeric(knownScores$New.score)
 knownScores$New.eValue <- as.numeric(knownScores$New.eValue)
 
-nMatchesData <- read.table(file="nMatches.txt", sep = "\t", header = T, stringsAsFactors = F)
+nMatchesData <- read.table(file="nMatches.txt", header = T, stringsAsFactors = F)
 nMatchesPlot <- ggplot()
-nMatchesPlot <- nMatchesPlot + geom_histogram(aes(x=nMatchesData$nMatches), fill = "darkblue", col = "darkblue", alpha = 0.5)
+nMatchesPlot <- nMatchesPlot + geom_histogram(aes(x=nMatchesData$nMatches), fill = "darkblue", col = "darkblue", alpha = 0.5, bins = 100)
 nMatchesPlot <- nMatchesPlot + labs(x = "Number of peptides per precursor", y = "number of spectra")
 plot(nMatchesPlot)
 
@@ -21,7 +21,7 @@ ms1Plot <- ms1Plot + geom_density(aes(x=matches$MS1_deviation, col=matches$Categ
 ms1Plot <- ms1Plot + labs(x = "", y = "MS1 deviation [ppm]")
 plot(ms1Plot)
 
-fittingData <- read.table(file="C:\\Projects\\scores\\comparison xtandem\\fitting_values.txt", sep = "\t", header = T)
+fittingData <- read.table(file="C:\\Projects\\scores\\comparison xtandem\\fitting_values.txt", header = T)
 abPlot <- ggplot()
 abPlot <- abPlot + geom_point(aes(x=fittingData$a, y=fittingData$b), alpha = 0.1, na.rm=TRUE)
 abPlot <- abPlot + labs(x = "a", y = "b")

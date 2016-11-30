@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +51,7 @@ public class ReviewFigure {
     private String parametersFilePath = "C:\\Projects\\PeptideShaker\\test files\\tutorial.par";
     private String psReportFilePath = "C:\\Github\\onyase\\Resources\\Score_test.txt";
 
-    public final static String SEPARATOR = "\t";
+    public final static String SEPARATOR = " ";
 
     private SpectrumFactory spectrumFactory;
     private SequenceFactory sequenceFactory;
@@ -152,6 +154,7 @@ public class ReviewFigure {
 
         HashMap<String, Integer> nMatchesMap = new HashMap<String, Integer>();
         ArrayList<String> spectrumTitlesExport = new ArrayList<String>();
+        ArrayList<PeptideAssumption> peptidesExport = new ArrayList<PeptideAssumption>();
         ArrayList<Double> ms1Deviations = new ArrayList<Double>();
         ArrayList<Double> scores = new ArrayList<Double>();
         ArrayList<String> categories = new ArrayList<String>();
@@ -190,10 +193,12 @@ public class ReviewFigure {
                         Double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, peptideSpectrumAnnotator);
 
                         if (score > 0) {
-                            
+
                             spectrumTitlesExport.add(spectrumTitle);
-                            
+
                             scores.add(score);
+
+                            peptidesExport.add(peptideAssumption);
 
                             ArrayList<Double> spectrumScores = hyperScores.get(spectrumTitle);
                             if (spectrumScores == null) {
@@ -318,6 +323,7 @@ public class ReviewFigure {
             if (spectrumEValueMap != null) {
                 eValue = spectrumEValueMap.get(score);
             }
+            spectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
             bw.write(spectrumTitle + SEPARATOR + ms1Deviation + SEPARATOR + score + SEPARATOR + eValue + SEPARATOR + category);
             bw.newLine();
         }
@@ -333,6 +339,7 @@ public class ReviewFigure {
             if (matchesForSpectrum == null) {
                 matchesForSpectrum = 0;
             }
+            spectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
             bw.write(spectrumTitle + SEPARATOR + precursor.getMz() + SEPARATOR + precursor.getRtInMinutes() + SEPARATOR + matchesForSpectrum);
             bw.newLine();
         }
@@ -349,31 +356,49 @@ public class ReviewFigure {
                 String confidence = psConfidence.get(spectrumTitle);
                 Double newScore = newScores.get(spectrumTitle);
                 Double eValue = newEValues.get(spectrumTitle);
+                spectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
                 bw.write(spectrumTitle + SEPARATOR + sequence + SEPARATOR + score + SEPARATOR + confidence + SEPARATOR + newScore + SEPARATOR + eValue);
                 bw.newLine();
             }
         }
         bw.close();
-        
-        File exportFile = new File("C:\\Github\\onyase\\export\\testExample.psm");
+
+        File exportFile = new File("C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\no_PTM\\testExample.psm");
         bw = new BufferedWriter(new FileWriter(exportFile));
-        bw.write("Spectrum_Tilte" + SEPARATOR + "MS1_deviation" + SEPARATOR + "MS2_Score" + SEPARATOR + "eValue" + SEPARATOR + "Category");
+        bw.write("# Version: 0.0.1");
         bw.newLine();
+        bw.write("# Spectra: " + mgfFilePath);
+        bw.newLine();
+        bw.write("# Fasta: " + fastaFilePath);
+        bw.newLine();
+        bw.write("# Parameters: " + parametersFilePath);
+        bw.newLine();
+        bw.write("# ");
+        bw.newLine();
+        bw.write("# Spectrum_Tilte" + SEPARATOR + "Sequence" + SEPARATOR + "Charge" + SEPARATOR + "MS2_Score" + SEPARATOR + "eValue");
+        bw.newLine();
+        String lastSpectrum = "";
         for (int i = 0; i < spectrumTitlesExport.size(); i++) {
-            Double ms1Deviation = ms1Deviations.get(i);
             Double score = scores.get(i);
-            String category = categories.get(i);
             String spectrumTitle = spectrumTitlesExport.get(i);
             Double eValue = null;
             HashMap<Double, Double> spectrumEValueMap = eValuesMap.get(spectrumTitle);
             if (spectrumEValueMap != null) {
                 eValue = spectrumEValueMap.get(score);
             }
-            bw.write(spectrumTitle + SEPARATOR + ms1Deviation + SEPARATOR + score + SEPARATOR + eValue + SEPARATOR + category);
-            bw.newLine();
+            if (eValue != null) {
+                PeptideAssumption peptideAssumption = peptidesExport.get(i);
+                Peptide peptide = peptideAssumption.getPeptide();
+                spectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
+                if (!spectrumTitle.equals(lastSpectrum)) {
+                    bw.write(spectrumTitle);
+                    lastSpectrum = spectrumTitle;
+                }
+                bw.write(SEPARATOR + peptide.getSequence() + SEPARATOR + peptideAssumption.getIdentificationCharge().value + SEPARATOR + score + SEPARATOR + eValue);
+                bw.newLine();
+            }
         }
         bw.close();
-        
 
         spectrumFactory.closeFiles();
         sequenceFactory.closeFile();
