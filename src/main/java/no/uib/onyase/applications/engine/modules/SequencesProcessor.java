@@ -42,11 +42,11 @@ public class SequencesProcessor {
     /**
      * The sequence factory.
      */
-    private SequenceFactory sequenceFactory;
+    private SequenceFactory sequenceFactory = SequenceFactory.getInstance();
     /**
      * The spectrum factory.
      */
-    private SpectrumFactory spectrumFactory;
+    private SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
     /**
      * A handler for the exceptions.
      */
@@ -70,18 +70,21 @@ public class SequencesProcessor {
     }
 
     /**
-     * Iterates all sequences and returns all PSMs found in a map indexed by spectrum title and peptide key.
-     * 
+     * Iterates all sequences and returns all PSMs found in a map indexed by
+     * spectrum title and peptide key.
+     *
      * @param spectrumFileName the name of the file to process
      * @param precursorProcessor the precursor processor
      * @param identificationParameters the identification parameters to sue
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param nThreads the number of threads to use
-     * 
+     *
      * @return a map of all PSMs indexed by spectrum and peptide key
-     * 
-     * @throws FileNotFoundException exception thrown if the fasta file is not found
-     * @throws InterruptedException exception thrown if a threading issue occurs.
+     *
+     * @throws FileNotFoundException exception thrown if the fasta file is not
+     * found
+     * @throws InterruptedException exception thrown if a threading issue
+     * occurs.
      */
     public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, int nThreads) throws FileNotFoundException, InterruptedException {
 
@@ -100,19 +103,23 @@ public class SequencesProcessor {
         if (!pool.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS)) {
             waitingHandler.appendReport("Mapping tags timed out. Please contact the developers.", true, true);
         }
-        
+
         // Gather all PSMs
         waitingHandler.setSecondaryProgressCounterIndeterminate(true);
         HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequenceProcessors.get(0).getPsmMap();
-        for (int i = 1 ; i < sequenceProcessors.size() ; i++) {
+        for (int i = 1; i < sequenceProcessors.size(); i++) {
             HashMap<String, HashMap<String, PeptideAssumption>> tempMap = sequenceProcessors.get(i).getPsmMap();
             for (String spectrumTitle : tempMap.keySet()) {
                 HashMap<String, PeptideAssumption> newAssumptions = tempMap.get(spectrumTitle);
                 HashMap<String, PeptideAssumption> currentAssumptions = psmMap.get(spectrumTitle);
-                currentAssumptions.putAll(newAssumptions);
+                if (currentAssumptions != null) {
+                    currentAssumptions.putAll(newAssumptions);
+                } else {
+                    psmMap.put(spectrumTitle, newAssumptions);
+                }
             }
         }
-        
+
         return psmMap;
     }
 
@@ -144,11 +151,11 @@ public class SequencesProcessor {
         /**
          * The score to use.
          */
-        private HyperScore hyperScore;
+        private HyperScore hyperScore = new HyperScore();
         /**
          * A spectrum annotator.
          */
-        private PeptideSpectrumAnnotator peptideSpectrumAnnotator;
+        private PeptideSpectrumAnnotator peptideSpectrumAnnotator = new PeptideSpectrumAnnotator();
         /**
          * All peptide assumptions indexed by spectrum and by peptide key.
          */
@@ -254,7 +261,7 @@ public class SequencesProcessor {
 
         /**
          * Returns a map of all PSMs found indexed by spectrum and peptide key.
-         * 
+         *
          * @return a map of all PSMs found
          */
         public HashMap<String, HashMap<String, PeptideAssumption>> getPsmMap() {

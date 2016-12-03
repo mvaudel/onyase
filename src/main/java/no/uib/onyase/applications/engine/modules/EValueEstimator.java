@@ -1,26 +1,10 @@
 package no.uib.onyase.applications.engine.modules;
 
 import com.compomics.util.exceptions.ExceptionHandler;
-import com.compomics.util.experiment.biology.Peptide;
-import com.compomics.util.experiment.biology.Protein;
-import com.compomics.util.experiment.biology.ions.ElementaryIon;
-import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
-import com.compomics.util.experiment.identification.protein_sequences.ProteinSequenceIterator;
-import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
-import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
-import com.compomics.util.experiment.identification.spectrum_annotation.SpecificAnnotationSettings;
-import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.PeptideSpectrumAnnotator;
 import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
-import com.compomics.util.experiment.massspectrometry.Charge;
-import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
-import com.compomics.util.experiment.massspectrometry.Spectrum;
-import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.math.HistogramUtils;
-import com.compomics.util.preferences.DigestionPreferences;
-import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
-import com.sun.tools.xjc.api.SpecVersion;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;

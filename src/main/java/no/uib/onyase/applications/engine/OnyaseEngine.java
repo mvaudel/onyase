@@ -4,44 +4,21 @@ import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
-import com.compomics.util.experiment.biology.Peptide;
-import com.compomics.util.experiment.biology.Protein;
-import com.compomics.util.experiment.biology.ions.ElementaryIon;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
-import com.compomics.util.experiment.identification.peptide_fragmentation.PeptideFragmentationModel;
-import com.compomics.util.experiment.identification.protein_sequences.ProteinSequenceIterator;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
-import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
-import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
-import com.compomics.util.experiment.identification.spectrum_annotation.SpecificAnnotationSettings;
-import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.PeptideSpectrumAnnotator;
 import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
-import com.compomics.util.experiment.massspectrometry.Charge;
-import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
-import com.compomics.util.experiment.massspectrometry.Precursor;
-import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
-import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
-import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
-import com.compomics.util.preferences.ProcessingPreferences;
 import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import no.uib.onyase.applications.engine.export.TxtExporter;
 import no.uib.onyase.applications.engine.modules.EValueEstimator;
 import no.uib.onyase.applications.engine.modules.PrecursorProcessor;
 import no.uib.onyase.applications.engine.modules.SequencesProcessor;
-import no.uib.onyase.scripts.ReviewFigure;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -124,36 +101,69 @@ public class OnyaseEngine {
      */
     public void launch(File spectrumFile, File destinationFile, IdentificationParameters identificationParameters, int maxX, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
+        Duration totalDuration = new Duration();
+        totalDuration.start();
+        waitingHandler.setWaitingText("Onyase engine start.");
+        
         // Load the spectra in the spectrum factory
+        Duration localDuration = new Duration();
+        localDuration.start();
         waitingHandler.setSecondaryProgressCounterIndeterminate(true);
         String spectrumFileName = Util.getFileName(spectrumFile);
         waitingHandler.setWaitingText("Loading spectra from " + spectrumFileName + ".");
         spectrumFactory.addSpectra(spectrumFile);
+        localDuration.end();
+        waitingHandler.setWaitingText("Loading spectra completed (" + localDuration + ").");
+        
 
         // Load precursors
+        localDuration = new Duration();
+        localDuration.start();
         waitingHandler.setWaitingText("Loading precursors from " + spectrumFileName + ".");
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
         precursorProcessor = new PrecursorProcessor(spectrumFileName, searchParameters);
+        localDuration.end();
+        waitingHandler.setWaitingText("Loading precursors completed (" + localDuration + ").");
 
         // Load the sequences in the sequence factory
+        localDuration = new Duration();
+        localDuration.start();
         File fastaFile = searchParameters.getFastaFile();
         String fastaFileName = Util.getFileName(fastaFile);
         waitingHandler.setWaitingText("Loading sequences from " + fastaFileName + ".");
         sequenceFactory.loadFastaFile(fastaFile);
+        localDuration.end();
+        waitingHandler.setWaitingText("Loading sequences completed (" + localDuration + ").");
 
         // Get PSMs
-        waitingHandler.setWaitingText("Getting PSMs according to the identification parameters (" + identificationParameters.getName() + ").");
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
         HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads);
+        localDuration.end();
+        waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
 
         // Estimate e-values
+        localDuration = new Duration();
+        localDuration.start();
         waitingHandler.setWaitingText("Estimating e-values.");
         EValueEstimator eValueEstimator = new EValueEstimator(waitingHandler, exceptionHandler);
         eValueEstimator.estimateEValues(psmMap, nThreads);
+        localDuration.end();
+        waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
 
         // Export
+        localDuration = new Duration();
+        localDuration.start();
         waitingHandler.setWaitingText("Exporting PSMs.");
         TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
         txtExporter.writeExport(psmMap, destinationFile, nThreads);
+        localDuration.end();
+        waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
+        
+        totalDuration.end();
+        waitingHandler.appendReportEndLine();
+        waitingHandler.setWaitingText("Onyase engine completed (" + totalDuration + ").");
     }
 }

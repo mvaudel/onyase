@@ -69,6 +69,8 @@ public class TxtExporter {
      */
     public void writeExport(HashMap<String, HashMap<String, PeptideAssumption>> psmMap, File destinationFile, int nThreads) throws IOException, InterruptedException {
         
+        this.psmMap = psmMap;
+        
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
         waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
         Iterator<String> spectrumTitlesIterator = psmMap.keySet().iterator();
