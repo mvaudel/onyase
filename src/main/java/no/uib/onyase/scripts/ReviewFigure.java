@@ -173,11 +173,12 @@ public class ReviewFigure {
             }
             //Protein protein = sequenceFactory.getProtein("P11021");
             String sequence = protein.getSequence();
-            ArrayList<Peptide> peptides = proteinSequenceIterator.getPeptides(sequence, digestionPreferences, massMin, massMax);
+            ArrayList<ProteinSequenceIterator.PeptideWithPosition> peptides = proteinSequenceIterator.getPeptides(sequence, digestionPreferences, massMin, massMax);
             nSequences += peptides.size();
 
-            for (Peptide peptide : peptides) {
+            for (ProteinSequenceIterator.PeptideWithPosition peptideWithPosition : peptides) {
 
+                Peptide peptide = peptideWithPosition.getPeptide();
                 Double peptideMass = peptide.getMass();
                 for (int charge = minCharge; charge <= maxCharge; charge++) {
                     PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));

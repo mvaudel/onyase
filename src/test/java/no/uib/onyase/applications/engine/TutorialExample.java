@@ -47,7 +47,7 @@ public class TutorialExample {
                 ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch(spectrumFile, destinationFile, identificationParameters, 2, 4, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParameters, 2, 1, waitingHandler, exceptionHandler);
     }
     
 }

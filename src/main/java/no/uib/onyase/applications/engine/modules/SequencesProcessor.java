@@ -1,6 +1,9 @@
 package no.uib.onyase.applications.engine.modules;
 
 import com.compomics.util.exceptions.ExceptionHandler;
+import com.compomics.util.experiment.biology.ElementaryElement;
+import com.compomics.util.experiment.biology.PTM;
+import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.biology.Protein;
 import com.compomics.util.experiment.biology.ions.ElementaryIon;
@@ -22,6 +25,7 @@ import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
+import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -30,6 +34,7 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import no.uib.onyase.applications.engine.modules.ModificationProfileIterator.ModificationProfile;
 
 /**
  * The sequences processor runs multiple sequences iterators on the database in
@@ -47,6 +52,10 @@ public class SequencesProcessor {
      * The spectrum factory.
      */
     private SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
+    /**
+     * The modifications factory.
+     */
+    private PTMFactory ptmFactory = PTMFactory.getInstance();
     /**
      * A handler for the exceptions.
      */
@@ -160,6 +169,10 @@ public class SequencesProcessor {
          * All peptide assumptions indexed by spectrum and by peptide key.
          */
         private HashMap<String, HashMap<String, PeptideAssumption>> psmMap = new HashMap<String, HashMap<String, PeptideAssumption>>();
+        /**
+         * An iterator for the possible modification profiles.
+         */
+        private ModificationProfileIterator modificationProfileIterator = new ModificationProfileIterator();
 
         /**
          * Constructor.
@@ -189,6 +202,16 @@ public class SequencesProcessor {
                 DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
                 int minCharge = searchParameters.getMinChargeSearched().value;
                 int maxCharge = searchParameters.getMaxChargeSearched().value;
+                int minIsotope = searchParameters.getMinIsotopicCorrection();
+                int maxIsotope = searchParameters.getMaxIsotopicCorrection();
+                PtmSettings ptmSettings = searchParameters.getPtmSettings();
+                HashMap<String, PTM> variablePtms = new HashMap<String, PTM>(ptmSettings.getVariableModifications().size());
+                HashMap<String, Double> variablePtmMasses = new HashMap<String, Double>(ptmSettings.getVariableModifications().size());
+                for (String ptmName : ptmSettings.getVariableModifications()) {
+                    PTM ptm = ptmFactory.getPTM(ptmName);
+                    variablePtms.put(ptmName, ptm);
+                    variablePtmMasses.put(ptmName, ptm.getMass());
+                }
 
                 // Information from the spectrum processing
                 Double massMin = precursorProcessor.getMassMin();
@@ -204,43 +227,82 @@ public class SequencesProcessor {
                     // Get a protein and find all possible peptides
                     Protein protein = proteinIterator.getNextProtein();
                     String sequence = protein.getSequence();
-                    ArrayList<Peptide> peptides = proteinSequenceIterator.getPeptides(sequence, digestionPreferences, massMin, massMax);
+                    ArrayList<ProteinSequenceIterator.PeptideWithPosition> peptides = proteinSequenceIterator.getPeptides(sequence, digestionPreferences, massMin, massMax);
 
                     // Iterate all peptides
-                    for (Peptide peptide : peptides) {
+                    for (ProteinSequenceIterator.PeptideWithPosition peptideWithPosition : peptides) {
 
+                        Peptide peptide = peptideWithPosition.getPeptide();
                         String peptideKey = peptide.getKey();
                         Double peptideMass = peptide.getMass();
+                        int indexOnProtein = peptideWithPosition.getPosition();
 
                         // Iterate posible charges
                         for (int charge = minCharge; charge <= maxCharge; charge++) {
 
-                            // See if we have a precursor for this m/z
-                            double mz = (charge * ElementaryIon.proton.getTheoreticMass() + peptideMass) / charge;
-                            ArrayList<PrecursorMap.PrecursorWithTitle> matches = precursorMap.getMatchingSpectra(mz);
+                            double protonContribution = charge * ElementaryIon.proton.getTheoreticMass();
 
-                            // For every match, estimate the PSM score if not done previsouly
-                            for (PrecursorMap.PrecursorWithTitle precursorWithTitle : matches) {
+                            // Iterate possible isotopes
+                            for (int isotope = minIsotope; isotope <= maxIsotope; isotope++) {
 
-                                String spectrumTitle = precursorWithTitle.spectrumTitle;
-                                HashMap<String, PeptideAssumption> spectrumMatches = psmMap.get(spectrumTitle);
-                                if (spectrumMatches == null) {
-                                    spectrumMatches = new HashMap<String, PeptideAssumption>();
-                                    psmMap.put(spectrumTitle, spectrumMatches);
+                                // See if we have a precursor for this m/z
+                                double mass;
+                                if (isotope == 0) {
+                                    mass = protonContribution + peptideMass;
+                                } else {
+                                    double isotopeContribution = isotope * ElementaryElement.neutron.getMass();
+                                    mass = protonContribution + isotopeContribution + peptideMass;
+                                }
+                                double mz = mass / charge;
+                                ArrayList<PrecursorMap.PrecursorWithTitle> precursorMatches = precursorMap.getMatchingSpectra(mz);
+
+                                // For every match, estimate the PSM score if not done previsouly
+                                for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
+
+                                    String spectrumTitle = precursorWithTitle.spectrumTitle;
+                                    HashMap<String, PeptideAssumption> spectrumMatches = psmMap.get(spectrumTitle);
+                                    if (spectrumMatches == null) {
+                                        spectrumMatches = new HashMap<String, PeptideAssumption>();
+                                        psmMap.put(spectrumTitle, spectrumMatches);
+                                    }
+
+                                    // If the PSM was not scored already, estimate the score
+                                    if (!spectrumMatches.containsKey(peptideKey)) {
+                                        String spectrumKey = Spectrum.getSpectrumKey(spectrumFileName, spectrumTitle);
+                                        PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
+                                        MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
+                                        SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
+                                        Double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, peptideSpectrumAnnotator);
+                                        peptideAssumption.setRawScore(score);
+                                        peptideAssumption.setScore(score);
+
+                                        // Save the PSM in the map
+                                        spectrumMatches.put(peptideKey, peptideAssumption);
+                                    }
                                 }
 
-                                // If the PSM was not scored already, estimate the score
-                                if (!spectrumMatches.containsKey(peptideKey)) {
-                                    String spectrumKey = Spectrum.getSpectrumKey(spectrumFileName, spectrumTitle);
-                                    PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
-                                    MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                    SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
-                                    Double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, peptideSpectrumAnnotator);
-                                    peptideAssumption.setRawScore(score);
-                                    peptideAssumption.setScore(score);
+                                // See if the peptide can be modified
+                                HashMap<String, ArrayList<Integer>> possibleModificationSites = new HashMap<String, ArrayList<Integer>>(0);
+                                HashMap<String, Integer> possibleModificationOccurence = new HashMap<String, Integer>(0);
+                                for (PTM ptm : variablePtms.values()) {
+                                    ArrayList<Integer> ptmSites = peptide.getPotentialModificationSitesNoCombination(ptm, protein.getSequence(), indexOnProtein);
+                                    if (!ptmSites.isEmpty()) {
+                                        possibleModificationSites.put(ptm.getName(), ptmSites);
+                                        possibleModificationOccurence.put(ptm.getName(), ptmSites.size());
+                                    }
+                                }
 
-                                    // Save the PSM in the map
-                                    spectrumMatches.put(peptideKey, peptideAssumption);
+                                if (!possibleModificationOccurence.isEmpty()) {
+
+                                    // Get the possible modification combinations    
+                                    ArrayList<ModificationProfile> modificationProfiles = modificationProfileIterator.getPossibleModificationProfiles(possibleModificationOccurence, variablePtmMasses);
+
+                                    // See if the modification profiles yield matches among the precursors
+                                    for (ModificationProfile modificationProfile : modificationProfiles) {
+                                        double modifedMass = mass + modificationProfile.getMass();
+                                        mz = modifedMass / charge;
+                                        precursorMatches = precursorMap.getMatchingSpectra(mz);
+                                    }
                                 }
                             }
                         }
