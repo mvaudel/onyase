@@ -7,60 +7,42 @@ import java.util.ArrayList;
  *
  * @author Marc Vaudel
  */
-public class ModificationSitesIterator {
-    
-    private ArrayList<Integer> possibleSites;
-    
-    private int[] indexes;
-    
-    private int increment;
-    
-    private int nSites;
-    
-    private static final int maxSites = 5;
-    
-    public ModificationSitesIterator(ArrayList<Integer> possibleSites, Integer nModifications) {
-        increment = Math.max(possibleSites.size() / (maxSites * nModifications), 1);
-        indexes = new int[nModifications];
-        for (int i = 0 ; i < nModifications ; i++) {
-            indexes[i] = i;
-        }
-        indexes[nModifications-1] -= increment;
-        this.possibleSites = possibleSites;
-        nSites = possibleSites.size();
-    }
-    
-    public boolean hasNext() {
-        for (int i = indexes.length-1 ; i >= 0 ; i--) {
-            if (indexes[i] + (indexes.length - i) * increment < nSites) {
-                indexes[i] += increment;
-                for (int j = i+1 ; j < indexes.length ; j++) {
-                    indexes[j] = indexes[j-1] + increment;
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    public ArrayList<Integer> getNextSites() {
-        ArrayList<Integer> result = new ArrayList<Integer>(indexes.length);
-        for (int index : indexes) {
-            result.add(possibleSites.get(index));
-        }
-        return result;
-    }
+public interface ModificationSitesIterator {
 
-    public int getnSites() {
-        return nSites;
-    }
+    /**
+     * Indicates whether there is another site combination and moves the
+     * iterator.
+     *
+     * @return a boolean indicating whether there is another site combination
+     * and moves the iterator
+     */
+    public boolean hasNext();
 
-    public int getIncrement() {
-        return increment;
-    }
+    /**
+     * Returns the next modification sites.
+     *
+     * @return the next modification sites
+     */
+    public ArrayList<Integer> getNextSites();
 
-    public void setIncrement(int increment) {
-        this.increment = increment;
-    }
+    /**
+     * Returns the number of sites.
+     *
+     * @return the number of sites
+     */
+    public int getnSites();
 
+    /**
+     * Returns the increment.
+     *
+     * @return the increment.
+     */
+    public int getIncrement();
+
+    /**
+     * Sets the increment.
+     *
+     * @param increment the increment
+     */
+    public void setIncrement(int increment);
 }
