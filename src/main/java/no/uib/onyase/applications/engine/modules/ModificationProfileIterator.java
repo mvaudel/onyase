@@ -15,7 +15,6 @@ public class ModificationProfileIterator {
      * The separator for the profiles keys.
      */
     public static final char SEPARATOR = '_';
-
     /**
      * A cache for the modification profiles already created.
      */
@@ -74,7 +73,7 @@ public class ModificationProfileIterator {
         result.remove(0);
         return result;
     }
-
+            
     /**
      * Class representing a modification profile.
      */
@@ -158,7 +157,7 @@ public class ModificationProfileIterator {
          * @return a copy of the modification profile
          */
         public ModificationProfile getCopy() {
-            return new ModificationProfile(modificationOccurence, mass);
+            return new ModificationProfile(new HashMap<String, Integer>(modificationOccurence), mass);
         }
 
         /**
