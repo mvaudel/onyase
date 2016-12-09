@@ -111,6 +111,9 @@ public class TxtExporter {
      * @throws UnsupportedEncodingException exception thrown if the modifications could not be encoded
      */
     private String getModifications(Peptide peptide) throws UnsupportedEncodingException {
+        if (peptide.getModificationMatches() == null) {
+            return "";
+        }
         StringBuilder stringBuilder = new StringBuilder();
         for (ModificationMatch modificationMatch : peptide.getModificationMatches()) {
             if (stringBuilder.length() > 0) {
