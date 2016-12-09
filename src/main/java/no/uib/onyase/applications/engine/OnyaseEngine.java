@@ -81,6 +81,7 @@ public class OnyaseEngine {
      *
      * @param spectrumFile the spectrum file to search
      * @param destinationFile the destination file
+     * @param identificationParametersFile the file where the identification parameters are stored
      * @param identificationParameters the identification parameters
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param nThreads the number of threads to use
@@ -99,7 +100,7 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File destinationFile, IdentificationParameters identificationParameters, int maxX, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -158,7 +159,7 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Exporting PSMs.");
         TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
-        txtExporter.writeExport(psmMap, destinationFile, nThreads);
+        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, destinationFile, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
         

@@ -2,18 +2,23 @@ package no.uib.onyase.applications.engine.export;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.Peptide;
+import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
+import com.compomics.util.experiment.io.identifications.idfilereaders.OnyaseIdfileReader;
+import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import no.uib.onyase.utils.Properties;
 
 /**
  * Simple exporter for text files.
@@ -22,10 +27,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class TxtExporter {
     
-    /**
-     * The column separator.
-     */
-    public static final String SEPARATOR = " ";
     /**
      * The end of line separator.
      */
@@ -59,7 +60,10 @@ public class TxtExporter {
     /**
      * Writes the given psms to a file.
      * 
+     * @param spectrumFile the file containing the spectra
      * @param psmMap the psms as a map
+     * @param parametersFile the file containing the parameters
+     * @param identificationParameters the identification parameters
      * @param destinationFile the destination file
      * @param nThreads the number of threads to use
      * 
@@ -67,7 +71,7 @@ public class TxtExporter {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void writeExport(HashMap<String, HashMap<String, PeptideAssumption>> psmMap, File destinationFile, int nThreads) throws IOException, InterruptedException {
+    public void writeExport(File spectrumFile, HashMap<String, HashMap<String, PeptideAssumption>> psmMap, File parametersFile, IdentificationParameters identificationParameters, File destinationFile, int nThreads) throws IOException, InterruptedException {
         
         this.psmMap = psmMap;
         
@@ -75,6 +79,17 @@ public class TxtExporter {
         waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
         Iterator<String> spectrumTitlesIterator = psmMap.keySet().iterator();
         BufferedWriter bw = new BufferedWriter(new FileWriter(destinationFile));
+        Properties properties = new Properties();
+        bw.write(OnyaseIdfileReader.comment + OnyaseIdfileReader.separator + OnyaseIdfileReader.versionTag + properties.getVersion());
+        bw.newLine();
+        bw.write(OnyaseIdfileReader.comment + OnyaseIdfileReader.separator + OnyaseIdfileReader.spectraTag + spectrumFile.getAbsolutePath());
+        bw.newLine();
+        bw.write(OnyaseIdfileReader.comment + OnyaseIdfileReader.separator + OnyaseIdfileReader.fastaTag + identificationParameters.getSearchParameters().getFastaFile());
+        bw.newLine();
+        bw.write(OnyaseIdfileReader.comment + OnyaseIdfileReader.separator + OnyaseIdfileReader.paramsTag + parametersFile.getAbsolutePath());
+        bw.newLine();
+        bw.write(OnyaseIdfileReader.comment + OnyaseIdfileReader.separator + "Spectrum_Title" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value");
+        bw.newLine();
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
             SpectrumProcessor spectrumProcessor = new SpectrumProcessor(spectrumTitlesIterator, bw);
@@ -82,9 +97,29 @@ public class TxtExporter {
         }
         pool.shutdown();
         if (!pool.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS)) {
-            waitingHandler.appendReport("Mapping tags timed out. Please contact the developers.", true, true);
+            waitingHandler.appendReport("Export timed out.", true, true);
         }
-        
+    }
+    
+    /**
+     * Returns the variable modifications of the given peptide in an utf-8 encoded String in the form: modificationName1 + Peptide.MODIFICATION_LOCALIZATION_SEPARATOR + modificationSite1 + Peptide.MODIFICATION_SEPARATOR + modificationName2 + Peptide.MODIFICATION_LOCALIZATION_SEPARATOR + modificationSite2.
+     * 
+     * @param peptide the peptide of interest
+     * 
+     * @return the variable modifications in a string
+     * 
+     * @throws UnsupportedEncodingException exception thrown if the modifications could not be encoded
+     */
+    private String getModifications(Peptide peptide) throws UnsupportedEncodingException {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (ModificationMatch modificationMatch : peptide.getModificationMatches()) {
+            if (stringBuilder.length() > 0) {
+                stringBuilder.append(Peptide.MODIFICATION_SEPARATOR);
+            }
+            stringBuilder.append(modificationMatch.getTheoreticPtm()).append(Peptide.MODIFICATION_LOCALIZATION_SEPARATOR).append(modificationMatch.getModificationSite());
+        }
+        String result = URLEncoder.encode(stringBuilder.toString(), "utf-8");
+        return result;
     }
 
     /**
@@ -130,14 +165,17 @@ public class TxtExporter {
                             spectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
                             stringBuilder.append(spectrumTitle);
                         }
-                        stringBuilder.append(SEPARATOR);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
                         Peptide peptide = peptideAssumption.getPeptide();
                         stringBuilder.append(peptide.getSequence());
-                        stringBuilder.append(SEPARATOR);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        String modificationsAsString = getModifications(peptide);
+                        stringBuilder.append(modificationsAsString);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
                         stringBuilder.append(peptideAssumption.getIdentificationCharge().value);
-                        stringBuilder.append(SEPARATOR);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
                         stringBuilder.append(peptideAssumption.getRawScore());
-                        stringBuilder.append(SEPARATOR);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
                         stringBuilder.append(peptideAssumption.getScore());
                         stringBuilder.append(END_LINE);
                     }

@@ -39,6 +39,23 @@
 
     <!-- Build -->
     <build>
+        <!-- Copy the resources required during building -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>onyase.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>onyase.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
 
         <!-- Extensions -->
         <extensions>

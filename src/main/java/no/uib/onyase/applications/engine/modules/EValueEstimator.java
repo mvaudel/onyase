@@ -72,7 +72,7 @@ public class EValueEstimator {
         }
         pool.shutdown();
         if (!pool.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS)) {
-            waitingHandler.appendReport("Mapping tags timed out. Please contact the developers.", true, true);
+            waitingHandler.appendReport("E-value estimation timed out. Please contact the developers.", true, true);
         }
 
         // See if we have missing values

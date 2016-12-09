@@ -37,6 +37,15 @@ public class TutorialExample {
         }
     }
     
+    /**
+     * Launches the search.
+     * 
+     * @throws IOException exception thrown if an error occurs while reading or writing a file
+     * @throws ClassNotFoundException exception thrown if an error occurs while uncasting a file 
+     * @throws SQLException exception thrown if an error occurs while interacting with a database
+     * @throws MzMLUnmarshallerException exception thrown if an error occurs while interacting with an mzML file
+     * @throws InterruptedException exception thrown if a threading error occurs
+     */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
         
         File spectrumFile = new File(mgfFilePath);
@@ -47,7 +56,7 @@ public class TutorialExample {
                 ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch(spectrumFile, destinationFile, identificationParameters, 2, 1, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, 4, waitingHandler, exceptionHandler);
     }
     
 }

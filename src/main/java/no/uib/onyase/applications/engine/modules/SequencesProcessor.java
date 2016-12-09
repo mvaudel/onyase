@@ -10,7 +10,6 @@ import com.compomics.util.experiment.biology.ions.ElementaryIon;
 import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
-import com.compomics.util.experiment.identification.matches.SpectrumMatch;
 import com.compomics.util.experiment.identification.protein_sequences.ProteinSequenceIterator;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
@@ -20,14 +19,12 @@ import com.compomics.util.experiment.identification.spectrum_annotation.spectrum
 import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
 import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
-import com.compomics.util.experiment.massspectrometry.Precursor;
 import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap.PrecursorWithTitle;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
-import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -120,7 +116,7 @@ public class SequencesProcessor {
         }
         pool.shutdown();
         if (!pool.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS)) {
-            waitingHandler.appendReport("Mapping tags timed out. Please contact the developers.", true, true);
+            waitingHandler.appendReport("Search timed out.", true, true);
         }
 
         // Gather all PSMs
