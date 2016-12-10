@@ -8,6 +8,7 @@ import com.compomics.util.waiting.WaitingHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +70,7 @@ public class EValueEstimator {
         for (int i = 0; i < nThreads; i++) {
             SpectrumProcessor spectrumProcessor = new SpectrumProcessor(spectrumTitlesIterator);
             pool.submit(spectrumProcessor);
+            spectrumProcessors.add(spectrumProcessor);
         }
         pool.shutdown();
         if (!pool.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS)) {
@@ -196,6 +198,8 @@ public class EValueEstimator {
                         waitingHandler.increaseSecondaryProgressCounter();
                     }
                 }
+            } catch (NoSuchElementException exception) {
+                // the last spectrum got processed by another thread.
             } catch (Exception e) {
                 if (!waitingHandler.isRunCanceled()) {
                     exceptionHandler.catchException(e);

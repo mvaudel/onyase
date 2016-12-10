@@ -2,6 +2,7 @@ package no.uib.onyase.applications.engine;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
+import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
@@ -56,6 +57,9 @@ public class TutorialExample {
         File destinationFile = new File(destinationFilePath);
         File identificationParametersFile = new File(parametersFilePath);
         IdentificationParameters identificationParameters = IdentificationParameters.getIdentificationParameters(identificationParametersFile);
+        AnnotationSettings annotationSettings = new AnnotationSettings(identificationParameters.getSearchParameters());
+        annotationSettings.setIntensityLimit(0.5);
+        identificationParameters.setAnnotationSettings(annotationSettings);
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
 

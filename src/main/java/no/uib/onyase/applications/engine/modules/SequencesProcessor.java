@@ -2,6 +2,7 @@ package no.uib.onyase.applications.engine.modules;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.ElementaryElement;
+import com.compomics.util.experiment.biology.Ion;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.biology.Peptide;
@@ -245,7 +246,7 @@ public class SequencesProcessor {
                         }
                     }
                 }
-                
+
                 // Get objects for modification iteration
                 ArrayList<String> orderedModificationsName = new ArrayList<String>(variablePtms.keySet());
                 Collections.sort(orderedModificationsName);
@@ -260,7 +261,7 @@ public class SequencesProcessor {
                 PrecursorMap precursorMap = precursorProcessor.getPrecursorMap();
 
                 // Settings needed for the scoring
-                AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences();
+                AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences().clone();
 
                 // Iterate the proteins and store the possible PSMs
                 while (proteinIterator.hasNext()) {
@@ -299,7 +300,7 @@ public class SequencesProcessor {
 
                                 // For every match, estimate the PSM score if not done previsouly
                                 for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
-                                    createPeptideAssumptions(precursorWithTitle, peptideKey, peptide, charge, annotationSettings);
+                                    createPeptideAssumption(precursorWithTitle, peptideKey, peptide, charge, annotationSettings);
                                 }
 
                                 // See if the peptide can be modified
@@ -381,10 +382,11 @@ public class SequencesProcessor {
                                                     }
                                                 }
                                                 Peptide modifiedPeptide = new Peptide(peptide.getSequence(), modificationMatches);
+                                                String modifiedPeptideKey = modifiedPeptide.getKey();
 
                                                 // For every match, estimate the PSM score if not done previsouly
                                                 for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
-                                                    createPeptideAssumptions(precursorWithTitle, peptideKey, modifiedPeptide, charge, annotationSettings);
+                                                    createPeptideAssumption(precursorWithTitle, modifiedPeptideKey, modifiedPeptide, charge, annotationSettings);
                                                 }
                                             }
                                         }
@@ -416,7 +418,32 @@ public class SequencesProcessor {
             return psmMap;
         }
 
-        private void createPeptideAssumptions(PrecursorWithTitle precursorWithTitle, String peptideKey, Peptide peptide, int charge, AnnotationSettings annotationSettings) throws IOException, MzMLUnmarshallerException, InterruptedException, ClassNotFoundException, SQLException {
+        /**
+         * Creates the peptide assumption for the given input and estimates the
+         * score.
+         *
+         * @param precursorWithTitle the precursor with title for this spectrum
+         * @param peptideKey the key for the peptide
+         * @param peptide the peptide
+         * @param charge the charge
+         * @param annotationSettings the annotation settings
+         *
+         * @throws InterruptedException
+         * @throws ClassNotFoundException
+         * @throws SQLException
+         * @throws IOException exception thrown whenever an error occurred while
+         * reading the file
+         * @throws MzMLUnmarshallerException exception thrown whenever an error
+         * occurred while parsing the mzML file
+         * @throws InterruptedException exception thrown whenever a threading
+         * issue occurred while mapping potential modification sites
+         * @throws ClassNotFoundException exception thrown whenever an error
+         * occurred while deserializing an object from the ProteinTree
+         * @throws SQLException exception thrown whenever an error occurred
+         * while interacting with the ProteinTree
+         */
+        private void createPeptideAssumption(PrecursorWithTitle precursorWithTitle, String peptideKey, Peptide peptide, int charge, AnnotationSettings annotationSettings) throws IOException, MzMLUnmarshallerException, InterruptedException, ClassNotFoundException, SQLException {
+
             String spectrumTitle = precursorWithTitle.spectrumTitle;
             HashMap<String, PeptideAssumption> spectrumMatches = psmMap.get(spectrumTitle);
             if (spectrumMatches == null) {
@@ -431,11 +458,13 @@ public class SequencesProcessor {
                 MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
                 SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                 Double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, peptideSpectrumAnnotator);
-                peptideAssumption.setRawScore(score);
-                peptideAssumption.setScore(score);
+                if (score > 0) {
+                    peptideAssumption.setRawScore(score);
+                    peptideAssumption.setScore(score);
 
-                // Save the PSM in the map
-                spectrumMatches.put(peptideKey, peptideAssumption);
+                    // Save the PSM in the map
+                    spectrumMatches.put(peptideKey, peptideAssumption);
+                }
             }
         }
     }
