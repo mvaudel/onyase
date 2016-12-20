@@ -2,6 +2,10 @@ package no.uib.onyase.applications.engine;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
+import com.compomics.util.experiment.biology.PTM;
+import com.compomics.util.experiment.biology.PTMFactory;
+import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
+import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -19,7 +23,7 @@ import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 public class TutorialExample {
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
-    private String parametersFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.par";
+    private String parametersFilePath = "C:\\Users\\mvaudel\\.compomics\\identification_parameters\\Test Onyase.par";
     private String destinationFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.psm";
 
     /**
@@ -62,9 +66,22 @@ public class TutorialExample {
         identificationParameters.setAnnotationSettings(annotationSettings);
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
+        SearchParameters searchParameters = identificationParameters.getSearchParameters();
+        PtmSettings ptmSettings = searchParameters.getPtmSettings();
+        PTMFactory ptmFactory = PTMFactory.getInstance();
+        PTM ptm = ptmFactory.getPTM("Pyrolidone from E");
+        ptmSettings.addVariableModification(ptm);
+        ptm = ptmFactory.getPTM("Pyrolidone from Q");
+        ptmSettings.addVariableModification(ptm);
+        ptm = ptmFactory.getPTM("Pyrolidone from carbamidomethylated C");
+        ptmSettings.addVariableModification(ptm);
+        ptm = ptmFactory.getPTM("Acetylation of protein N-term");
+        ptmSettings.addVariableModification(ptm);
+        File newParameters = new File("C:\\Users\\mvaudel\\.compomics\\identification_parameters\\Test Onyase.par");
+        IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, 4, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, true, 4, waitingHandler, exceptionHandler);
     }
 
 }

@@ -1,5 +1,6 @@
-package no.uib.onyase.applications.engine.modules;
+package no.uib.onyase.scripts.review_figure;
 
+import no.uib.onyase.applications.engine.modules.*;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.ElementaryElement;
 import com.compomics.util.experiment.biology.PTM;

@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine;
+package no.uib.onyase.scripts.review_figure;
 
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
@@ -7,28 +7,33 @@ import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
+import com.compomics.util.experiment.massspectrometry.Precursor;
+import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.HashMap;
-import no.uib.onyase.applications.engine.export.TxtExporter;
 import no.uib.onyase.applications.engine.modules.EValueEstimator;
 import no.uib.onyase.applications.engine.modules.PrecursorProcessor;
-import no.uib.onyase.applications.engine.modules.SequencesProcessor;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
- * The Onyase engine searches spectra according to given identification
- * parameters.
  *
  * @author Marc Vaudel
  */
-public class OnyaseEngine {
+public class ReviewFigureEngine {
 
+    /**
+     * Separator for the exports.
+     */
+    public final static String separator = " ";
     /**
      * The spectrum factory.
      */
@@ -46,15 +51,6 @@ public class OnyaseEngine {
      */
     private PTMFactory ptmFactory;
     /**
-     * The handler for the exceptions.
-     */
-    private ExceptionHandler exceptionHandler;
-    /**
-     * The waiting handler provides feedback to the user and allowing canceling
-     * the process.
-     */
-    private WaitingHandler waitingHandler;
-    /**
      * The module handling the precursors.
      */
     private PrecursorProcessor precursorProcessor;
@@ -62,7 +58,7 @@ public class OnyaseEngine {
     /**
      * Constructor.
      */
-    public OnyaseEngine() {
+    public ReviewFigureEngine() {
         initializeFactories();
     }
 
@@ -79,6 +75,7 @@ public class OnyaseEngine {
     /**
      * Launches the search.
      *
+     * @param jobName the job name
      * @param spectrumFile the spectrum file to search
      * @param destinationFile the destination file
      * @param identificationParametersFile the file where the identification
@@ -103,7 +100,7 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -165,8 +162,50 @@ public class OnyaseEngine {
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
+        // Export histograms
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Exporting Histograms.");
+        exportHistograms(psmMap, spectrumFile.getName(), jobName, waitingHandler);
+        localDuration.end();
+        waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
+        
+        // Finished
         totalDuration.end();
         waitingHandler.appendReportEndLine();
         waitingHandler.setWaitingText("Onyase engine completed (" + totalDuration + ").");
+        
+        // Write report
+        File reportFile = new File("C:\\Github\\onyase\\R\\resources\\report_" + jobName + ".txt");
+        BufferedWriter reportBw = new BufferedWriter(new FileWriter(reportFile));
+        reportBw.write("Duration: " + totalDuration.getDuration());
+        reportBw.close();
+        
+    }
+    
+    private void exportHistograms(HashMap<String, HashMap<String, PeptideAssumption>> psmMap, String fileName, String suffix, WaitingHandler waitingHandler) throws IOException, MzMLUnmarshallerException {
+        
+        File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + suffix + ".txt");
+        BufferedWriter precursorBw = new BufferedWriter(new FileWriter(precursorFile));
+        
+        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "peptides");
+        precursorBw.newLine();
+        
+        waitingHandler.setSecondaryProgressCounterIndeterminate(false);
+        waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
+        
+        for (String spectrumTitle : psmMap.keySet()) {
+            String spectrumKey = Spectrum.getSpectrumKey(fileName, spectrumTitle);
+            Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
+            String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
+            HashMap<String, PeptideAssumption> assumptions = psmMap.get(spectrumTitle);
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(assumptions.size());
+            precursorBw.write(stringBuilder.toString());
+            precursorBw.newLine();
+            waitingHandler.increaseSecondaryProgressCounter();
+        }
+        
+        precursorBw.close();
     }
 }
