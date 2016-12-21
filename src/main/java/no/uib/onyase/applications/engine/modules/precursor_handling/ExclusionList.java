@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine.modules;
+package no.uib.onyase.applications.engine.modules.precursor_handling;
 
 import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.experiment.massspectrometry.Precursor;
@@ -29,6 +29,14 @@ public class ExclusionList {
      * Map of the precursors in this map.
      */
     private PrecursorMap precursorMap;
+    /**
+     * The maximal m/z to accept.
+     */
+    private Double maxMz;
+    /**
+     * The minimal m/z to accept
+     */
+    private Double minMz;
 
     /**
      * Constructor.
@@ -40,7 +48,36 @@ public class ExclusionList {
      * reading the exclusion list
      */
     public ExclusionList(double precursorTolerance, boolean ppm) throws IOException {
-        importListFromFile(defaultListFilePath, precursorTolerance, ppm);
+        this(defaultListFilePath, precursorTolerance, ppm, null, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param precursorTolerance the precursor m/z tolerance
+     * @param ppm boolean indicating whether the precursor tolerance is in ppm
+     * @param minMz the minimal m/z to accept
+     *
+     * @throws IOException exception thrown whenever an error occurred while
+     * reading the exclusion list
+     */
+    public ExclusionList(double precursorTolerance, boolean ppm, Double minMz) throws IOException {
+        this(defaultListFilePath, precursorTolerance, ppm, minMz, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param precursorTolerance the precursor m/z tolerance
+     * @param ppm boolean indicating whether the precursor tolerance is in ppm
+     * @param minMz the minimal m/z to accept
+     * @param maxMz the maximal m/z to accept
+     *
+     * @throws IOException exception thrown whenever an error occurred while
+     * reading the exclusion list
+     */
+    public ExclusionList(double precursorTolerance, boolean ppm, Double minMz, Double maxMz) throws IOException {
+        this(defaultListFilePath, precursorTolerance, ppm, minMz, maxMz);
     }
 
     /**
@@ -50,11 +87,23 @@ public class ExclusionList {
      * exclusion list
      * @param precursorTolerance the precursor m/z tolerance
      * @param ppm boolean indicating whether the precursor tolerance is in ppm
+     * @param minMz the minimal m/z to accept
+     * @param maxMz the maximal m/z to accept
      *
      * @throws IOException exception thrown whenever an error occurred while
      * reading the exclusion list
      */
-    public ExclusionList(String exclusionListfilePath, double precursorTolerance, boolean ppm) throws IOException {
+    public ExclusionList(String exclusionListfilePath, double precursorTolerance, boolean ppm, Double minMz, Double maxMz) throws IOException {
+        if (minMz != null) {
+            this.minMz = minMz;
+        } else {
+            this.minMz = 0.0;
+        }
+        if (maxMz != null) {
+            this.maxMz = maxMz;
+        } else {
+            this.maxMz = Double.MAX_VALUE;
+        }
         importListFromFile(exclusionListfilePath, precursorTolerance, ppm);
     }
 
@@ -120,6 +169,9 @@ public class ExclusionList {
      * according to the exclusion list
      */
     public boolean isExcluded(double mz) {
+        if (mz < minMz || mz > maxMz) {
+            return false;
+        }
         ArrayList<PrecursorMap.PrecursorWithTitle> excludedPrecursors = getMatchingSpectra(mz);
         return !excludedPrecursors.isEmpty();
     }

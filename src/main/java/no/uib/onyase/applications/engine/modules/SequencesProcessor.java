@@ -1,5 +1,7 @@
 package no.uib.onyase.applications.engine.modules;
 
+import no.uib.onyase.applications.engine.modules.precursor_handling.ExclusionList;
+import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.ElementaryElement;
 import com.compomics.util.experiment.biology.PTM;
@@ -94,6 +96,8 @@ public class SequencesProcessor {
      * @param removeZeros boolean indicating whether the peptide assumptions of
      * score zero should be removed
      * @param nThreads the number of threads to use
+     * @param minMz the minimal m/z to consider
+     * @param maxMz the maximal m/z to consider
      *
      * @return a map of all PSMs indexed by spectrum and peptide key
      *
@@ -102,8 +106,8 @@ public class SequencesProcessor {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads) throws IOException, InterruptedException {
-        return iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, removeZeros, nThreads);
+    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz) throws IOException, InterruptedException {
+        return iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz);
     }
 
     /**
@@ -118,6 +122,8 @@ public class SequencesProcessor {
      * @param removeZeros boolean indicating whether the peptide assumptions of
      * score zero should be removed
      * @param nThreads the number of threads to use
+     * @param minMz the minimal m/z to consider
+     * @param maxMz the maximal m/z to consider
      *
      * @return a map of all PSMs indexed by spectrum and peptide key
      *
@@ -126,7 +132,7 @@ public class SequencesProcessor {
      * @throws IOException exception thrown whenever an error occurred while
      * reading a file
      */
-    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads) throws InterruptedException, IOException {
+    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz) throws InterruptedException, IOException {
 
         // Iterate all protein sequences in the factory and get the possible PSMs
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -135,7 +141,7 @@ public class SequencesProcessor {
         ArrayList<SequenceProcessor> sequenceProcessors = new ArrayList<SequenceProcessor>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, removeZeros);
+            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, removeZeros, minMz, maxMz);
             sequenceProcessors.add(sequenceProcessor);
             pool.submit(sequenceProcessor);
         }
@@ -234,11 +240,13 @@ public class SequencesProcessor {
          * @param maxX the maximal number of Xs to allow in a peptide
          * @param removeZeros boolean indicating whether the peptide assumptions
          * of score zero should be removed
+         * @param minMz the minimal m/z to consider
+         * @param maxMz the maximal m/z to consider
          *
          * @throws IOException exception thrown whenever an error occurred while
          * reading the exclusion list file
          */
-        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros) throws IOException {
+        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz) throws IOException {
             this.proteinIterator = proteinIterator;
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
@@ -246,9 +254,9 @@ public class SequencesProcessor {
             SearchParameters searchParameters = identificationParameters.getSearchParameters();
             this.removeZeros = removeZeros;
             if (exclusionListFilePath != null) {
-                exclusionList = new ExclusionList(exclusionListFilePath, searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm());
+                exclusionList = new ExclusionList(exclusionListFilePath, searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
             } else {
-                exclusionList = new ExclusionList(searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm());
+                exclusionList = new ExclusionList(searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
             }
             proteinSequenceIterator = new ProteinSequenceIterator(identificationParameters.getSearchParameters().getPtmSettings().getFixedModifications(), maxX);
         }

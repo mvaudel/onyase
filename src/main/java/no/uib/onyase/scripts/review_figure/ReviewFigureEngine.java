@@ -21,7 +21,7 @@ import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.HashMap;
 import no.uib.onyase.applications.engine.modules.EValueEstimator;
-import no.uib.onyase.applications.engine.modules.PrecursorProcessor;
+import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -85,6 +85,8 @@ public class ReviewFigureEngine {
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param removeZeros boolean indicating whether the peptide assumptions of
      * score zero should be removed
+     * @param minMz the minimal m/z to consider
+     * @param maxMz the maximal m/z to consider
      * @param nThreads the number of threads to use
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
@@ -101,7 +103,7 @@ public class ReviewFigureEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -122,7 +124,7 @@ public class ReviewFigureEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Loading precursors from " + spectrumFileName + ".");
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        precursorProcessor = new PrecursorProcessor(spectrumFileName, searchParameters);
+        precursorProcessor = new PrecursorProcessor(spectrumFileName, searchParameters, minMz, maxMz);
         localDuration.end();
         waitingHandler.setWaitingText("Loading precursors completed (" + localDuration + ").");
 
@@ -141,7 +143,7 @@ public class ReviewFigureEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads);
+        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz);
         localDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
 
