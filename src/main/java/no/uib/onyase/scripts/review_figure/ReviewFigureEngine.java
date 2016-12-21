@@ -197,7 +197,7 @@ public class ReviewFigureEngine {
         File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + suffix + ".txt");
         BufferedWriter precursorBw = new BufferedWriter(new FileWriter(precursorFile));
 
-        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "#ions" + separator + "#peptides");
+        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "nIons" + separator + "nPeptides");
         precursorBw.newLine();
 
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
