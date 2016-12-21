@@ -320,6 +320,9 @@ public class SequencesProcessor {
 
                 // Settings needed for the scoring
                 AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences().clone();
+                
+                // A counter to manage caches
+                int proteinCounter = 0;
 
                 // Iterate the proteins and store the possible PSMs
                 while (proteinIterator.hasNext()) {
@@ -470,6 +473,11 @@ public class SequencesProcessor {
                     } else {
                         waitingHandler.increaseSecondaryProgressCounter();
                     }
+                    
+                    proteinCounter++;
+                    if (proteinCounter % 100 == 0) {
+                        inspectedPeptides.clear();
+                    }
                 }
             } catch (Exception e) {
                 if (!waitingHandler.isRunCanceled()) {
@@ -518,14 +526,14 @@ public class SequencesProcessor {
 
             String spectrumTitle = precursorWithTitle.spectrumTitle;
             HashMap<String, PeptideAssumption> spectrumMatches = psmMap.get(spectrumTitle);
-            HashSet<String> inspectedPeptidesForSpectrum;
             if (spectrumMatches == null) {
                 spectrumMatches = new HashMap<String, PeptideAssumption>();
                 psmMap.put(spectrumTitle, spectrumMatches);
+            }
+            HashSet<String> inspectedPeptidesForSpectrum = inspectedPeptides.get(spectrumTitle);
+            if (inspectedPeptidesForSpectrum == null) {
                 inspectedPeptidesForSpectrum = new HashSet<String>();
                 inspectedPeptides.put(spectrumTitle, inspectedPeptidesForSpectrum);
-            } else {
-                inspectedPeptidesForSpectrum = inspectedPeptides.get(spectrumTitle);
             }
 
             // If the PSM was not scored already, estimate the score

@@ -203,7 +203,7 @@ public class TxtExporter {
                     PeptideAssumption bestPeptideAssumption = null;
                     for (PeptideAssumption peptideAssumption : peptideAssumptions.values()) {
                         Double eValue = peptideAssumption.getScore();
-                        if (bestEvalue == null || eValue > bestEvalue) {
+                        if (bestEvalue == null || eValue < bestEvalue) {
                             bestPeptideAssumption = peptideAssumption;
                             bestEvalue = eValue;
                         }

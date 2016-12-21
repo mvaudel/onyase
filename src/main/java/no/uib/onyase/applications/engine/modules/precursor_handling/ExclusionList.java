@@ -170,7 +170,7 @@ public class ExclusionList {
      */
     public boolean isExcluded(double mz) {
         if (mz < minMz || mz > maxMz) {
-            return false;
+            return true;
         }
         ArrayList<PrecursorMap.PrecursorWithTitle> excludedPrecursors = getMatchingSpectra(mz);
         return !excludedPrecursors.isEmpty();

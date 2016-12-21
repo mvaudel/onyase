@@ -107,7 +107,7 @@ public class ReviewFigureEngine {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
-        waitingHandler.setWaitingText("Onyase engine start.");
+        waitingHandler.setWaitingText("Review Figure " + jobName + " start.");
 
         // Load the spectra in the spectrum factory
         Duration localDuration = new Duration();
@@ -156,20 +156,20 @@ public class ReviewFigureEngine {
         localDuration.end();
         waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
 
-        // Export
+        // Export all psms
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Exporting all PSMs.");
         TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, allPsmsFile, nThreads, true);
+        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, allPsmsFile, nThreads, false);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
-        // Export
+        // Export best psms
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Exporting best PSMs.");
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, bestPsmsFile, nThreads, false);
+        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, bestPsmsFile, nThreads, true);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
@@ -199,7 +199,7 @@ public class ReviewFigureEngine {
         File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + suffix + ".txt");
         BufferedWriter precursorBw = new BufferedWriter(new FileWriter(precursorFile));
 
-        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "nIons" + separator + "nPeptides");
+        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "nPeptides");
         precursorBw.newLine();
 
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -213,23 +213,9 @@ public class ReviewFigureEngine {
             Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
             String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
             HashMap<String, PeptideAssumption> assumptions = psmMap.get(spectrumTitle);
-            for (PeptideAssumption peptideAssumption : assumptions.values()) {
-                figureMetrics = (FigureMetrics) peptideAssumption.getUrParam(figureMetrics);
-                Integer nIons = figureMetrics.getnIons();
-                Integer nPeptides = ionsToPeptideMap.get(nIons);
-                if (nPeptides == null) {
-                    ionsToPeptideMap.put(nIons, 1);
-                } else {
-                    ionsToPeptideMap.put(nIons, nPeptides + 1);
-                }
-            }
-            for (Integer nIons : ionsToPeptideMap.keySet()) {
-                Integer nPeptides = ionsToPeptideMap.get(nIons);
-                StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(nIons).append(separator).append(nPeptides);
-                precursorBw.write(stringBuilder.toString());
-                precursorBw.newLine();
-            }
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(assumptions.size());
+            precursorBw.write(stringBuilder.toString());
             ionsToPeptideMap.clear();
             waitingHandler.increaseSecondaryProgressCounter();
         }

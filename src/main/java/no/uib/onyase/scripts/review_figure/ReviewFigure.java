@@ -9,6 +9,7 @@ import com.compomics.util.experiment.identification.identification_parameters.Se
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
+import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
@@ -57,7 +58,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "0";
+        String jobName = "5";
         
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -78,6 +79,8 @@ public class ReviewFigure {
         ptmSettings.addVariableModification(ptm);
         ptm = ptmFactory.getPTM("Pyrolidone from carbamidomethylated C");
         ptmSettings.addVariableModification(ptm);
+        DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
+        digestionPreferences.setnMissedCleavages("Trypsin", 4);
         File newParameters = new File(resourcesFolderPath, "Test_Onyase_" + jobName + ".par");
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
