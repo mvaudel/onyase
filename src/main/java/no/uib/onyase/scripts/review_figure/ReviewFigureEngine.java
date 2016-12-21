@@ -206,7 +206,6 @@ public class ReviewFigureEngine {
         waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
 
         HashMap<Integer, Integer> ionsToPeptideMap = new HashMap<Integer, Integer>();
-        FigureMetrics figureMetrics = new FigureMetrics();
 
         for (String spectrumTitle : psmMap.keySet()) {
             String spectrumKey = Spectrum.getSpectrumKey(fileName, spectrumTitle);
