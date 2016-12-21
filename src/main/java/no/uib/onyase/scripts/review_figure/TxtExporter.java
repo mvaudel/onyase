@@ -50,6 +50,10 @@ public class TxtExporter {
      * The spectrum factory.
      */
     private SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
+    /**
+     * Boolean indicating whether only the best hit should be exported.
+     */
+    private boolean onlyBestHit = false;
 
     /**
      * Constructor.
@@ -72,13 +76,15 @@ public class TxtExporter {
      * @param identificationParameters the identification parameters
      * @param destinationFile the destination file
      * @param nThreads the number of threads to use
+     * @param onlyBestHit boolean indicating whether only the best hit should be
+     * exported
      *
      * @throws IOException exception thrown whenever an error occurs while
      * writing the file
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void writeExport(File spectrumFile, HashMap<String, HashMap<String, PeptideAssumption>> psmMap, File parametersFile, IdentificationParameters identificationParameters, File destinationFile, int nThreads) throws IOException, InterruptedException {
+    public void writeExport(File spectrumFile, HashMap<String, HashMap<String, PeptideAssumption>> psmMap, File parametersFile, IdentificationParameters identificationParameters, File destinationFile, int nThreads, boolean onlyBestHit) throws IOException, InterruptedException {
 
         this.psmMap = psmMap;
 
@@ -90,8 +96,13 @@ public class TxtExporter {
         bw.newLine();
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SpectrumProcessor spectrumProcessor = new SpectrumProcessor(spectrumTitlesIterator, bw, spectrumFile.getName(), identificationParameters);
-            pool.submit(spectrumProcessor);
+            if (onlyBestHit) {
+                BestHitsExporter spectrumProcessor = new BestHitsExporter(spectrumTitlesIterator, bw, spectrumFile.getName(), identificationParameters);
+                pool.submit(spectrumProcessor);
+            } else {
+                AllHitsExporter spectrumProcessor = new AllHitsExporter(spectrumTitlesIterator, bw, spectrumFile.getName(), identificationParameters);
+                pool.submit(spectrumProcessor);
+            }
         }
         pool.shutdown();
         if (!pool.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS)) {
@@ -134,7 +145,7 @@ public class TxtExporter {
     /**
      * Private runnable to write the results on a spectrum.
      */
-    private class SpectrumProcessor implements Runnable {
+    private class BestHitsExporter implements Runnable {
 
         /**
          * Iterator for the spectrum titles.
@@ -160,7 +171,136 @@ public class TxtExporter {
          * @param bw the writer to use
          * @param mgfFileName the name of the mgf file
          */
-        public SpectrumProcessor(Iterator<String> spectrumTitlesIterator, BufferedWriter bw, String mgfFileName, IdentificationParameters identificationParameters) {
+        public BestHitsExporter(Iterator<String> spectrumTitlesIterator, BufferedWriter bw, String mgfFileName, IdentificationParameters identificationParameters) {
+            this.spectrumTitlesIterator = spectrumTitlesIterator;
+            this.bw = bw;
+            this.mgfFileName = mgfFileName;
+            this.identificationParameters = identificationParameters;
+        }
+
+        @Override
+        public void run() {
+
+            try {
+
+                boolean ppm = identificationParameters.getSearchParameters().isPrecursorAccuracyTypePpm();
+                int minIsotope = identificationParameters.getSearchParameters().getMinIsotopicCorrection();
+                int maxIsotope = identificationParameters.getSearchParameters().getMaxIsotopicCorrection();
+
+                FigureMetrics figureMetrics = new FigureMetrics();
+
+                // Iterate the PSMs and write the details to the file
+                while (spectrumTitlesIterator.hasNext()) {
+
+                    // get the PSMs for the next spectrum
+                    String spectrumTitle = spectrumTitlesIterator.next();
+                    String encodedSpectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
+                    HashMap<String, PeptideAssumption> peptideAssumptions = psmMap.get(spectrumTitle);
+
+                    Precursor precursor = spectrumFactory.getPrecursor(mgfFileName, spectrumTitle);
+
+                    Double bestEvalue = null;
+                    PeptideAssumption bestPeptideAssumption = null;
+                    for (PeptideAssumption peptideAssumption : peptideAssumptions.values()) {
+                        Double eValue = peptideAssumption.getScore();
+                        if (bestEvalue == null || eValue > bestEvalue) {
+                            bestPeptideAssumption = peptideAssumption;
+                            bestEvalue = eValue;
+                        }
+                    }
+
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    figureMetrics = (FigureMetrics) bestPeptideAssumption.getUrParam(figureMetrics);
+
+                    stringBuilder.append(encodedSpectrumTitle);
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(precursor.getMz());
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(bestPeptideAssumption.getDeltaMass(precursor.getMz(), ppm, minIsotope, maxIsotope));
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(precursor.getRtInMinutes());
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    Peptide peptide = bestPeptideAssumption.getPeptide();
+                    stringBuilder.append(peptide.getSequence());
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    String modificationsAsString = getModifications(peptide);
+                    stringBuilder.append(modificationsAsString);
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(bestPeptideAssumption.getIdentificationCharge().value);
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(bestPeptideAssumption.getRawScore());
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(bestPeptideAssumption.getScore());
+                    if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(0.5);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(0.5);
+                    } else if (figureMetrics.isIsDecoy()) {
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(1);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(0);
+                    } else {
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(0);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(1);
+                    }
+                    stringBuilder.append(OnyaseIdfileReader.separator);
+                    stringBuilder.append(figureMetrics.getnIons());
+                    stringBuilder.append(END_LINE);
+                    bw.write(stringBuilder.toString());
+
+                    // check for cancellation and update progress
+                    if (waitingHandler.isRunCanceled()) {
+                        return;
+                    } else {
+                        waitingHandler.increaseSecondaryProgressCounter();
+                    }
+                }
+            } catch (NoSuchElementException exception) {
+                // the last spectrum got processed by another thread.
+            } catch (Exception e) {
+                if (!waitingHandler.isRunCanceled()) {
+                    exceptionHandler.catchException(e);
+                    waitingHandler.setRunCanceled();
+                }
+            }
+        }
+    }
+
+    /**
+     * Private runnable to write the results on a spectrum.
+     */
+    private class AllHitsExporter implements Runnable {
+
+        /**
+         * Iterator for the spectrum titles.
+         */
+        private final Iterator<String> spectrumTitlesIterator;
+        /**
+         * The writer to use.
+         */
+        private final BufferedWriter bw;
+        /**
+         * The name of the mgf file.
+         */
+        private final String mgfFileName;
+        /**
+         * The identification parameters.
+         */
+        private final IdentificationParameters identificationParameters;
+
+        /**
+         * Constructor.
+         *
+         * @param spectrumTitlesIterator An iterator for the spectra to process
+         * @param bw the writer to use
+         * @param mgfFileName the name of the mgf file
+         */
+        public AllHitsExporter(Iterator<String> spectrumTitlesIterator, BufferedWriter bw, String mgfFileName, IdentificationParameters identificationParameters) {
             this.spectrumTitlesIterator = spectrumTitlesIterator;
             this.bw = bw;
             this.mgfFileName = mgfFileName;

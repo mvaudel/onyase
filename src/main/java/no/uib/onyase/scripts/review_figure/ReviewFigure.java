@@ -24,7 +24,7 @@ public class ReviewFigure {
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
     private String parametersFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.par";
-    private String destinationFilePath = "C:\\Github\\onyase\\R\\resources\\test.psm";
+    private String resourcesFolderPath = "C:\\Github\\onyase\\R\\resources";
 
     /**
      * The main method used to start PeptideShaker.
@@ -57,8 +57,11 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
+        String jobName = "0";
+        
         File spectrumFile = new File(mgfFilePath);
-        File destinationFile = new File(destinationFilePath);
+        File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
+        File bestPsmsFile = new File(resourcesFolderPath, "best_psms_" + jobName + ".psm");
         File identificationParametersFile = new File(parametersFilePath);
         IdentificationParameters identificationParameters = IdentificationParameters.getIdentificationParameters(identificationParametersFile);
         AnnotationSettings annotationSettings = new AnnotationSettings(identificationParameters.getSearchParameters());
@@ -75,11 +78,11 @@ public class ReviewFigure {
         ptmSettings.addVariableModification(ptm);
         ptm = ptmFactory.getPTM("Pyrolidone from carbamidomethylated C");
         ptmSettings.addVariableModification(ptm);
-        File newParameters = new File("C:\\Users\\mvaudel\\.compomics\\identification_parameters\\Test Onyase.par");
+        File newParameters = new File(resourcesFolderPath, "Test_Onyase_" + jobName + ".par");
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch("Default", spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, false, 3, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, false, 3, waitingHandler, exceptionHandler);
     }
 
 }

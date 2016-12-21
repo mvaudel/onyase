@@ -77,7 +77,8 @@ public class ReviewFigureEngine {
      *
      * @param jobName the job name
      * @param spectrumFile the spectrum file to search
-     * @param destinationFile the destination file
+     * @param allPsmsFile the file where to export all psms
+     * @param bestPsmsFile the file where to export the best psms
      * @param identificationParametersFile the file where the identification
      * parameters are stored
      * @param identificationParameters the identification parameters
@@ -100,7 +101,7 @@ public class ReviewFigureEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(String jobName, File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -156,9 +157,17 @@ public class ReviewFigureEngine {
         // Export
         localDuration = new Duration();
         localDuration.start();
-        waitingHandler.setWaitingText("Exporting PSMs.");
+        waitingHandler.setWaitingText("Exporting all PSMs.");
         TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, destinationFile, nThreads);
+        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, allPsmsFile, nThreads, true);
+        localDuration.end();
+        waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
+
+        // Export
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Exporting best PSMs.");
+        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, bestPsmsFile, nThreads, false);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
