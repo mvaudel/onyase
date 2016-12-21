@@ -86,7 +86,7 @@ public class TxtExporter {
         waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
         Iterator<String> spectrumTitlesIterator = psmMap.keySet().iterator();
         BufferedWriter bw = new BufferedWriter(new FileWriter(destinationFile));
-        bw.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "mz_deviation" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value");
+        bw.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "mz_deviation" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value" + OnyaseIdfileReader.separator + "Decoy" + OnyaseIdfileReader.separator + "Target" + OnyaseIdfileReader.separator + "nIons");
         bw.newLine();
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
@@ -176,6 +176,8 @@ public class TxtExporter {
                 int minIsotope = identificationParameters.getSearchParameters().getMinIsotopicCorrection();
                 int maxIsotope = identificationParameters.getSearchParameters().getMaxIsotopicCorrection();
 
+                FigureMetrics figureMetrics = new FigureMetrics();
+
                 // Iterate the PSMs and write the details to the file
                 while (spectrumTitlesIterator.hasNext()) {
 
@@ -188,6 +190,9 @@ public class TxtExporter {
 
                     StringBuilder stringBuilder = new StringBuilder();
                     for (PeptideAssumption peptideAssumption : peptideAssumptions.values()) {
+
+                        figureMetrics = (FigureMetrics) peptideAssumption.getUrParam(figureMetrics);
+
                         stringBuilder.append(encodedSpectrumTitle);
                         stringBuilder.append(OnyaseIdfileReader.separator);
                         stringBuilder.append(precursor.getMz());
@@ -207,6 +212,24 @@ public class TxtExporter {
                         stringBuilder.append(peptideAssumption.getRawScore());
                         stringBuilder.append(OnyaseIdfileReader.separator);
                         stringBuilder.append(peptideAssumption.getScore());
+                        if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0.5);
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0.5);
+                        } else if (figureMetrics.isIsDecoy()) {
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(1);
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0);
+                        } else {
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0);
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(1);
+                        }
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(figureMetrics.getnIons());
                         stringBuilder.append(END_LINE);
                     }
                     bw.write(stringBuilder.toString());

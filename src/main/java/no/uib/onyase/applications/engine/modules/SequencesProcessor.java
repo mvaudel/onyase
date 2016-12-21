@@ -92,7 +92,7 @@ public class SequencesProcessor {
      * @param precursorProcessor the precursor processor
      * @param identificationParameters the identification parameters to sue
      * @param maxX the maximal number of Xs to allow in a peptide sequence
-         * @param removeZeros boolean indicating whether the peptide assumptions of
+     * @param removeZeros boolean indicating whether the peptide assumptions of
      * score zero should be removed
      * @param nThreads the number of threads to use
      *
@@ -178,6 +178,10 @@ public class SequencesProcessor {
          */
         private HashMap<String, HashMap<String, PeptideAssumption>> psmMap = new HashMap<String, HashMap<String, PeptideAssumption>>();
         /**
+         * Map of the keys of inspected peptides indexed by spectrum.
+         */
+        private HashMap<String, HashSet<String>> inspectedPeptides = new HashMap<String, HashSet<String>>();
+        /**
          * An iterator for the possible modification profiles.
          */
         private ModificationProfileIterator modificationProfileIterator = new ModificationProfileIterator();
@@ -186,7 +190,8 @@ public class SequencesProcessor {
          */
         private HashMap<String, HashSet<String>> overlappingModifications;
         /**
-         * Boolean indicating whether the peptide assumptions of score zero should be removed.
+         * Boolean indicating whether the peptide assumptions of score zero
+         * should be removed.
          */
         private boolean removeZeros;
 
@@ -199,7 +204,8 @@ public class SequencesProcessor {
          * @param precursorProcessor the precursor processor for this file
          * @param identificationParameters the identification parameters to use
          * @param maxX the maximal number of Xs to allow in a peptide
-         * @param removeZeros boolean indicating whether the peptide assumptions of score zero should be removed
+         * @param removeZeros boolean indicating whether the peptide assumptions
+         * of score zero should be removed
          */
         public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, boolean removeZeros) {
             this.proteinIterator = proteinIterator;
@@ -434,7 +440,8 @@ public class SequencesProcessor {
          * @param peptide the peptide
          * @param charge the charge
          * @param annotationSettings the annotation settings
-         * @param removeZeros boolean indicating whether the peptide assumptions of score zero should be removed
+         * @param removeZeros boolean indicating whether the peptide assumptions
+         * of score zero should be removed
          *
          * @throws InterruptedException
          * @throws ClassNotFoundException
@@ -454,26 +461,32 @@ public class SequencesProcessor {
 
             String spectrumTitle = precursorWithTitle.spectrumTitle;
             HashMap<String, PeptideAssumption> spectrumMatches = psmMap.get(spectrumTitle);
+            HashSet<String> inspectedPeptidesForSpectrum;
             if (spectrumMatches == null) {
                 spectrumMatches = new HashMap<String, PeptideAssumption>();
                 psmMap.put(spectrumTitle, spectrumMatches);
+                inspectedPeptidesForSpectrum = new HashSet<String>();
+                inspectedPeptides.put(spectrumTitle, inspectedPeptidesForSpectrum);
+            } else {
+                inspectedPeptidesForSpectrum = inspectedPeptides.get(spectrumTitle);
             }
 
             // If the PSM was not scored already, estimate the score
-            if (!spectrumMatches.containsKey(peptideKey)) {
+            if (!inspectedPeptidesForSpectrum.contains(peptideKey)) {
+                inspectedPeptidesForSpectrum.add(peptideKey);
                 String spectrumKey = Spectrum.getSpectrumKey(spectrumFileName, spectrumTitle);
                 PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
                 MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
                 SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                 Double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, peptideSpectrumAnnotator);
                 if (!removeZero || score > 0) {
-                peptideAssumption.setRawScore(score);
+                    peptideAssumption.setRawScore(score);
                     peptideAssumption.setScore(score);
 
                     // Save the PSM in the map
                     spectrumMatches.put(peptideKey, peptideAssumption);
+                }
             }
         }
     }
-}
 }

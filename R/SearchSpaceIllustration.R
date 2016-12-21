@@ -12,6 +12,7 @@ plot(precursorHistogramPlot)
 # Histogram of e-values
 eValuesHistogram <- read.table("resources\\test.psm", header = T, sep = " ", stringsAsFactors = F)
 eValuesHistogramNoZero <- eValuesHistogram[eValuesHistogram$HyperScore > 0 & eValuesHistogram$E.Value < 0,]
+eValuesHistogramNoZero$E.Value <- -eValuesHistogramNoZero$E.Value
 
 eValueHistogramPlot <- ggplot()
 eValueHistogramPlot <- eValueHistogramPlot + geom_histogram(aes(x=eValuesHistogramNoZero$E.Value), binwidth = 1, col="darkblue", fill = "blue", alpha = 0.5)

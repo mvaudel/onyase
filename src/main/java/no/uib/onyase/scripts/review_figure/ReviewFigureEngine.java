@@ -169,43 +169,60 @@ public class ReviewFigureEngine {
         exportHistograms(psmMap, spectrumFile.getName(), jobName, waitingHandler);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
-        
+
         // Finished
         totalDuration.end();
         waitingHandler.appendReportEndLine();
         waitingHandler.setWaitingText("Onyase engine completed (" + totalDuration + ").");
-        
+
         // Write report
         File reportFile = new File("C:\\Github\\onyase\\R\\resources\\report_" + jobName + ".txt");
         BufferedWriter reportBw = new BufferedWriter(new FileWriter(reportFile));
         reportBw.write("Duration: " + totalDuration.getDuration());
         reportBw.close();
-        
+
     }
-    
+
     private void exportHistograms(HashMap<String, HashMap<String, PeptideAssumption>> psmMap, String fileName, String suffix, WaitingHandler waitingHandler) throws IOException, MzMLUnmarshallerException {
-        
+
         File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + suffix + ".txt");
         BufferedWriter precursorBw = new BufferedWriter(new FileWriter(precursorFile));
-        
-        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "peptides");
+
+        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "#ions" + separator + "#peptides");
         precursorBw.newLine();
-        
+
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
         waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
-        
+
+        HashMap<Integer, Integer> ionsToPeptideMap = new HashMap<Integer, Integer>();
+        FigureMetrics figureMetrics = new FigureMetrics();
+
         for (String spectrumTitle : psmMap.keySet()) {
             String spectrumKey = Spectrum.getSpectrumKey(fileName, spectrumTitle);
             Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
             String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
             HashMap<String, PeptideAssumption> assumptions = psmMap.get(spectrumTitle);
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(assumptions.size());
-            precursorBw.write(stringBuilder.toString());
-            precursorBw.newLine();
+            for (PeptideAssumption peptideAssumption : assumptions.values()) {
+                figureMetrics = (FigureMetrics) peptideAssumption.getUrParam(figureMetrics);
+                Integer nIons = figureMetrics.getnIons();
+                Integer nPeptides = ionsToPeptideMap.get(nIons);
+                if (nPeptides == null) {
+                    ionsToPeptideMap.put(nIons, 1);
+                } else {
+                    ionsToPeptideMap.put(nIons, nPeptides + 1);
+                }
+            }
+            for (Integer nIons : ionsToPeptideMap.keySet()) {
+                Integer nPeptides = ionsToPeptideMap.get(nIons);
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(nIons).append(separator).append(nPeptides);
+                precursorBw.write(stringBuilder.toString());
+                precursorBw.newLine();
+            }
+            ionsToPeptideMap.clear();
             waitingHandler.increaseSecondaryProgressCounter();
         }
-        
+
         precursorBw.close();
     }
 }
