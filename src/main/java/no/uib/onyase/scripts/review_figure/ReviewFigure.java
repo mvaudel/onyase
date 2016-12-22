@@ -8,6 +8,7 @@ import com.compomics.util.experiment.identification.identification_parameters.Pt
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
+import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -58,8 +59,8 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "5";
-        
+        String jobName = "9";
+
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
         File bestPsmsFile = new File(resourcesFolderPath, "best_psms_" + jobName + ".psm");
@@ -79,13 +80,23 @@ public class ReviewFigure {
         ptmSettings.addVariableModification(ptm);
         ptm = ptmFactory.getPTM("Pyrolidone from carbamidomethylated C");
         ptmSettings.addVariableModification(ptm);
+        ptm = ptmFactory.getPTM("Phosphorylation of S");
+        ptmSettings.addVariableModification(ptm);
+        ptm = ptmFactory.getPTM("Phosphorylation of T");
+        ptmSettings.addVariableModification(ptm);
+        ptm = ptmFactory.getPTM("Phosphorylation of Y");
+        ptmSettings.addVariableModification(ptm);
         DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
-        digestionPreferences.setnMissedCleavages("Trypsin", 4);
+//        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
+//        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
+//        searchParameters.setMaxChargeSearched(new Charge(Charge.PLUS, 6));
+//        searchParameters.setMinIsotopicCorrection(-4);
+//        searchParameters.setMaxIsotopicCorrection(4);
         File newParameters = new File(resourcesFolderPath, "Test_Onyase_" + jobName + ".par");
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, false, 500.0, null, 3, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, false, 500.0, null, 4, waitingHandler, exceptionHandler);
     }
 
 }

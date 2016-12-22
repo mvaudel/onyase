@@ -68,6 +68,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
         if (modificationSites.isEmpty()) {
             for (String modification : modifications) {
                 ModificationSitesIterator modificationSitesIterator = modificationSitesIterators.get(modification);
+                modificationSitesIterator.hasNext();
                 ArrayList<Integer> sites = modificationSitesIterator.getNextSites();
                 modificationSites.put(modification, sites);
             }
@@ -88,6 +89,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
                         modificationSitesIterator = new SingleModificationSiteIterator(possibleSites);
                     } else {
                         modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence);
+                        modificationSitesIterator.hasNext();
                     }
                     newSites = modificationSitesIterator.getNextSites();
                     modificationSites.put(modification2, newSites);
