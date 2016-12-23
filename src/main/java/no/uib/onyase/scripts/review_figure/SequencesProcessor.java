@@ -31,6 +31,7 @@ import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap.PrecursorWithTitle;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
+import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -338,6 +339,8 @@ public class SequencesProcessor {
 
                     // Iterate all peptides
                     for (ProteinSequenceIterator.PeptideWithPosition peptideWithPosition : peptides) {
+                        
+                        long timeStart = System.currentTimeMillis();
 
                         Peptide peptide = peptideWithPosition.getPeptide();
                         String peptideKey = peptide.getKey();
@@ -407,7 +410,7 @@ public class SequencesProcessor {
 
                                                 // Get the number of modifications
                                                 HashMap<String, Integer> modificationOccurrence = modificationProfile.getModificationOccurence();
-
+                                                
                                                 // Create an iterator for the possible sites
                                                 PeptideModificationsIterator peptideModificationsIterator;
                                                 if (modificationOccurrence.size() == 1) {
@@ -449,11 +452,12 @@ public class SequencesProcessor {
 
                                                     // Create a modified peptide
                                                     modificationMatches.clear();
-                                                    HashMap<String, ArrayList<Integer>> modificationSitesMap = peptideModificationsIterator.next();
+                                                    HashMap<String, int[]> modificationSitesMap = peptideModificationsIterator.next();
                                                     for (String modificationName : modificationSitesMap.keySet()) {
-                                                        ArrayList<Integer> sites = modificationSitesMap.get(modificationName);
+                                                        int[] sites = modificationSitesMap.get(modificationName);
                                                         for (Integer site : sites) {
                                                             ModificationMatch modificationMatch = new ModificationMatch(modificationName, true, site);
+                                                            modificationMatch.setConfident(true);
                                                             modificationMatches.add(modificationMatch);
                                                         }
                                                     }
@@ -463,6 +467,12 @@ public class SequencesProcessor {
                                                     // For every match, estimate the PSM score if not done previsouly
                                                     for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
                                                         createPeptideAssumption(precursorWithTitle, modifiedPeptideKey, modifiedPeptide, charge, annotationSettings, removeZeros, isDecoy);
+                                                    }
+                                                    
+                                                    long currentTime = System.currentTimeMillis();
+                                                    if (currentTime - timeStart > 60000) {
+                                                        System.out.println("Peptide overtime: " + modifiedPeptideKey);
+//                                                        break;
                                                     }
                                                 }
                                             }

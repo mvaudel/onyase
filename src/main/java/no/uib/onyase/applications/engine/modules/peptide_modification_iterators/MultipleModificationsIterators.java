@@ -26,7 +26,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     /**
      * Current map of modification sites.
      */
-    private final HashMap<String, ArrayList<Integer>> modificationSites;
+    private final HashMap<String, int[]> modificationSites;
     /**
      * Map of possible modification sites.
      */
@@ -59,7 +59,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
             }
             modificationSitesIterators.put(modification, modificationSitesIterator);
         }
-        modificationSites = new HashMap<String, ArrayList<Integer>>(modificationOccurrence.size());
+        modificationSites = new HashMap<String, int[]>(modificationOccurrence.size());
         this.possibleModificationSites = possibleModificationSites;
     }
 
@@ -69,7 +69,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
             for (String modification : modifications) {
                 ModificationSitesIterator modificationSitesIterator = modificationSitesIterators.get(modification);
                 modificationSitesIterator.hasNext();
-                ArrayList<Integer> sites = modificationSitesIterator.getNextSites();
+                int[] sites = modificationSitesIterator.getNextSites();
                 modificationSites.put(modification, sites);
             }
             return true;
@@ -77,7 +77,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
         for (String modification : modifications) {
             ModificationSitesIterator modificationSitesIterator = modificationSitesIterators.get(modification);
             if (modificationSitesIterator.hasNext()) {
-                ArrayList<Integer> newSites = modificationSitesIterator.getNextSites();
+                int[] newSites = modificationSitesIterator.getNextSites();
                 modificationSites.put(modification, newSites);
                 for (String modification2 : modifications) {
                     if (modification.equals(modification2)) {
@@ -102,7 +102,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     }
 
     @Override
-    public HashMap<String, ArrayList<Integer>> next() {
+    public HashMap<String, int[]> next() {
         return modificationSites;
     }
 }

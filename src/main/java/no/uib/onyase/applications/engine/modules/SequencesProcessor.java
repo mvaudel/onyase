@@ -442,11 +442,12 @@ public class SequencesProcessor {
 
                                                     // Create a modified peptide
                                                     modificationMatches.clear();
-                                                    HashMap<String, ArrayList<Integer>> modificationSitesMap = peptideModificationsIterator.next();
+                                                    HashMap<String, int[]> modificationSitesMap = peptideModificationsIterator.next();
                                                     for (String modificationName : modificationSitesMap.keySet()) {
-                                                        ArrayList<Integer> sites = modificationSitesMap.get(modificationName);
-                                                        for (Integer site : sites) {
+                                                        int[] sites = modificationSitesMap.get(modificationName);
+                                                        for (int site : sites) {
                                                             ModificationMatch modificationMatch = new ModificationMatch(modificationName, true, site);
+                                                            modificationMatch.setConfident(true);
                                                             modificationMatches.add(modificationMatch);
                                                         }
                                                     }

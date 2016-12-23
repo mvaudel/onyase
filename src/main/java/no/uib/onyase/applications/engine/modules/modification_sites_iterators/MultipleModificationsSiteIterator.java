@@ -19,6 +19,10 @@ public class MultipleModificationsSiteIterator implements ModificationSitesItera
      */
     private int[] indexes;
     /**
+     * The current sites.
+     */
+    private int[] sites;
+    /**
      * The increment to use when iterating the possible indexes.
      */
     private int increment;
@@ -34,13 +38,14 @@ public class MultipleModificationsSiteIterator implements ModificationSitesItera
      * @param nModifications the number of modifications
      */
     public MultipleModificationsSiteIterator(ArrayList<Integer> possibleSites, Integer nModifications) {
-        increment = Math.max(possibleSites.size() / (maxSites * nModifications), 1);
+        increment = Math.max(possibleSites.size() / maxSites, 1);
         indexes = new int[nModifications];
         for (int i = 0 ; i < nModifications ; i++) {
             indexes[i] = i;
         }
         indexes[nModifications-1] -= increment;
         this.possibleSites = possibleSites;
+        sites = new int[nModifications];
     }
     
     @Override
@@ -58,12 +63,11 @@ public class MultipleModificationsSiteIterator implements ModificationSitesItera
     }
     
     @Override
-    public ArrayList<Integer> getNextSites() {
-        ArrayList<Integer> result = new ArrayList<Integer>(indexes.length);
-        for (int index : indexes) {
-            result.add(possibleSites.get(index));
+    public int[] getNextSites() {
+        for (int i = 0 ; i < indexes.length ; i++) {
+            sites[i] = possibleSites.get(indexes[i]);
         }
-        return result;
+        return sites;
     }
 
     @Override

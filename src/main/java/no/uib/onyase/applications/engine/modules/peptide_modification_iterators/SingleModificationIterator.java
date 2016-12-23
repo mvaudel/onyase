@@ -21,7 +21,7 @@ public class SingleModificationIterator implements PeptideModificationsIterator 
     /**
      * The current map of sites.
      */
-    private HashMap<String, ArrayList<Integer>> sitesMap;
+    private HashMap<String, int[]> sitesMap;
     /**
      * The name of the modification.
      */
@@ -40,7 +40,7 @@ public class SingleModificationIterator implements PeptideModificationsIterator 
         } else {
             modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, modificationOccurrence);
         }
-        sitesMap = new HashMap<String, ArrayList<Integer>>(1);
+        sitesMap = new HashMap<String, int[]>(1);
         this.modificationName = modificationName;
     }
 
@@ -50,8 +50,8 @@ public class SingleModificationIterator implements PeptideModificationsIterator 
     }
 
     @Override
-    public HashMap<String, ArrayList<Integer>> next() {
-        ArrayList<Integer> newSites = modificationSitesIterator.getNextSites();
+    public HashMap<String, int[]> next() {
+        int[] newSites = modificationSitesIterator.getNextSites();
         sitesMap.put(modificationName, newSites);
         return sitesMap;
     }

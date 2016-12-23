@@ -28,7 +28,7 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
     /**
      * Current map of modification sites.
      */
-    private final HashMap<String, ArrayList<Integer>> modificationSites;
+    private final HashMap<String, int[]> modificationSites;
     /**
      * Map of possible modification sites.
      */
@@ -62,7 +62,7 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
             modificationSitesIterator.setIncrement(1);
             modificationSitesIterators.put(modification, modificationSitesIterator);
         }
-        modificationSites = new HashMap<String, ArrayList<Integer>>(modificationOccurrence.size());
+        modificationSites = new HashMap<String, int[]>(modificationOccurrence.size());
         this.possibleModificationSites = possibleModificationSites;
     }
 
@@ -71,7 +71,7 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
         if (modificationSites.isEmpty()) {
             for (String modification : modifications) {
                 ModificationSitesIterator modificationSitesIterator = modificationSitesIterators.get(modification);
-                ArrayList<Integer> sites = modificationSitesIterator.getNextSites();
+                int[] sites = modificationSitesIterator.getNextSites();
                 modificationSites.put(modification, sites);
             }
             return true;
@@ -82,9 +82,11 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
             if (!hasNext) {
                 ModificationSitesIterator modificationSitesIterator = modificationSitesIterators.get(modification);
                 if (modificationSitesIterator.hasNext()) {
-                    ArrayList<Integer> newSites = modificationSitesIterator.getNextSites();
+                    int[] newSites = modificationSitesIterator.getNextSites();
                     modificationSites.put(modification, newSites);
-                    occupancySites.addAll(newSites);
+                    for (int newSite : newSites) {
+                        occupancySites.add(newSite);
+                    }
                     for (String modification2 : modifications) {
                         if (modification.equals(modification2)) {
                             break;
@@ -102,8 +104,8 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
                             if (occupancySites.contains(newSite)) {
                                 return hasNext();
                             }
+                            occupancySites.add(newSite);
                         }
-                        occupancySites.addAll(newSites);
                         modificationSites.put(modification2, newSites);
                         modificationSitesIterators.put(modification2, modificationSitesIterator);
                     }
@@ -111,20 +113,20 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
                 }
             } else {
                 ModificationSitesIterator modificationSitesIterator = modificationSitesIterators.get(modification);
-                ArrayList<Integer> newSites = modificationSitesIterator.getNextSites();
+                int[] newSites = modificationSitesIterator.getNextSites();
                 for (Integer newSite : newSites) {
                     if (occupancySites.contains(newSite)) {
                         return hasNext();
                     }
+                    occupancySites.add(newSite);
                 }
-                occupancySites.addAll(newSites);
             }
         }
         return hasNext;
     }
 
     @Override
-    public HashMap<String, ArrayList<Integer>> next() {
+    public HashMap<String, int[]> next() {
         return modificationSites;
     }
 

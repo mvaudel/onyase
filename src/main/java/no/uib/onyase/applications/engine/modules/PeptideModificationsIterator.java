@@ -22,6 +22,6 @@ public interface PeptideModificationsIterator {
      *
      * @return the next profile
      */
-    public HashMap<String, ArrayList<Integer>> next();
+    public HashMap<String, int[]> next();
 
 }

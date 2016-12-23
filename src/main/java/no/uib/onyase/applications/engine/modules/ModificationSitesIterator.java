@@ -23,7 +23,7 @@ public interface ModificationSitesIterator {
      *
      * @return the next modification sites
      */
-    public ArrayList<Integer> getNextSites();
+    public int[] getNextSites();
 
     /**
      * Returns the number of sites.

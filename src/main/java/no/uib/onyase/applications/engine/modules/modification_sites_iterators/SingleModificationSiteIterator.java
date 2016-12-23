@@ -11,11 +11,18 @@ import no.uib.onyase.applications.engine.modules.ModificationSitesIterator;
  */
 public class SingleModificationSiteIterator implements ModificationSitesIterator {
     
+    /**
+     * The list of possible modification sites.
+     */
     private ArrayList<Integer> possibleSites;
-    
+    /**
+     * An iterator of the possible modification sites.
+     */
     private Iterator<Integer> siteIterator;
-    
-    private ArrayList<Integer> sites;
+    /**
+     * The current sites.
+     */
+    private int[] sites;
     /**
      * The increment to use when iterating the possible indexes.
      */
@@ -29,7 +36,7 @@ public class SingleModificationSiteIterator implements ModificationSitesIterator
         increment = Math.max(possibleSites.size() / maxSites, 1);
         this.possibleSites = possibleSites;
         siteIterator = possibleSites.iterator();
-        sites = new ArrayList<Integer>(1);
+        sites = new int[1];
     }
 
     @Override
@@ -41,9 +48,8 @@ public class SingleModificationSiteIterator implements ModificationSitesIterator
     }
 
     @Override
-    public ArrayList<Integer> getNextSites() {
-        sites.clear();
-        sites.add(siteIterator.next());
+    public int[] getNextSites() {
+        sites[0] = siteIterator.next();
         return sites;
     }
 
