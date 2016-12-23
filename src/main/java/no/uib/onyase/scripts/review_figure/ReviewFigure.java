@@ -16,6 +16,7 @@ import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -72,20 +73,38 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        PtmSettings ptmSettings = searchParameters.getPtmSettings();
+        HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
+        PtmSettings ptmSettings = new PtmSettings();
         PTMFactory ptmFactory = PTMFactory.getInstance();
-        PTM ptm = ptmFactory.getPTM("Pyrolidone from E");
+        String ptmName = "Carbamidomethylation of C";
+        PTM ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addFixedModification(ptm);
+        ptmName = "Oxidation of M";
+        maxModifications.put(ptmName, 4);
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Pyrolidone from Q");
+        ptmName = "Pyrolidone from E";
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Pyrolidone from carbamidomethylated C");
+        ptmName = "Pyrolidone from Q";
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Phosphorylation of S");
+        ptmName = "Pyrolidone from carbamidomethylated C";
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Phosphorylation of T");
+        ptmName = "Phosphorylation of S";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Phosphorylation of Y");
+        ptmName = "Phosphorylation of T";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of Y";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
+        searchParameters.setPtmSettings(ptmSettings);
         DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
 //        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
 //        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
@@ -96,7 +115,7 @@ public class ReviewFigure {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, false, 500.0, null, 3, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, false, 500.0, null, maxModifications, 3, waitingHandler, exceptionHandler);
     }
 
 }

@@ -13,6 +13,7 @@ import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -67,21 +68,31 @@ public class TutorialExample {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        PtmSettings ptmSettings = searchParameters.getPtmSettings();
+        HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
+        PtmSettings ptmSettings = new PtmSettings();
         PTMFactory ptmFactory = PTMFactory.getInstance();
-        PTM ptm = ptmFactory.getPTM("Pyrolidone from E");
+        String ptmName = "Carbamidomethylation of C";
+        PTM ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addFixedModification(ptm);
+        ptmName = "Oxidation of M";
+        maxModifications.put(ptmName, 4);
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Pyrolidone from Q");
+        ptmName = "Pyrolidone from E";
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Pyrolidone from carbamidomethylated C");
+        ptmName = "Pyrolidone from Q";
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptm = ptmFactory.getPTM("Acetylation of protein N-term");
+        ptmName = "Pyrolidone from carbamidomethylated C";
+        ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
+        searchParameters.setPtmSettings(ptmSettings);
         File newParameters = new File("C:\\Users\\mvaudel\\.compomics\\identification_parameters\\Test Onyase.par");
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, true, 500.0, null, 4, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, true, 500.0, null, maxModifications, 4, waitingHandler, exceptionHandler);
     }
 
 }

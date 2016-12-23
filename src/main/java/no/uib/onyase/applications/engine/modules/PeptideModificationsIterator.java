@@ -1,6 +1,5 @@
 package no.uib.onyase.applications.engine.modules;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**

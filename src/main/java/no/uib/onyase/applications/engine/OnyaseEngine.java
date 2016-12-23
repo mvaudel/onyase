@@ -89,6 +89,7 @@ public class OnyaseEngine {
      * score zero should be removed
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
+     * @param maxModifications the maximal number of modifications
      * @param nThreads the number of threads to use
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
@@ -105,7 +106,7 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -145,7 +146,7 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz);
+        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz, maxModifications);
         localDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
 

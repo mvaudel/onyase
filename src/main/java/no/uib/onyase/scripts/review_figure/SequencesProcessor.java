@@ -104,6 +104,7 @@ public class SequencesProcessor {
      * @param nThreads the number of threads to use
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
+     * @param maxModifications the maximal number of modifications
      *
      * @return a map of all PSMs indexed by spectrum and peptide key
      *
@@ -112,8 +113,8 @@ public class SequencesProcessor {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz) throws IOException, InterruptedException {
-        return iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz);
+    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws IOException, InterruptedException {
+        return iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz, maxModifications);
     }
 
     /**
@@ -130,6 +131,7 @@ public class SequencesProcessor {
      * @param nThreads the number of threads to use
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
+     * @param maxModifications the maximal number of modifications
      *
      * @return a map of all PSMs indexed by spectrum and peptide key
      *
@@ -138,7 +140,7 @@ public class SequencesProcessor {
      * @throws IOException exception thrown whenever an error occurred while
      * reading a file
      */
-    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz) throws InterruptedException, IOException {
+    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws InterruptedException, IOException {
 
         // Iterate all protein sequences in the factory and get the possible PSMs
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -147,7 +149,7 @@ public class SequencesProcessor {
         ArrayList<SequenceProcessor> sequenceProcessors = new ArrayList<SequenceProcessor>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, removeZeros, minMz, maxMz);
+            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, removeZeros, minMz, maxMz, maxModifications);
             sequenceProcessors.add(sequenceProcessor);
             pool.submit(sequenceProcessor);
         }
@@ -233,6 +235,10 @@ public class SequencesProcessor {
          * A list of excluded m/z.
          */
         private ExclusionList exclusionList;
+        /**
+         * The maximal number of modifications
+         */
+        private HashMap<String, Integer> maxModifications;
 
         /**
          * Constructor.
@@ -248,11 +254,12 @@ public class SequencesProcessor {
          * of score zero should be removed
          * @param minMz the minimal m/z to consider
          * @param maxMz the maximal m/z to consider
+         * @param maxModifications the maximal number of modifications
          *
          * @throws IOException exception thrown whenever an error occurred while
          * reading the exclusion list file
          */
-        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz) throws IOException {
+        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws IOException {
             this.proteinIterator = proteinIterator;
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
@@ -265,6 +272,11 @@ public class SequencesProcessor {
                 exclusionList = new ExclusionList(searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
             }
             proteinSequenceIterator = new ProteinSequenceIterator(identificationParameters.getSearchParameters().getPtmSettings().getFixedModifications(), maxX);
+            if (maxModifications != null) {
+                this.maxModifications = new HashMap<String, Integer>(maxModifications);
+            } else {
+                this.maxModifications = new HashMap<String, Integer>(0);
+            }
         }
 
         @Override
@@ -339,7 +351,7 @@ public class SequencesProcessor {
 
                     // Iterate all peptides
                     for (ProteinSequenceIterator.PeptideWithPosition peptideWithPosition : peptides) {
-                        
+
                         long timeStart = System.currentTimeMillis();
 
                         Peptide peptide = peptideWithPosition.getPeptide();
@@ -383,8 +395,15 @@ public class SequencesProcessor {
                                 for (PTM ptm : variablePtms.values()) {
                                     ArrayList<Integer> ptmSites = peptide.getPotentialModificationSitesNoCombination(ptm, protein.getSequence(), indexOnProtein);
                                     if (!ptmSites.isEmpty()) {
-                                        possibleModificationSites.put(ptm.getName(), ptmSites);
-                                        possibleModificationOccurence.put(ptm.getName(), ptmSites.size());
+                                        String ptmName = ptm.getName();
+                                        possibleModificationSites.put(ptmName, ptmSites);
+                                        Integer maximalOccurrence = maxModifications.get(ptmName);
+                                        if (maximalOccurrence == null) {
+                                            maximalOccurrence = ptmSites.size();
+                                        } else {
+                                            maximalOccurrence = Math.min(ptmSites.size(), maximalOccurrence);
+                                        }
+                                        possibleModificationOccurence.put(ptmName, maximalOccurrence);
                                     }
                                 }
 
@@ -410,7 +429,7 @@ public class SequencesProcessor {
 
                                                 // Get the number of modifications
                                                 HashMap<String, Integer> modificationOccurrence = modificationProfile.getModificationOccurence();
-                                                
+
                                                 // Create an iterator for the possible sites
                                                 PeptideModificationsIterator peptideModificationsIterator;
                                                 if (modificationOccurrence.size() == 1) {
@@ -468,7 +487,7 @@ public class SequencesProcessor {
                                                     for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
                                                         createPeptideAssumption(precursorWithTitle, modifiedPeptideKey, modifiedPeptide, charge, annotationSettings, removeZeros, isDecoy);
                                                     }
-                                                    
+
                                                     long currentTime = System.currentTimeMillis();
                                                     if (currentTime - timeStart > 60000) {
                                                         System.out.println("Peptide overtime: " + modifiedPeptideKey);
