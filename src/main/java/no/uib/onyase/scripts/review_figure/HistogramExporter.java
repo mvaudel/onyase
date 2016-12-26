@@ -1,5 +1,6 @@
-package no.uib.onyase.scripts.review_figure.partial;
+package no.uib.onyase.scripts.review_figure;
 
+import no.uib.onyase.applications.engine.model.PeptideDraft;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;

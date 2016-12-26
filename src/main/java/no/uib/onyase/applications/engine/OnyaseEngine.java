@@ -6,7 +6,6 @@ import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
-import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.Duration;
@@ -15,15 +14,13 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import no.uib.onyase.applications.engine.export.TxtExporter;
-import no.uib.onyase.applications.engine.modules.EValueEstimator;
+import no.uib.onyase.applications.engine.model.PeptideDraft;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
-import no.uib.onyase.applications.engine.modules.SequencesProcessor;
+import no.uib.onyase.scripts.review_figure.PsmScorer;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
- * The Onyase engine searches spectra according to given identification
- * parameters.
+ * The Onyase Engine runs a standard database search.
  *
  * @author Marc Vaudel
  */
@@ -45,15 +42,6 @@ public class OnyaseEngine {
      * The PTM factory.
      */
     private PTMFactory ptmFactory;
-    /**
-     * The handler for the exceptions.
-     */
-    private ExceptionHandler exceptionHandler;
-    /**
-     * The waiting handler provides feedback to the user and allowing canceling
-     * the process.
-     */
-    private WaitingHandler waitingHandler;
     /**
      * The module handling the precursors.
      */
@@ -78,18 +66,18 @@ public class OnyaseEngine {
 
     /**
      * Launches the search.
-     *
+     * 
      * @param spectrumFile the spectrum file to search
-     * @param destinationFile the destination file
+     * @param allPsmsFile the file where to export all psms
      * @param identificationParametersFile the file where the identification
      * parameters are stored
      * @param identificationParameters the identification parameters
      * @param maxX the maximal number of Xs to allow in a peptide sequence
-     * @param removeZeros boolean indicating whether the peptide assumptions of
-     * score zero should be removed
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
+     * @param maxPtmSites the preferred number of PTM sites to inspect for every
+     * PTM.
      * @param nThreads the number of threads to use
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
@@ -106,7 +94,7 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(File spectrumFile, File allPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxPtmSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -146,30 +134,23 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz, maxModifications, 5);
+        HashMap<String, HashMap<String, PeptideDraft>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications);
         localDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
 
-        // Estimate e-values
+        // Estimate Scores
         localDuration = new Duration();
         localDuration.start();
-        waitingHandler.setWaitingText("Estimating e-values.");
-        EValueEstimator eValueEstimator = new EValueEstimator(waitingHandler, exceptionHandler);
-        eValueEstimator.estimateEValues(psmMap, nThreads);
+        waitingHandler.setWaitingText("Scoring PSMs.");
+        PsmScorer psmScorer = new PsmScorer(waitingHandler, exceptionHandler);
+        psmScorer.estimateScores(spectrumFileName, psmMap, identificationParameters, maxPtmSites, nThreads, allPsmsFile, null);
         localDuration.end();
-        waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
+        waitingHandler.setWaitingText("Scoring PSMs completed (" + localDuration + ").");
 
-        // Export
-        localDuration = new Duration();
-        localDuration.start();
-        waitingHandler.setWaitingText("Exporting PSMs.");
-        TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, destinationFile, nThreads);
-        localDuration.end();
-        waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
-
+        // Finished
         totalDuration.end();
         waitingHandler.appendReportEndLine();
         waitingHandler.setWaitingText("Onyase engine completed (" + totalDuration + ").");
+
     }
 }

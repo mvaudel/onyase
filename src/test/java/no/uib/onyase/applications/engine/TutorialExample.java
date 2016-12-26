@@ -92,7 +92,7 @@ public class TutorialExample {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, true, 500.0, null, maxModifications, 4, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 4, 5, waitingHandler, exceptionHandler);
     }
 
 }

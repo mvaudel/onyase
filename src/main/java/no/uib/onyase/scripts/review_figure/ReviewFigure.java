@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure.partial;
+package no.uib.onyase.scripts.review_figure;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;

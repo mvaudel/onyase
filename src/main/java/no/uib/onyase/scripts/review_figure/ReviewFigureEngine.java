@@ -1,16 +1,12 @@
-package no.uib.onyase.scripts.review_figure.full;
+package no.uib.onyase.scripts.review_figure;
 
-import no.uib.onyase.scripts.review_figure.full.TxtExporter;
-import no.uib.onyase.scripts.review_figure.full.SequencesProcessor;
+import no.uib.onyase.applications.engine.model.PeptideDraft;
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
-import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
-import com.compomics.util.experiment.massspectrometry.Precursor;
-import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.Duration;
@@ -19,10 +15,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.util.HashMap;
-import no.uib.onyase.applications.engine.modules.EValueEstimator;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -32,10 +26,6 @@ import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
  */
 public class ReviewFigureEngine {
 
-    /**
-     * Separator for the exports.
-     */
-    public final static String separator = " ";
     /**
      * The spectrum factory.
      */
@@ -85,8 +75,6 @@ public class ReviewFigureEngine {
      * parameters are stored
      * @param identificationParameters the identification parameters
      * @param maxX the maximal number of Xs to allow in a peptide sequence
-     * @param removeZeros boolean indicating whether the peptide assumptions of
-     * score zero should be removed
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
@@ -106,7 +94,7 @@ public class ReviewFigureEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -146,44 +134,29 @@ public class ReviewFigureEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz, maxModifications);
+        HashMap<String, HashMap<String, PeptideDraft>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications);
         localDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
 
-        // Estimate e-values
-        localDuration = new Duration();
-        localDuration.start();
-        waitingHandler.setWaitingText("Estimating e-values.");
-        EValueEstimator eValueEstimator = new EValueEstimator(waitingHandler, exceptionHandler);
-        eValueEstimator.estimateEValues(psmMap, nThreads);
-        localDuration.end();
-        waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
-
-        // Export all psms
-        localDuration = new Duration();
-        localDuration.start();
-        waitingHandler.setWaitingText("Exporting all PSMs.");
-        TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, allPsmsFile, nThreads, false);
-        localDuration.end();
-        waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
-
-        // Export best psms
-        localDuration = new Duration();
-        localDuration.start();
-        waitingHandler.setWaitingText("Exporting best PSMs.");
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, bestPsmsFile, nThreads, true);
-        localDuration.end();
-        waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
-
         // Export histograms
+        File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + jobName + ".txt");
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Exporting Histograms.");
-        exportHistograms(psmMap, spectrumFile.getName(), jobName, waitingHandler);
+        HistogramExporter histogramExporter = new HistogramExporter(waitingHandler, exceptionHandler);
+        histogramExporter.writeExport(spectrumFile, psmMap, identificationParameters, precursorFile, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
+        // Estimate Scores
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Scoring PSMs.");
+        PsmScorer psmScorer = new PsmScorer(waitingHandler, exceptionHandler);
+        psmScorer.estimateScores(spectrumFileName, psmMap, identificationParameters, 5, nThreads, allPsmsFile, bestPsmsFile);
+        localDuration.end();
+        waitingHandler.setWaitingText("Scoring PSMs completed (" + localDuration + ").");
+        
         // Finished
         totalDuration.end();
         waitingHandler.appendReportEndLine();
@@ -195,33 +168,5 @@ public class ReviewFigureEngine {
         reportBw.write("Duration: " + totalDuration.getDuration());
         reportBw.close();
 
-    }
-
-    private void exportHistograms(HashMap<String, HashMap<String, PeptideAssumption>> psmMap, String fileName, String suffix, WaitingHandler waitingHandler) throws IOException, MzMLUnmarshallerException {
-
-        File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + suffix + ".txt");
-        BufferedWriter precursorBw = new BufferedWriter(new FileWriter(precursorFile));
-
-        precursorBw.write("title" + separator + "mz" + separator + "rt" + separator + "nPeptides");
-        precursorBw.newLine();
-
-        waitingHandler.setSecondaryProgressCounterIndeterminate(false);
-        waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
-
-        HashMap<Integer, Integer> ionsToPeptideMap = new HashMap<Integer, Integer>();
-
-        for (String spectrumTitle : psmMap.keySet()) {
-            String spectrumKey = Spectrum.getSpectrumKey(fileName, spectrumTitle);
-            Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
-            String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
-            HashMap<String, PeptideAssumption> assumptions = psmMap.get(spectrumTitle);
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(assumptions.size());
-            precursorBw.write(stringBuilder.toString());
-            ionsToPeptideMap.clear();
-            waitingHandler.increaseSecondaryProgressCounter();
-        }
-
-        precursorBw.close();
     }
 }

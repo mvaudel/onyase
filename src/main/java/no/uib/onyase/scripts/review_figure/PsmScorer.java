@@ -1,5 +1,6 @@
-package no.uib.onyase.scripts.review_figure.partial;
+package no.uib.onyase.scripts.review_figure;
 
+import no.uib.onyase.applications.engine.model.PeptideDraft;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
@@ -38,7 +39,6 @@ import no.uib.onyase.applications.engine.modules.PeptideModificationsIterator;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
-import no.uib.onyase.scripts.review_figure.full.FigureMetrics;
 import org.apache.commons.math.util.FastMath;
 
 /**
@@ -285,7 +285,7 @@ public class PsmScorer {
                             Peptide modifiedPeptide = new Peptide(peptideDraft.getSequence(), null);
 
                             // Estimate the score
-                            PeptideAssumption peptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, peptideDraft.charge));
+                            PeptideAssumption peptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, peptideDraft.getCharge()));
                             MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
                             SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                             ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
@@ -356,7 +356,7 @@ public class PsmScorer {
                                 Peptide modifiedPeptide = new Peptide(peptideDraft.getSequence(), modificationMatches);
 
                                 // Estimate the score
-                                PeptideAssumption peptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, peptideDraft.charge));
+                                PeptideAssumption peptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, peptideDraft.getCharge()));
                                 MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
                                 SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                                 ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);

@@ -1,5 +1,6 @@
-package no.uib.onyase.scripts.review_figure.partial;
+package no.uib.onyase.scripts.review_figure;
 
+import no.uib.onyase.applications.engine.model.PeptideDraft;
 import no.uib.onyase.applications.engine.modules.precursor_handling.ExclusionList;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import no.uib.onyase.applications.engine.modules.*;

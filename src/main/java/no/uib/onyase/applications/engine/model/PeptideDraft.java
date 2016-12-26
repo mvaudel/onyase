@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure.partial;
+package no.uib.onyase.applications.engine.model;
 
 import java.util.HashMap;
 
@@ -24,7 +24,7 @@ public class PeptideDraft {
     /**
      * The charge.
      */
-    int charge;
+    private int charge;
     /**
      * The occurrence of variable modifications indexed by modification name.
      */

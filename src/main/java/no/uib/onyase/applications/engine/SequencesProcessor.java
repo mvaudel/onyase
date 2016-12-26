@@ -1,41 +1,28 @@
-package no.uib.onyase.scripts.review_figure.full;
+package no.uib.onyase.applications.engine;
 
+import no.uib.onyase.applications.engine.model.PeptideDraft;
 import no.uib.onyase.applications.engine.modules.precursor_handling.ExclusionList;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import no.uib.onyase.applications.engine.modules.*;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.ElementaryElement;
-import com.compomics.util.experiment.biology.Ion;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.biology.Protein;
 import com.compomics.util.experiment.biology.ions.ElementaryIon;
-import com.compomics.util.experiment.biology.ions.PeptideFragmentIon;
 import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
-import com.compomics.util.experiment.identification.matches.IonMatch;
-import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.protein_sequences.ProteinSequenceIterator;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
-import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
-import com.compomics.util.experiment.identification.spectrum_annotation.SpecificAnnotationSettings;
 import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.PeptideSpectrumAnnotator;
-import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
-import com.compomics.util.experiment.massspectrometry.Charge;
-import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
-import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
-import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap.PrecursorWithTitle;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
-import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,14 +31,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import no.uib.onyase.applications.engine.modules.ModificationProfileIterator.ModificationProfile;
-import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
-import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;
-import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
-import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
  * The sequences processor runs multiple sequences iterators on the database in
- * the sequence factory.
+ * the sequence factory and matches possible peptides to precursors in the given spectrum file.
  *
  * @author Marc Vaudel
  */
@@ -99,8 +82,6 @@ public class SequencesProcessor {
      * @param precursorProcessor the precursor processor
      * @param identificationParameters the identification parameters to sue
      * @param maxX the maximal number of Xs to allow in a peptide sequence
-     * @param removeZeros boolean indicating whether the peptide assumptions of
-     * score zero should be removed
      * @param nThreads the number of threads to use
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
@@ -113,8 +94,8 @@ public class SequencesProcessor {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws IOException, InterruptedException {
-        return iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz, maxModifications);
+    public HashMap<String, HashMap<String, PeptideDraft>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws IOException, InterruptedException {
+        return iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications);
     }
 
     /**
@@ -126,8 +107,6 @@ public class SequencesProcessor {
      * @param exclusionListFilePath path of the exclusion list to use
      * @param identificationParameters the identification parameters to sue
      * @param maxX the maximal number of Xs to allow in a peptide sequence
-     * @param removeZeros boolean indicating whether the peptide assumptions of
-     * score zero should be removed
      * @param nThreads the number of threads to use
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
@@ -140,7 +119,7 @@ public class SequencesProcessor {
      * @throws IOException exception thrown whenever an error occurred while
      * reading a file
      */
-    public HashMap<String, HashMap<String, PeptideAssumption>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws InterruptedException, IOException {
+    public HashMap<String, HashMap<String, PeptideDraft>> iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws InterruptedException, IOException {
 
         // Iterate all protein sequences in the factory and get the possible PSMs
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -149,7 +128,7 @@ public class SequencesProcessor {
         ArrayList<SequenceProcessor> sequenceProcessors = new ArrayList<SequenceProcessor>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, removeZeros, minMz, maxMz, maxModifications);
+            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, minMz, maxMz, maxModifications);
             sequenceProcessors.add(sequenceProcessor);
             pool.submit(sequenceProcessor);
         }
@@ -160,12 +139,12 @@ public class SequencesProcessor {
 
         // Gather all PSMs
         waitingHandler.setSecondaryProgressCounterIndeterminate(true);
-        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequenceProcessors.get(0).getPsmMap();
+        HashMap<String, HashMap<String, PeptideDraft>> psmMap = sequenceProcessors.get(0).getPsmMap();
         for (int i = 1; i < sequenceProcessors.size(); i++) {
-            HashMap<String, HashMap<String, PeptideAssumption>> tempMap = sequenceProcessors.get(i).getPsmMap();
+            HashMap<String, HashMap<String, PeptideDraft>> tempMap = sequenceProcessors.get(i).getPsmMap();
             for (String spectrumTitle : tempMap.keySet()) {
-                HashMap<String, PeptideAssumption> newAssumptions = tempMap.get(spectrumTitle);
-                HashMap<String, PeptideAssumption> currentAssumptions = psmMap.get(spectrumTitle);
+                HashMap<String, PeptideDraft> newAssumptions = tempMap.get(spectrumTitle);
+                HashMap<String, PeptideDraft> currentAssumptions = psmMap.get(spectrumTitle);
                 if (currentAssumptions != null) {
                     currentAssumptions.putAll(newAssumptions);
                 } else {
@@ -213,7 +192,7 @@ public class SequencesProcessor {
         /**
          * All peptide assumptions indexed by spectrum and by peptide key.
          */
-        private HashMap<String, HashMap<String, PeptideAssumption>> psmMap = new HashMap<String, HashMap<String, PeptideAssumption>>();
+        private HashMap<String, HashMap<String, PeptideDraft>> psmMap = new HashMap<String, HashMap<String, PeptideDraft>>();
         /**
          * Map of the keys of inspected peptides indexed by spectrum.
          */
@@ -227,11 +206,6 @@ public class SequencesProcessor {
          */
         private HashMap<String, HashSet<String>> overlappingModifications;
         /**
-         * Boolean indicating whether the peptide assumptions of score zero
-         * should be removed.
-         */
-        private boolean removeZeros;
-        /**
          * A list of excluded m/z.
          */
         private ExclusionList exclusionList;
@@ -239,7 +213,6 @@ public class SequencesProcessor {
          * The maximal number of modifications
          */
         private HashMap<String, Integer> maxModifications;
-        private final int maxSites = 5;
 
         /**
          * Constructor.
@@ -260,13 +233,12 @@ public class SequencesProcessor {
          * @throws IOException exception thrown whenever an error occurred while
          * reading the exclusion list file
          */
-        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws IOException {
+        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications) throws IOException {
             this.proteinIterator = proteinIterator;
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
             this.identificationParameters = identificationParameters;
             SearchParameters searchParameters = identificationParameters.getSearchParameters();
-            this.removeZeros = removeZeros;
             if (exclusionListFilePath != null) {
                 exclusionList = new ExclusionList(exclusionListFilePath, searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
             } else {
@@ -325,20 +297,14 @@ public class SequencesProcessor {
                 }
 
                 // Get objects for modification iteration
-                ArrayList<String> orderedModificationsName = new ArrayList<String>(variablePtms.keySet());
-                Collections.sort(orderedModificationsName);
-                ArrayList<String> orderedPeptideModificationsName = new ArrayList<String>(variablePtms.size());
-                HashMap<String, Integer[]> possibleModificationSites = new HashMap<String, Integer[]>(1);
-                HashMap<String, Integer> possibleModificationOccurence = new HashMap<String, Integer>(1);
-                ArrayList<ModificationMatch> modificationMatches = new ArrayList<ModificationMatch>(1);
+                ArrayList<String> orderedModificationsNameList = new ArrayList<String>(variablePtms.keySet());
+                Collections.sort(orderedModificationsNameList);
+                String[] orderedModifications = orderedModificationsNameList.toArray(new String[orderedModificationsNameList.size()]);
 
                 // Information from the spectrum processing
                 Double massMin = precursorProcessor.getMassMin();
                 Double massMax = precursorProcessor.getMassMax();
                 PrecursorMap precursorMap = precursorProcessor.getPrecursorMap();
-
-                // Settings needed for the scoring
-                AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences().clone();
 
                 // Iterate the proteins and store the possible PSMs
                 while (proteinIterator.hasNext()) {
@@ -382,26 +348,52 @@ public class SequencesProcessor {
                                     // get the precursors at this m/z
                                     ArrayList<PrecursorMap.PrecursorWithTitle> precursorMatches = precursorMap.getMatchingSpectra(mz);
 
-                                    // For every match, estimate the PSM score if not done previsouly
-                                    for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
-                                        createPeptideAssumption(precursorWithTitle, peptideKey, peptide, charge, annotationSettings, removeZeros, isDecoy);
+                                    if (!precursorMatches.isEmpty()) {
+
+                                        // Iterate all precursor matches
+                                        for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
+
+                                            // Get the matches for this precursor
+                                            String spectrumTitle = precursorWithTitle.spectrumTitle;
+                                            HashMap<String, PeptideDraft> peptideDrafts = psmMap.get(spectrumTitle);
+
+                                            if (peptideDrafts == null) {
+                                                // No matches yet, add new map
+                                                peptideDrafts = new HashMap<String, PeptideDraft>();
+                                                psmMap.put(spectrumTitle, peptideDrafts);
+
+                                                // Create PeptideDraft and add it to the map
+                                                PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, null, null, isDecoy);
+                                                peptideDrafts.put(peptideKey, peptideDraft);
+                                            } else {
+                                                // Matches found, see if this one was already found
+                                                PeptideDraft previousDraft = peptideDrafts.get(peptideKey);
+                                                if (previousDraft == null) {
+                                                    // Create PeptideDraft and add it to the map
+                                                    PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, null, null, isDecoy);
+                                                    peptideDrafts.put(peptideKey, peptideDraft);
+                                                } else {
+                                                    // Update the match
+                                                    previousDraft.setTargetDecoy(isDecoy);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
                                 // See if the peptide can be modified
-                                possibleModificationSites.clear();
-                                possibleModificationOccurence.clear();
+                                HashMap<String, Integer[]> possibleModificationSites = new HashMap<String, Integer[]>(1);
+                                HashMap<String, Integer> possibleModificationOccurence = new HashMap<String, Integer>(1);
                                 for (PTM ptm : variablePtms.values()) {
-                                    ArrayList<Integer> ptmSitesList = peptide.getPotentialModificationSitesNoCombination(ptm, protein.getSequence(), indexOnProtein);
-                                    if (!ptmSitesList.isEmpty()) {
+                                    ArrayList<Integer> ptmSites = peptide.getPotentialModificationSitesNoCombination(ptm, protein.getSequence(), indexOnProtein);
+                                    if (!ptmSites.isEmpty()) {
                                         String ptmName = ptm.getName();
-                                        Integer[] ptmSites = ptmSitesList.toArray(new Integer[ptmSitesList.size()]);
-                                        possibleModificationSites.put(ptmName, ptmSites);
+                                        possibleModificationSites.put(ptmName, ptmSites.toArray(new Integer[ptmSites.size()]));
                                         Integer maximalOccurrence = maxModifications.get(ptmName);
                                         if (maximalOccurrence == null) {
-                                            maximalOccurrence = ptmSites.length;
+                                            maximalOccurrence = ptmSites.size();
                                         } else {
-                                            maximalOccurrence = Math.min(ptmSites.length, maximalOccurrence);
+                                            maximalOccurrence = Math.min(ptmSites.size(), maximalOccurrence);
                                         }
                                         possibleModificationOccurence.put(ptmName, maximalOccurrence);
                                     }
@@ -428,64 +420,36 @@ public class SequencesProcessor {
                                             if (!precursorMatches.isEmpty()) {
 
                                                 // Get the number of modifications
-                                                HashMap<String, Integer> modificationOccurrence = modificationProfile.getModificationOccurence();
+                                                HashMap<String, Integer> modificationOccurrence = new HashMap<String, Integer>(modificationProfile.getModificationOccurence());
 
-                                                // Create an iterator for the possible sites
-                                                PeptideModificationsIterator peptideModificationsIterator;
-                                                if (modificationOccurrence.size() == 1) {
-                                                    String modificationName = modificationOccurrence.keySet().iterator().next();
-                                                    Integer[] possibleSites = possibleModificationSites.get(modificationName);
-                                                    Integer occurrence = modificationOccurrence.get(modificationName);
-                                                    peptideModificationsIterator = new SingleModificationIterator(possibleSites, occurrence, modificationName, maxSites);
-                                                } else {
-                                                    boolean overlap = false;
-                                                    for (String modification1 : modificationOccurrence.keySet()) {
-                                                        HashSet<String> potentialConflicts = overlappingModifications.get(modification1);
-                                                        if (potentialConflicts != null) {
-                                                            for (String modification2 : modificationOccurrence.keySet()) {
-                                                                if (potentialConflicts.contains(modification2)) {
-                                                                    overlap = true;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                        if (overlap) {
-                                                            break;
-                                                        }
-                                                    }
-                                                    orderedPeptideModificationsName.clear();
-                                                    for (String modification : orderedModificationsName) {
-                                                        if (modificationOccurrence.keySet().contains(modification)) {
-                                                            orderedPeptideModificationsName.add(modification);
-                                                        }
-                                                    }
-                                                    if (overlap) {
-                                                        peptideModificationsIterator = new OverlappingModificationsIterator(modificationOccurrence, possibleModificationSites, orderedPeptideModificationsName, maxSites);
+                                                // Create PeptideDraft
+                                                PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, modificationOccurrence, possibleModificationSites, isDecoy);
+
+                                                // Compute a key for this peptide to see if it was already found
+                                                String modifiedPeptideKey = peptideDraft.getKey(orderedModifications);
+
+                                                // Iterate all precursor matches
+                                                for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
+
+                                                    // Get the matches for this precursor
+                                                    String spectrumTitle = precursorWithTitle.spectrumTitle;
+                                                    HashMap<String, PeptideDraft> peptideDrafts = psmMap.get(spectrumTitle);
+
+                                                    if (peptideDrafts == null) {
+                                                        // No matches yet, add new map
+                                                        peptideDrafts = new HashMap<String, PeptideDraft>();
+                                                        peptideDrafts.put(modifiedPeptideKey, peptideDraft);
+                                                        psmMap.put(spectrumTitle, peptideDrafts);
                                                     } else {
-                                                        peptideModificationsIterator = new MultipleModificationsIterators(modificationOccurrence, possibleModificationSites, orderedPeptideModificationsName, maxSites);
-                                                    }
-                                                }
-
-                                                // Iterate all possible sites
-                                                while (peptideModificationsIterator.hasNext()) {
-
-                                                    // Create a modified peptide
-                                                    modificationMatches.clear();
-                                                    HashMap<String, int[]> modificationSitesMap = peptideModificationsIterator.next();
-                                                    for (String modificationName : modificationSitesMap.keySet()) {
-                                                        int[] sites = modificationSitesMap.get(modificationName);
-                                                        for (Integer site : sites) {
-                                                            ModificationMatch modificationMatch = new ModificationMatch(modificationName, true, site);
-                                                            modificationMatch.setConfident(true);
-                                                            modificationMatches.add(modificationMatch);
+                                                        // Matches found, see if this one was already found
+                                                        PeptideDraft previousDraft = peptideDrafts.get(modifiedPeptideKey);
+                                                        if (previousDraft == null) {
+                                                            // Add the match to the list of matches for this precursor
+                                                            peptideDrafts.put(modifiedPeptideKey, peptideDraft);
+                                                        } else {
+                                                            // Update the match
+                                                            previousDraft.setTargetDecoy(isDecoy);
                                                         }
-                                                    }
-                                                    Peptide modifiedPeptide = new Peptide(peptide.getSequence(), modificationMatches);
-                                                    String modifiedPeptideKey = modifiedPeptide.getKey();
-
-                                                    // For every match, estimate the PSM score if not done previsouly
-                                                    for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
-                                                        createPeptideAssumption(precursorWithTitle, modifiedPeptideKey, modifiedPeptide, charge, annotationSettings, removeZeros, isDecoy);
                                                     }
                                                 }
                                             }
@@ -514,109 +478,9 @@ public class SequencesProcessor {
          *
          * @return a map of all PSMs found
          */
-        public HashMap<String, HashMap<String, PeptideAssumption>> getPsmMap() {
+        public HashMap<String, HashMap<String, PeptideDraft>> getPsmMap() {
             return psmMap;
         }
-
-        /**
-         * Creates the peptide assumption for the given input and estimates the
-         * score.
-         *
-         * @param precursorWithTitle the precursor with title for this spectrum
-         * @param peptideKey the key for the peptide
-         * @param peptide the peptide
-         * @param charge the charge
-         * @param annotationSettings the annotation settings
-         * @param removeZeros boolean indicating whether the peptide assumptions
-         * of score zero should be removed
-         * @param isDecoy boolean indicating whether the protein is decoy
-         *
-         * @throws InterruptedException
-         * @throws ClassNotFoundException
-         * @throws SQLException
-         * @throws IOException exception thrown whenever an error occurred while
-         * reading the file
-         * @throws MzMLUnmarshallerException exception thrown whenever an error
-         * occurred while parsing the mzML file
-         * @throws InterruptedException exception thrown whenever a threading
-         * issue occurred while mapping potential modification sites
-         * @throws ClassNotFoundException exception thrown whenever an error
-         * occurred while deserializing an object from the ProteinTree
-         * @throws SQLException exception thrown whenever an error occurred
-         * while interacting with the ProteinTree
-         */
-        private void createPeptideAssumption(PrecursorWithTitle precursorWithTitle, String peptideKey, Peptide peptide, int charge, AnnotationSettings annotationSettings, boolean removeZero, boolean isDecoy) throws IOException, MzMLUnmarshallerException, InterruptedException, ClassNotFoundException, SQLException {
-
-            String spectrumTitle = precursorWithTitle.spectrumTitle;
-            HashMap<String, PeptideAssumption> spectrumMatches = psmMap.get(spectrumTitle);
-            if (spectrumMatches == null) {
-                spectrumMatches = new HashMap<String, PeptideAssumption>();
-                psmMap.put(spectrumTitle, spectrumMatches);
-            }
-            HashSet<String> inspectedPeptidesForSpectrum = inspectedPeptides.get(spectrumTitle);
-            if (inspectedPeptidesForSpectrum == null) {
-                inspectedPeptidesForSpectrum = new HashSet<String>();
-                inspectedPeptides.put(spectrumTitle, inspectedPeptidesForSpectrum);
-            } else if (inspectedPeptidesForSpectrum.size() > 1000) {
-                inspectedPeptidesForSpectrum.clear();
-            }
-
-            // If the PSM was not scored already, estimate the score
-            if (!inspectedPeptidesForSpectrum.contains(peptideKey)) {
-                inspectedPeptidesForSpectrum.add(peptideKey);
-                String spectrumKey = Spectrum.getSpectrumKey(spectrumFileName, spectrumTitle);
-                PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
-                MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
-                ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
-                Double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-
-                if (!removeZero || score > 0) {
-
-                    peptideAssumption.setRawScore(score);
-                    peptideAssumption.setScore(score);
-
-                    FigureMetrics figureMetrics = new FigureMetrics();
-                    if (isDecoy) {
-                        figureMetrics.setIsDecoy(true);
-                    } else {
-                        figureMetrics.setIsTarget(true);
-                    }
-                    HashSet<Integer> bIons = new HashSet<Integer>(1);
-                    HashSet<Integer> yIons = new HashSet<Integer>(1);
-                    for (IonMatch ionMatch : ionMatches) {
-                        Ion ion = ionMatch.ion;
-                        if (ion.getType() == Ion.IonType.PEPTIDE_FRAGMENT_ION) {
-                            PeptideFragmentIon peptideFragmentIon = (PeptideFragmentIon) ion;
-                            Integer number = peptideFragmentIon.getNumber();
-                            if (ion.getSubType() == PeptideFragmentIon.A_ION
-                                    || ion.getSubType() == PeptideFragmentIon.B_ION
-                                    || ion.getSubType() == PeptideFragmentIon.C_ION) {
-                                bIons.add(number);
-                            } else {
-                                yIons.add(number);
-                            }
-                        }
-                    }
-                    int nIons = bIons.size() + yIons.size();
-                    figureMetrics.setnIons(nIons);
-                    peptideAssumption.addUrParam(figureMetrics);
-
-                    // Save the PSM in the map
-                    spectrumMatches.put(peptideKey, peptideAssumption);
-                }
-            } else {
-                PeptideAssumption peptideAssumption = spectrumMatches.get(peptideKey);
-                if (peptideAssumption != null) {
-                    FigureMetrics figureMetrics = new FigureMetrics();
-                    figureMetrics = (FigureMetrics) peptideAssumption.getUrParam(figureMetrics);
-                    if (isDecoy) {
-                        figureMetrics.setIsDecoy(true);
-                    } else {
-                        figureMetrics.setIsTarget(true);
-                    }
-                }
-            }
-        }
     }
+
 }
