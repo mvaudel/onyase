@@ -33,12 +33,13 @@ public class SingleModificationIterator implements PeptideModificationsIterator 
      * @param possibleSites a list of the possible sites
      * @param modificationOccurrence the occurrence of the modification
      * @param modificationName the name of the modification
+     * @param maxSites the preferred number of sites to iterate
      */
-    public SingleModificationIterator(ArrayList<Integer> possibleSites, Integer modificationOccurrence, String modificationName) {
+    public SingleModificationIterator(Integer[] possibleSites, Integer modificationOccurrence, String modificationName, int maxSites) {
         if (modificationOccurrence == 1) {
-            modificationSitesIterator = new SingleModificationSiteIterator(possibleSites);
+            modificationSitesIterator = new SingleModificationSiteIterator(possibleSites, maxSites);
         } else {
-            modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, modificationOccurrence);
+            modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, modificationOccurrence, maxSites);
         }
         sitesMap = new HashMap<String, int[]>(1);
         this.modificationName = modificationName;

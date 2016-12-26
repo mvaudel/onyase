@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine;
+package no.uib.onyase.scripts.review_figure.partial;
 
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
@@ -6,29 +6,29 @@ import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
-import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import no.uib.onyase.applications.engine.export.TxtExporter;
-import no.uib.onyase.applications.engine.modules.EValueEstimator;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
-import no.uib.onyase.applications.engine.modules.SequencesProcessor;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
- * The Onyase engine searches spectra according to given identification
- * parameters.
  *
  * @author Marc Vaudel
  */
-public class OnyaseEngine {
+public class ReviewFigureEngine {
 
+    /**
+     * Separator for the exports.
+     */
+    public final static String separator = " ";
     /**
      * The spectrum factory.
      */
@@ -46,15 +46,6 @@ public class OnyaseEngine {
      */
     private PTMFactory ptmFactory;
     /**
-     * The handler for the exceptions.
-     */
-    private ExceptionHandler exceptionHandler;
-    /**
-     * The waiting handler provides feedback to the user and allowing canceling
-     * the process.
-     */
-    private WaitingHandler waitingHandler;
-    /**
      * The module handling the precursors.
      */
     private PrecursorProcessor precursorProcessor;
@@ -62,7 +53,7 @@ public class OnyaseEngine {
     /**
      * Constructor.
      */
-    public OnyaseEngine() {
+    public ReviewFigureEngine() {
         initializeFactories();
     }
 
@@ -79,14 +70,14 @@ public class OnyaseEngine {
     /**
      * Launches the search.
      *
+     * @param jobName the job name
      * @param spectrumFile the spectrum file to search
-     * @param destinationFile the destination file
+     * @param allPsmsFile the file where to export all psms
+     * @param bestPsmsFile the file where to export the best psms
      * @param identificationParametersFile the file where the identification
      * parameters are stored
      * @param identificationParameters the identification parameters
      * @param maxX the maximal number of Xs to allow in a peptide sequence
-     * @param removeZeros boolean indicating whether the peptide assumptions of
-     * score zero should be removed
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
@@ -106,11 +97,11 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File destinationFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, boolean removeZeros, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
-        waitingHandler.setWaitingText("Onyase engine start.");
+        waitingHandler.setWaitingText("Review Figure " + jobName + " start.");
 
         // Load the spectra in the spectrum factory
         Duration localDuration = new Duration();
@@ -146,30 +137,39 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideAssumption>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, removeZeros, nThreads, minMz, maxMz, maxModifications, 5);
+        HashMap<String, HashMap<String, PeptideDraft>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications);
         localDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
 
-        // Estimate e-values
+        // Export histograms
+        File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + jobName + ".txt");
         localDuration = new Duration();
         localDuration.start();
-        waitingHandler.setWaitingText("Estimating e-values.");
-        EValueEstimator eValueEstimator = new EValueEstimator(waitingHandler, exceptionHandler);
-        eValueEstimator.estimateEValues(psmMap, nThreads);
-        localDuration.end();
-        waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
-
-        // Export
-        localDuration = new Duration();
-        localDuration.start();
-        waitingHandler.setWaitingText("Exporting PSMs.");
-        TxtExporter txtExporter = new TxtExporter(waitingHandler, exceptionHandler);
-        txtExporter.writeExport(spectrumFile, psmMap, identificationParametersFile, identificationParameters, destinationFile, nThreads);
+        waitingHandler.setWaitingText("Exporting Histograms.");
+        HistogramExporter histogramExporter = new HistogramExporter(waitingHandler, exceptionHandler);
+        histogramExporter.writeExport(spectrumFile, psmMap, identificationParameters, precursorFile, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
+        // Estimate Scores
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Scoring PSMs.");
+        PsmScorer psmScorer = new PsmScorer(waitingHandler, exceptionHandler);
+        psmScorer.estimateScores(spectrumFileName, psmMap, identificationParameters, 5, nThreads, allPsmsFile, bestPsmsFile);
+        localDuration.end();
+        waitingHandler.setWaitingText("Scoring PSMs completed (" + localDuration + ").");
+        
+        // Finished
         totalDuration.end();
         waitingHandler.appendReportEndLine();
         waitingHandler.setWaitingText("Onyase engine completed (" + totalDuration + ").");
+
+        // Write report
+        File reportFile = new File("C:\\Github\\onyase\\R\\resources\\report_" + jobName + ".txt");
+        BufferedWriter reportBw = new BufferedWriter(new FileWriter(reportFile));
+        reportBw.write("Duration: " + totalDuration.getDuration());
+        reportBw.close();
+
     }
 }

@@ -2,7 +2,6 @@ package no.uib.onyase.applications.engine.modules.peptide_modification_iterators
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import no.uib.onyase.applications.engine.modules.ModificationProfileIterator;
 import no.uib.onyase.applications.engine.modules.ModificationSitesIterator;
 import no.uib.onyase.applications.engine.modules.PeptideModificationsIterator;
 import no.uib.onyase.applications.engine.modules.modification_sites_iterators.MultipleModificationsSiteIterator;
@@ -30,7 +29,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     /**
      * Map of possible modification sites.
      */
-    private HashMap<String, ArrayList<Integer>> possibleModificationSites;
+    private HashMap<String, Integer[]> possibleModificationSites;
     /**
      * Map of the occurrences of every modification.
      */
@@ -39,23 +38,23 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     /**
      * Constructor.
      *
-     * @param modificationProfile the modification profile containing the
-     * occurrences of every modification
+     * @param modificationOccurrence the occurrences of every modification
      * @param possibleModificationSites the possible modification sites
      * @param orderedModifications an ordered list of modifications
+     * @param maxSites the preferred number of sites to iterate per modification
      */
-    public MultipleModificationsIterators(ModificationProfileIterator.ModificationProfile modificationProfile, HashMap<String, ArrayList<Integer>> possibleModificationSites, ArrayList<String> orderedModifications) {
-        modificationOccurrence = modificationProfile.getModificationOccurence();
+    public MultipleModificationsIterators(HashMap<String, Integer> modificationOccurrence, HashMap<String, Integer[]> possibleModificationSites, ArrayList<String> orderedModifications, int maxSites) {
+        this.modificationOccurrence = modificationOccurrence;
         modifications = orderedModifications;
         modificationSitesIterators = new HashMap<String, ModificationSitesIterator>(modificationOccurrence.size());
         for (String modification : modificationOccurrence.keySet()) {
             Integer occurrence = modificationOccurrence.get(modification);
-            ArrayList<Integer> possibleSites = possibleModificationSites.get(modification);
+            Integer[] possibleSites = possibleModificationSites.get(modification);
             ModificationSitesIterator modificationSitesIterator;
             if (occurrence == 1) {
-                modificationSitesIterator = new SingleModificationSiteIterator(possibleSites);
+                modificationSitesIterator = new SingleModificationSiteIterator(possibleSites, maxSites);
             } else {
-                modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence);
+                modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence, maxSites);
             }
             modificationSitesIterators.put(modification, modificationSitesIterator);
         }
@@ -83,14 +82,14 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
                     if (modification.equals(modification2)) {
                         break;
                     }
-                    ArrayList<Integer> possibleSites = possibleModificationSites.get(modification2);
+                    Integer[] possibleSites = possibleModificationSites.get(modification2);
                     Integer occurrence = modificationOccurrence.get(modification2);
                     if (occurrence == 1) {
                         modificationSitesIterator = new SingleModificationSiteIterator(possibleSites);
                     } else {
                         modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence);
-                        modificationSitesIterator.hasNext();
                     }
+                    modificationSitesIterator.hasNext();
                     newSites = modificationSitesIterator.getNextSites();
                     modificationSites.put(modification2, newSites);
                     modificationSitesIterators.put(modification2, modificationSitesIterator);

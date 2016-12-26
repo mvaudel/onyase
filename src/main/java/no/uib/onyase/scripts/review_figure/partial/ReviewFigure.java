@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure;
+package no.uib.onyase.scripts.review_figure.partial;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
@@ -6,9 +6,7 @@ import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
-import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
-import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -60,7 +58,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "9";
+        String jobName = "0";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -90,17 +88,17 @@ public class ReviewFigure {
         ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
         ptmName = "Pyrolidone from carbamidomethylated C";
-        ptm = ptmFactory.getPTM(ptmName);
-        ptmSettings.addVariableModification(ptm);
-        ptmName = "Phosphorylation of S";
-        maxModifications.put(ptmName, 3);
-        ptm = ptmFactory.getPTM(ptmName);
-        ptmSettings.addVariableModification(ptm);
-        ptmName = "Phosphorylation of T";
-        maxModifications.put(ptmName, 3);
-        ptm = ptmFactory.getPTM(ptmName);
-        ptmSettings.addVariableModification(ptm);
-        ptmName = "Phosphorylation of Y";
+//        ptm = ptmFactory.getPTM(ptmName);
+//        ptmSettings.addVariableModification(ptm);
+//        ptmName = "Phosphorylation of S";
+//        maxModifications.put(ptmName, 3);
+//        ptm = ptmFactory.getPTM(ptmName);
+//        ptmSettings.addVariableModification(ptm);
+//        ptmName = "Phosphorylation of T";
+//        maxModifications.put(ptmName, 3);
+//        ptm = ptmFactory.getPTM(ptmName);
+//        ptmSettings.addVariableModification(ptm);
+//        ptmName = "Phosphorylation of Y";
         maxModifications.put(ptmName, 3);
         ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
@@ -115,7 +113,6 @@ public class ReviewFigure {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, false, 500.0, null, maxModifications, 3, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 4, waitingHandler, exceptionHandler);
     }
-
 }

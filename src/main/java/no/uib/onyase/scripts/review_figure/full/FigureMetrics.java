@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure;
+package no.uib.onyase.scripts.review_figure.full;
 
 import com.compomics.util.experiment.personalization.UrParameter;
 

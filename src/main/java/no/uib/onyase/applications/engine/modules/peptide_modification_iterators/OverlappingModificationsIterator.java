@@ -32,7 +32,7 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
     /**
      * Map of possible modification sites.
      */
-    private HashMap<String, ArrayList<Integer>> possibleModificationSites;
+    private HashMap<String, Integer[]> possibleModificationSites;
     /**
      * Map of the occurrences of every modification.
      */
@@ -41,23 +41,23 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
     /**
      * Constructor.
      *
-     * @param modificationProfile the modification profile containing the
-     * occurrences of every modification
+     * @param modificationOccurrence the occurrences of every modification
      * @param possibleModificationSites the possible modification sites
      * @param orderedModifications an ordered list of modifications
+     * @param maxSites the preferred number of sites to iterate per modification
      */
-    public OverlappingModificationsIterator(ModificationProfileIterator.ModificationProfile modificationProfile, HashMap<String, ArrayList<Integer>> possibleModificationSites, ArrayList<String> orderedModifications) {
-        modificationOccurrence = modificationProfile.getModificationOccurence();
+    public OverlappingModificationsIterator(HashMap<String, Integer> modificationOccurrence, HashMap<String, Integer[]> possibleModificationSites, ArrayList<String> orderedModifications, int maxSites) {
+        this.modificationOccurrence = modificationOccurrence;
         modifications = orderedModifications;
         modificationSitesIterators = new HashMap<String, ModificationSitesIterator>(modificationOccurrence.size());
         for (String modification : modificationOccurrence.keySet()) {
             Integer occurrence = modificationOccurrence.get(modification);
-            ArrayList<Integer> possibleSites = possibleModificationSites.get(modification);
+            Integer[] possibleSites = possibleModificationSites.get(modification);
             ModificationSitesIterator modificationSitesIterator;
             if (occurrence == 1) {
-                modificationSitesIterator = new SingleModificationSiteIterator(possibleSites);
+                modificationSitesIterator = new SingleModificationSiteIterator(possibleSites, maxSites);
             } else {
-                modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence);
+                modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence, maxSites);
             }
             modificationSitesIterator.setIncrement(1);
             modificationSitesIterators.put(modification, modificationSitesIterator);
@@ -91,14 +91,14 @@ public class OverlappingModificationsIterator implements PeptideModificationsIte
                         if (modification.equals(modification2)) {
                             break;
                         }
-                        ArrayList<Integer> possibleSites = possibleModificationSites.get(modification2);
+                        Integer[] possibleSites = possibleModificationSites.get(modification2);
                         Integer occurrence = modificationOccurrence.get(modification2);
                         if (occurrence == 1) {
                             modificationSitesIterator = new SingleModificationSiteIterator(possibleSites);
                         } else {
                             modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, occurrence);
                         }
-                        modificationSitesIterator.setIncrement(1);
+                        modificationSitesIterator.hasNext();
                         newSites = modificationSitesIterator.getNextSites();
                         for (Integer newSite : newSites) {
                             if (occupancySites.contains(newSite)) {

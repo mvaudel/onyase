@@ -14,11 +14,11 @@ public class SingleModificationSiteIterator implements ModificationSitesIterator
     /**
      * The list of possible modification sites.
      */
-    private ArrayList<Integer> possibleSites;
+    private Integer[] possibleSites;
     /**
-     * An iterator of the possible modification sites.
+     * An index for iteration.
      */
-    private Iterator<Integer> siteIterator;
+    private int i;
     /**
      * The current sites.
      */
@@ -27,35 +27,48 @@ public class SingleModificationSiteIterator implements ModificationSitesIterator
      * The increment to use when iterating the possible indexes.
      */
     private int increment;
-    /**
-     * The preferred maximal number of sites to iterate.
-     */
-    private static final int maxSites = 5;
     
-    public SingleModificationSiteIterator(ArrayList<Integer> possibleSites) {
-        increment = Math.max(possibleSites.size() / maxSites, 1);
+    /**
+     * Constructor.
+     * 
+     * @param possibleSites the sites to iterate
+     * @param maxSites the preferred number of sites to iterate
+     */
+    public SingleModificationSiteIterator(Integer[] possibleSites, int maxSites) {
+        if (maxSites > 0) {
+            increment = Math.max(possibleSites.length / maxSites, 1);
+        } else {
+            increment = 1;
+        }
         this.possibleSites = possibleSites;
-        siteIterator = possibleSites.iterator();
+        i = -1;
         sites = new int[1];
+    }
+    
+    /**
+     * Constructor.
+     * 
+     * @param possibleSites the sites to iterate
+     */
+    public SingleModificationSiteIterator(Integer[] possibleSites) {
+        this(possibleSites, 0);
     }
 
     @Override
     public boolean hasNext() {
-        for (int i = 1 ; i < increment && siteIterator.hasNext() ; i++) {
-            siteIterator.next();
-        }
-        return siteIterator.hasNext();
+        i += increment;
+        return i < possibleSites.length;
     }
 
     @Override
     public int[] getNextSites() {
-        sites[0] = siteIterator.next();
+        sites[0] = possibleSites[i];
         return sites;
     }
 
     @Override
     public int getnSites() {
-        return possibleSites.size();
+        return possibleSites.length;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure;
+package no.uib.onyase.scripts.review_figure.full;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.Peptide;
@@ -197,67 +197,70 @@ public class TxtExporter {
                     String encodedSpectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
                     HashMap<String, PeptideAssumption> peptideAssumptions = psmMap.get(spectrumTitle);
 
-                    Precursor precursor = spectrumFactory.getPrecursor(mgfFileName, spectrumTitle);
+                    if (!peptideAssumptions.isEmpty()) {
 
-                    Double bestEvalue = null;
-                    PeptideAssumption bestPeptideAssumption = null;
-                    for (PeptideAssumption peptideAssumption : peptideAssumptions.values()) {
-                        Double eValue = peptideAssumption.getScore();
-                        if (bestEvalue == null || eValue < bestEvalue) {
-                            bestPeptideAssumption = peptideAssumption;
-                            bestEvalue = eValue;
+                        Precursor precursor = spectrumFactory.getPrecursor(mgfFileName, spectrumTitle);
+
+                        Double bestEvalue = null;
+                        PeptideAssumption bestPeptideAssumption = null;
+                        for (PeptideAssumption peptideAssumption : peptideAssumptions.values()) {
+                            Double eValue = peptideAssumption.getScore();
+                            if (bestEvalue == null || eValue < bestEvalue) {
+                                bestPeptideAssumption = peptideAssumption;
+                                bestEvalue = eValue;
+                            }
                         }
-                    }
 
-                    StringBuilder stringBuilder = new StringBuilder();
+                        StringBuilder stringBuilder = new StringBuilder();
 
-                    figureMetrics = (FigureMetrics) bestPeptideAssumption.getUrParam(figureMetrics);
+                        figureMetrics = (FigureMetrics) bestPeptideAssumption.getUrParam(figureMetrics);
 
-                    stringBuilder.append(encodedSpectrumTitle);
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(precursor.getMz());
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(bestPeptideAssumption.getDeltaMass(precursor.getMz(), ppm, minIsotope, maxIsotope));
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(precursor.getRtInMinutes());
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    Peptide peptide = bestPeptideAssumption.getPeptide();
-                    stringBuilder.append(peptide.getSequence());
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    String modificationsAsString = getModifications(peptide);
-                    stringBuilder.append(modificationsAsString);
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(bestPeptideAssumption.getIdentificationCharge().value);
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(bestPeptideAssumption.getRawScore());
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(bestPeptideAssumption.getScore());
-                    if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
+                        stringBuilder.append(encodedSpectrumTitle);
                         stringBuilder.append(OnyaseIdfileReader.separator);
-                        stringBuilder.append(0.5);
+                        stringBuilder.append(precursor.getMz());
                         stringBuilder.append(OnyaseIdfileReader.separator);
-                        stringBuilder.append(0.5);
-                    } else if (figureMetrics.isIsDecoy()) {
+                        stringBuilder.append(bestPeptideAssumption.getDeltaMass(precursor.getMz(), ppm, minIsotope, maxIsotope));
                         stringBuilder.append(OnyaseIdfileReader.separator);
-                        stringBuilder.append(1);
+                        stringBuilder.append(precursor.getRtInMinutes());
                         stringBuilder.append(OnyaseIdfileReader.separator);
-                        stringBuilder.append(0);
-                    } else {
+                        Peptide peptide = bestPeptideAssumption.getPeptide();
+                        stringBuilder.append(peptide.getSequence());
                         stringBuilder.append(OnyaseIdfileReader.separator);
-                        stringBuilder.append(0);
+                        String modificationsAsString = getModifications(peptide);
+                        stringBuilder.append(modificationsAsString);
                         stringBuilder.append(OnyaseIdfileReader.separator);
-                        stringBuilder.append(1);
-                    }
-                    stringBuilder.append(OnyaseIdfileReader.separator);
-                    stringBuilder.append(figureMetrics.getnIons());
-                    stringBuilder.append(END_LINE);
-                    bw.write(stringBuilder.toString());
+                        stringBuilder.append(bestPeptideAssumption.getIdentificationCharge().value);
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(bestPeptideAssumption.getRawScore());
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(bestPeptideAssumption.getScore());
+                        if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0.5);
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0.5);
+                        } else if (figureMetrics.isIsDecoy()) {
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(1);
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0);
+                        } else {
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(0);
+                            stringBuilder.append(OnyaseIdfileReader.separator);
+                            stringBuilder.append(1);
+                        }
+                        stringBuilder.append(OnyaseIdfileReader.separator);
+                        stringBuilder.append(figureMetrics.getnIons());
+                        stringBuilder.append(END_LINE);
+                        bw.write(stringBuilder.toString());
 
-                    // check for cancellation and update progress
-                    if (waitingHandler.isRunCanceled()) {
-                        return;
-                    } else {
-                        waitingHandler.increaseSecondaryProgressCounter();
+                        // check for cancellation and update progress
+                        if (waitingHandler.isRunCanceled()) {
+                            return;
+                        } else {
+                            waitingHandler.increaseSecondaryProgressCounter();
+                        }
                     }
                 }
             } catch (NoSuchElementException exception) {

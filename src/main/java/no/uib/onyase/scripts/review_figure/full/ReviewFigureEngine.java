@@ -1,5 +1,7 @@
-package no.uib.onyase.scripts.review_figure;
+package no.uib.onyase.scripts.review_figure.full;
 
+import no.uib.onyase.scripts.review_figure.full.TxtExporter;
+import no.uib.onyase.scripts.review_figure.full.SequencesProcessor;
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
