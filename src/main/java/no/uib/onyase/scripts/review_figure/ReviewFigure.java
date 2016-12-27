@@ -58,7 +58,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "0";
+        String jobName = "6";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -88,17 +88,17 @@ public class ReviewFigure {
         ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
         ptmName = "Pyrolidone from carbamidomethylated C";
-//        ptm = ptmFactory.getPTM(ptmName);
-//        ptmSettings.addVariableModification(ptm);
-//        ptmName = "Phosphorylation of S";
-//        maxModifications.put(ptmName, 3);
-//        ptm = ptmFactory.getPTM(ptmName);
-//        ptmSettings.addVariableModification(ptm);
-//        ptmName = "Phosphorylation of T";
-//        maxModifications.put(ptmName, 3);
-//        ptm = ptmFactory.getPTM(ptmName);
-//        ptmSettings.addVariableModification(ptm);
-//        ptmName = "Phosphorylation of Y";
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of S";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of T";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of Y";
         maxModifications.put(ptmName, 3);
         ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
@@ -113,6 +113,6 @@ public class ReviewFigure {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 4, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 3, waitingHandler, exceptionHandler);
     }
 }

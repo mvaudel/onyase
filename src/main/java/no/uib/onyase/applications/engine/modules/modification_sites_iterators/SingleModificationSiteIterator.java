@@ -1,7 +1,5 @@
 package no.uib.onyase.applications.engine.modules.modification_sites_iterators;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import no.uib.onyase.applications.engine.modules.ModificationSitesIterator;
 
 /**

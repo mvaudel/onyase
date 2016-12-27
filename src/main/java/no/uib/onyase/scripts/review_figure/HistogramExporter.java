@@ -244,7 +244,7 @@ public class HistogramExporter {
                         }
                     }
                     StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(nPeptides);
+                    stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(nPeptides).append(END_LINE);
                     bw.write(stringBuilder.toString());
                     waitingHandler.increaseSecondaryProgressCounter();
                 }

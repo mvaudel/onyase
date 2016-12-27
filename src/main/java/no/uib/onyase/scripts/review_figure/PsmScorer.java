@@ -103,6 +103,7 @@ public class PsmScorer {
 
         // Create an exporter
         TxtExporter textExporter = new TxtExporter(bestHitsFile, allHitsFile, identificationParameters);
+        textExporter.writeHeaders();
 
         // Iterate all protein sequences in the factory and get the possible PSMs
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -111,7 +112,7 @@ public class PsmScorer {
         ArrayList<SpectrumProcessor> spectrumProcessors = new ArrayList<SpectrumProcessor>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SpectrumProcessor spectrumProcessor = new SpectrumProcessor(spectrumFileName, spectrumTitlesIterator, identificationParameters, maxPtms, textExporter);
+            SpectrumProcessor spectrumProcessor = new SpectrumProcessor(spectrumFileName, spectrumTitlesIterator, identificationParameters, maxPtms, textExporter, i + 1);
             pool.submit(spectrumProcessor);
             spectrumProcessors.add(spectrumProcessor);
         }
@@ -208,6 +209,7 @@ public class PsmScorer {
          * The exporter to use to export hits.
          */
         private TxtExporter textExporter;
+        private int threadNumber;
 
         /**
          * Constructor.
@@ -219,12 +221,13 @@ public class PsmScorer {
          * PTM
          * @param textExporter the exporter to use to export hits
          */
-        public SpectrumProcessor(String spectrumFileName, Iterator<String> spectrumTitlesIterator, IdentificationParameters identificationParameters, int maxPtms, TxtExporter textExporter) {
+        public SpectrumProcessor(String spectrumFileName, Iterator<String> spectrumTitlesIterator, IdentificationParameters identificationParameters, int maxPtms, TxtExporter textExporter, int threadNumber) {
             this.spectrumTitlesIterator = spectrumTitlesIterator;
             this.spectrumFileName = spectrumFileName;
             this.identificationParameters = identificationParameters;
             this.maxPtms = maxPtms;
             this.textExporter = textExporter;
+            this.threadNumber = threadNumber;
         }
 
         @Override
@@ -271,6 +274,7 @@ public class PsmScorer {
                 ArrayList<String> orderedPeptideModificationsName = new ArrayList<String>(orderedModificationsName.size());
 
                 // Iterate all spectra where a peptide could be found
+                int cpt = 0;
                 while (spectrumTitlesIterator.hasNext()) {
                     String spectrumTitle = spectrumTitlesIterator.next();
                     String spectrumKey = Spectrum.getSpectrumKey(spectrumFileName, spectrumTitle);
@@ -289,14 +293,16 @@ public class PsmScorer {
                             MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
                             SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                             ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
-                            Double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-                            peptideAssumption.setRawScore(score);
-                            peptideAssumptions.add(peptideAssumption);
+                            double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                             scores.add(score);
-                            FigureMetrics figureMetrics = new FigureMetrics();
-                            figureMetrics.setIsDecoy(peptideDraft.isDecoy());
-                            figureMetrics.setIsTarget(peptideDraft.isTarget());
-                            peptideAssumption.addUrParam(figureMetrics);
+                            if (score > 0.0) {
+                                peptideAssumption.setRawScore(score);
+                                peptideAssumptions.add(peptideAssumption);
+                                FigureMetrics figureMetrics = new FigureMetrics();
+                                figureMetrics.setIsDecoy(peptideDraft.isDecoy());
+                                figureMetrics.setIsTarget(peptideDraft.isTarget());
+                                peptideAssumption.addUrParam(figureMetrics);
+                            }
 
                         } else {
 
@@ -360,43 +366,48 @@ public class PsmScorer {
                                 MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
                                 SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumKey, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                                 ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
-                                Double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-                                peptideAssumption.setRawScore(score);
-                                peptideAssumptions.add(peptideAssumption);
+                                double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                                 scores.add(score);
-                                FigureMetrics figureMetrics = new FigureMetrics();
-                                figureMetrics.setIsDecoy(peptideDraft.isDecoy());
-                                figureMetrics.setIsTarget(peptideDraft.isTarget());
-                                peptideAssumption.addUrParam(figureMetrics);
+                                if (score > 0.0) {
+                                    peptideAssumption.setRawScore(score);
+                                    peptideAssumptions.add(peptideAssumption);
+                                    FigureMetrics figureMetrics = new FigureMetrics();
+                                    figureMetrics.setIsDecoy(peptideDraft.isDecoy());
+                                    figureMetrics.setIsTarget(peptideDraft.isTarget());
+                                    peptideAssumption.addUrParam(figureMetrics);
+                                }
                             }
                         }
                     }
 
-                    // Get e-value map
-                    HashMap<Double, Double> eValueMap = hyperScore.getEValueHistogram(scores);
+                    if (!peptideAssumptions.isEmpty()) {
 
-                    // See if an interpolation was possible
-                    if (eValueMap != null) {
+                        // Get e-value map
+                        HashMap<Double, Double> eValueMap = hyperScore.getEValueHistogram(scores);
 
-                        // Set e-values
-                        for (PeptideAssumption peptideAssumption : peptideAssumptions) {
-                            Double score = peptideAssumption.getRawScore();
-                            if (!score.equals(0.0)) {
-                                Double eValue = eValueMap.get(score);
-                                peptideAssumption.setScore(eValue);
-                            } else {
-                                peptideAssumption.setScore(peptideAssumptions.size());
+                        // See if an interpolation was possible
+                        if (eValueMap != null) {
+
+                            // Set e-values
+                            for (PeptideAssumption peptideAssumption : peptideAssumptions) {
+                                Double score = peptideAssumption.getRawScore();
+                                if (!score.equals(0.0)) {
+                                    Double eValue = eValueMap.get(score);
+                                    peptideAssumption.setScore(eValue);
+                                } else {
+                                    peptideAssumption.setScore(peptideAssumptions.size());
+                                }
                             }
+                            progress = true;
+
+                            // Export hits
+                            textExporter.writeAssumptions(spectrumFileName, spectrumTitle, peptideAssumptions);
+
+                        } else {
+                            // Save this spectrum and assumptions as not processed
+                            missingValues.put(spectrumTitle, peptideAssumptions);
+                            progress = !progress;
                         }
-                        progress = true;
-
-                        // Export hits
-                        textExporter.writeAssumptions(spectrumFileName, spectrumTitle, peptideAssumptions);
-
-                    } else {
-                        // Save this spectrum and assumptions as not processed
-                        missingValues.put(spectrumTitle, peptideAssumptions);
-                        progress = !progress;
                     }
 
                     // check for cancellation and update progress
@@ -405,7 +416,6 @@ public class PsmScorer {
                     } else if (progress) {
                         waitingHandler.increaseSecondaryProgressCounter();
                     }
-
                 }
             } catch (NoSuchElementException exception) {
                 // the last spectrum got processed by another thread.
