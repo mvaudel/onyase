@@ -16,7 +16,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import no.uib.onyase.applications.engine.model.PeptideDraft;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
-import no.uib.onyase.scripts.review_figure.PsmScorer;
+import no.uib.onyase.scripts.review_figure.partial.PsmScorer;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
