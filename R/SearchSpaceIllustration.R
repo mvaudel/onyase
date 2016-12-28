@@ -1,108 +1,143 @@
 library(ggplot2)
 
-# Default Data
-precursorHistogram0 <- read.table("resources\\precursor_0.txt", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogram0 <- read.table("resources\\all_psms_0.psm", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogramNoZero0 <- eValuesHistogram0[eValuesHistogram0$HyperScore > 0 & eValuesHistogram0$E.Value < 1,]
-eValuesHistogramNoZero0$E.Value <- -eValuesHistogramNoZero0$E.Value
+# violin plots
 
-# Plot mz against rt
-precursorMapPlot <- ggplot()
-precursorMapPlot <- precursorMapPlot + geom_point(aes(x=precursorHistogram0$rt, y=precursorHistogram0$mz), col = "darkblue", fill = "blue", alpha = 0.5)
-precursorMapPlot <- precursorMapPlot + labs(x = "rt", y = "m/z")
-plot(precursorMapPlot)
+categories <- c("Default","Isoforms","Trembl","Vertebrates","Proteogenomics","4mc","semispecific","unspecific","Cmm","Phospho","AB-Y","ABC-XYZ","MS1","MS2","MS1 MS2","-4 +4 Da","1-4+","1-6+")
 
-# Database
+violinCategories <- c()
+violinMainCategories <- c()
+violinValues <- c()
+categorytemp <- character(length(precursorHistogram0$nPeptides[]))
+categorytemp[] <- categories[1]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram0$nPeptides[]))
+mainCategorytemp[] <- "Default"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram0$nPeptides))
+categorytemp <- character(length(precursorHistogram1$nPeptides))
+categorytemp[] <- categories[2]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram1$nPeptides[]))
+mainCategorytemp[] <- "Database"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram1$nPeptides))
+categorytemp <- character(length(precursorHistogram2$nPeptides))
+categorytemp[] <- categories[3]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram2$nPeptides[]))
+mainCategorytemp[] <- "Database"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram2$nPeptides))
+categorytemp <- character(length(precursorHistogram3$nPeptides))
+categorytemp[] <- categories[4]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram3$nPeptides[]))
+mainCategorytemp[] <- "Database"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram3$nPeptides))
+# categorytemp <- character(length(precursorHistogram4$nPeptides))
+# categorytemp[] <- categories[5]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram4$nPeptides[]))
+# mainCategorytemp[] <- "Database"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram4$nPeptides))
+categorytemp <- character(length(precursorHistogram5$nPeptides))
+categorytemp[] <- categories[6]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram5$nPeptides[]))
+mainCategorytemp[] <- "Enzymaticity"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram5$nPeptides))
+# categorytemp <- character(length(precursorHistogram6$nPeptides))
+# categorytemp[] <- categories[7]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram6$nPeptides[]))
+# mainCategorytemp[] <- "Enzymaticity"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram6$nPeptides))
+# categorytemp <- character(length(precursorHistogram7$nPeptides))
+# categorytemp[] <- categories[8]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram7$nPeptides[]))
+# mainCategorytemp[] <- "Enzymaticity"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram7$nPeptides))
+categorytemp <- character(length(precursorHistogram8$nPeptides))
+categorytemp[] <- categories[9]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram8$nPeptides[]))
+mainCategorytemp[] <- "Modification"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram8$nPeptides))
+# categorytemp <- character(length(precursorHistogram9$nPeptides))
+# categorytemp[] <- categories[10]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram9$nPeptides[]))
+# mainCategorytemp[] <- "Modification"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram9$nPeptides))
+categorytemp <- character(length(precursorHistogram10$nPeptides))
+categorytemp[] <- categories[11]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram10$nPeptides[]))
+mainCategorytemp[] <- "Ions"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram10$nPeptides))
+categorytemp <- character(length(precursorHistogram11$nPeptides))
+categorytemp[] <- categories[12]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram11$nPeptides[]))
+mainCategorytemp[] <- "Ions"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram11$nPeptides))
+# categorytemp <- character(length(precursorHistogram12$nPeptides))
+# categorytemp[] <- categories[13]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram12$nPeptides[]))
+# mainCategorytemp[] <- "Toleance"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram12$nPeptides))
+# categorytemp <- character(length(precursorHistogram13$nPeptides))
+# categorytemp[] <- categories[14]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram13$nPeptides[]))
+# mainCategorytemp[] <- "Toleance"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram13$nPeptides))
+# categorytemp <- character(length(precursorHistogram14$nPeptides))
+# categorytemp[] <- "categories[15]
+# violinCategories <- c(violinCategories, categorytemp)
+# mainCategorytemp <- character(length(precursorHistogram14$nPeptides[]))
+# mainCategorytemp[] <- "Toleance"
+# violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+# violinValues <- c(violinValues, log10(precursorHistogram14$nPeptides))
+categorytemp <- character(length(precursorHistogram15$nPeptides))
+categorytemp[] <- categories[16]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram15$nPeptides[]))
+mainCategorytemp[] <- "Isotopes"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram15$nPeptides))
+categorytemp <- character(length(precursorHistogram16$nPeptides))
+categorytemp[] <- categories[17]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram16$nPeptides[]))
+mainCategorytemp[] <- "Charges"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram16$nPeptides))
+categorytemp <- character(length(precursorHistogram17$nPeptides))
+categorytemp[] <- categories[18]
+violinCategories <- c(violinCategories, categorytemp)
+mainCategorytemp <- character(length(precursorHistogram17$nPeptides[]))
+mainCategorytemp[] <- "Charges"
+violinMainCategories <- c(violinMainCategories, mainCategorytemp)
+violinValues <- c(violinValues, log10(precursorHistogram17$nPeptides))
+violinCategoriesSorted <- factor(violinCategories, levels = categories)
 
-
-
-# Enzymaticity
-
-enzymaticityCategories <- c("Default", "4mc", "semi", "unspecific")
-
-precursorHistogram5 <- read.table("resources\\precursor_5.txt", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogram5 <- read.table("resources\\all_psms_5.psm", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogramNoZero5 <- eValuesHistogram0[eValuesHistogram5$HyperScore > 0 & eValuesHistogram5$E.Value < 1,]
-eValuesHistogramNoZero5$E.Value <- -eValuesHistogramNoZero5$E.Value
-
-precursorHistogram6 <- read.table("resources\\precursor_6.txt", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogram6 <- read.table("resources\\all_psms_6.psm", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogramNoZero6 <- eValuesHistogram0[eValuesHistogram6$HyperScore > 0 & eValuesHistogram6$E.Value < 1,]
-eValuesHistogramNoZero6$E.Value <- -eValuesHistogramNoZero6$E.Value
-
-precursorHistogram7 <- read.table("resources\\precursor_7.txt", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogram7 <- read.table("resources\\all_psms_7.psm", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogramNoZero7 <- eValuesHistogram0[eValuesHistogram7$HyperScore > 0 & eValuesHistogram6$E.Value < 1,]
-eValuesHistogramNoZero7$E.Value <- -eValuesHistogramNoZero7$E.Value
-
-medianNPeptides0 = median(precursorHistogram0$nPeptides)
-medianNPeptides5 = median(precursorHistogram5$nPeptides)
-medianNPeptides6 = median(precursorHistogram6$nPeptides)
-medianNPeptides7 = median(precursorHistogram7$nPeptides)
-
-precrusorHistogramCategories0 <- character(length(precursorHistogram0$nPeptides))
-precrusorHistogramCategories0[] <- enzymaticityCategories[1]
-precrusorHistogramCategories5 <- character(length(precursorHistogram5$nPeptides))
-precrusorHistogramCategories5[] <- enzymaticityCategories[2]
-precrusorHistogramCategories6 <- character(length(precursorHistogram6$nPeptides))
-precrusorHistogramCategories6[] <- enzymaticityCategories[3]
-precrusorHistogramCategories7 <- character(length(precursorHistogram7$nPeptides))
-precrusorHistogramCategories7[] <- enzymaticityCategories[4]
-enzymaticityPrecrusorHistogramCategories <- c(precrusorHistogramCategories0, precrusorHistogramCategories5, precrusorHistogramCategories6, precrusorHistogramCategories7)
-enzymaticityPrecrusorHistogramValues <- c(precursorHistogram0$nPeptides, precursorHistogram5$nPeptides, precursorHistogram6$nPeptides, precursorHistogram7$nPeptides)
-
-enzymaticityPrecursorHistogramPlot <- ggplot()
-enzymaticityPrecursorHistogramPlot <- enzymaticityPrecursorHistogramPlot + geom_histogram(aes(x=enzymaticityPrecrusorHistogramValues, fill=enzymaticityPrecrusorHistogramCategories, col=enzymaticityPrecrusorHistogramCategories), binwidth = 100, alpha = 0.5, position = "dodge")
-enzymaticityPrecursorHistogramPlot <- enzymaticityPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides0))
-enzymaticityPrecursorHistogramPlot <- enzymaticityPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides5))
-enzymaticityPrecursorHistogramPlot <- enzymaticityPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides6))
-enzymaticityPrecursorHistogramPlot <- enzymaticityPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides7))
-enzymaticityPrecursorHistogramPlot <- enzymaticityPrecursorHistogramPlot + labs(x = "# Peptides per Precursor", y = "Density", fill="", col="")
-plot(enzymaticityPrecursorHistogramPlot)
-
-
-# Variable modifications
-
-modificationsCategories <- c("Default", "Cmm", "Phospho")
-
-precursorHistogram8 <- read.table("resources\\precursor_8.txt", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogram8 <- read.table("resources\\all_psms_8.psm", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogramNoZero8 <- eValuesHistogram0[eValuesHistogram8$HyperScore > 0 & eValuesHistogram8$E.Value < 1,]
-eValuesHistogramNoZero8$E.Value <- -eValuesHistogramNoZero8$E.Value
-
-precursorHistogram9 <- read.table("resources\\precursor_9.txt", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogram9 <- read.table("resources\\all_psms_9.psm", header = T, sep = " ", stringsAsFactors = F)
-eValuesHistogramNoZero9 <- eValuesHistogram0[eValuesHistogram9$HyperScore > 0 & eValuesHistogram9$E.Value < 1,]
-eValuesHistogramNoZero9$E.Value <- -eValuesHistogramNoZero9$E.Value
-
-medianNPeptides0 = median(precursorHistogram0$nPeptides)
-medianNPeptides8 = median(precursorHistogram5$nPeptides)
-medianNPeptides9 = median(precursorHistogram6$nPeptides)
-
-precrusorHistogramCategories0 <- character(length(precursorHistogram0$nPeptides))
-precrusorHistogramCategories0[] <- modificationsCategories[1]
-precrusorHistogramCategories8 <- character(length(precursorHistogram8$nPeptides))
-precrusorHistogramCategories8[] <- modificationsCategories[2]
-precrusorHistogramCategories9 <- character(length(precursorHistogram9$nPeptides))
-precrusorHistogramCategories9[] <- modificationsCategories[3]
-modificationsPrecrusorHistogramCategories <- c(precrusorHistogramCategories0, precrusorHistogramCategories8, precrusorHistogramCategories9)
-modificationsPrecrusorHistogramValues <- c(precursorHistogram0$nPeptides, precursorHistogram8$nPeptides, precursorHistogram9$nPeptides)
-
-modificationsPrecursorHistogramPlot <- ggplot()
-modificationsPrecursorHistogramPlot <- modificationsPrecursorHistogramPlot + geom_histogram(aes(x=modificationsPrecrusorHistogramValues, fill=modificationsPrecrusorHistogramCategories, col=modificationsPrecrusorHistogramCategories), binwidth = 500, alpha = 0.5, position = "dodge")
-modificationsPrecursorHistogramPlot <- modificationsPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides0))
-modificationsPrecursorHistogramPlot <- modificationsPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides5))
-modificationsPrecursorHistogramPlot <- modificationsPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides6))
-modificationsPrecursorHistogramPlot <- modificationsPrecursorHistogramPlot + geom_vline(aes(xintercept=medianNPeptides7))
-modificationsPrecursorHistogramPlot <- modificationsPrecursorHistogramPlot + labs(x = "# Peptides per Precursor", y = "Density", fill="", col="")
-plot(modificationsPrecursorHistogramPlot)
-
-
-
-# Histogram of e-values
-decoyAsFactor <- as.factor(eValuesHistogramNoZero0$Decoy)
-eValueHistogramPlot <- ggplot()
-eValueHistogramPlot <- eValueHistogramPlot + geom_histogram(aes(x=eValuesHistogramNoZero0$E.Value, fill = decoyAsFactor, col = decoyAsFactor), binwidth = 1, alpha = 0.5)
-eValueHistogramPlot <- eValueHistogramPlot + labs(x = "E-value [-log10]", y = "# Spectra", col = "Decoy", fill = "Decoy")
-plot(eValueHistogramPlot)
-
+precursorHistogramPlot <- ggplot()
+precursorHistogramPlot <- precursorHistogramPlot + geom_violin(aes(x=violinCategoriesSorted, y=violinValues, fill = violinMainCategories))
+precursorHistogramPlot <- precursorHistogramPlot + geom_boxplot(aes(x=violinCategoriesSorted, y=violinValues, fill = violinMainCategories), width = 0.1, outlier.shape = NA)
+precursorHistogramPlot <- precursorHistogramPlot + labs(x = "Category", y = "# Peptides per Precursor [log10]", fill="", col="")
+precursorHistogramPlot <- precursorHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+plot(precursorHistogramPlot)
