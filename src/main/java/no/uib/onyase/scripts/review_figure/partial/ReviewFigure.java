@@ -74,7 +74,7 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-//        searchParameters.setFastaFile(new File("C:\\Databases\\hman_all_23.16_concatenated_target_decoy.fasta"));
+        searchParameters.setFastaFile(new File("C:\\Databases\\hman_all_23.16_concatenated_target_decoy.fasta"));
 //        searchParameters.setPrecursorAccuracy(0.5);
 //        searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();

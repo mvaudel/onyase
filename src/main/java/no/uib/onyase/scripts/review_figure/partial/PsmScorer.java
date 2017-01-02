@@ -21,11 +21,8 @@ import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.math.HistogramUtils;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -383,7 +380,7 @@ public class PsmScorer {
                     if (!peptideAssumptions.isEmpty()) {
 
                         // Get e-value map
-                        HashMap<Double, Double> eValueMap = hyperScore.getEValueHistogram(scores);
+                        HashMap<Double, Double> eValueMap = hyperScore.getEValueMap(scores);
 
                         // See if an interpolation was possible
                         if (eValueMap != null) {

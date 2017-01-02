@@ -1,6 +1,5 @@
 package no.uib.onyase.scripts.review_figure.full;
 
-import no.uib.onyase.applications.engine.model.PeptideDraft;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
@@ -25,10 +24,6 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import no.uib.onyase.applications.engine.modules.PeptideModificationsIterator;
-import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
-import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;
-import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
 
 /**
  * This class exports the data needed to create histograms of the number of
@@ -49,7 +44,7 @@ public class HistogramExporter {
     /**
      * Map of the PSMs to score
      */
-    private HashMap<String, HashMap<String, PeptideDraft>> psmMap;
+    private HashMap<String, HashMap<String, FigureMetrics>> scoreMap;
     /**
      * A handler for the exceptions.
      */
@@ -76,7 +71,7 @@ public class HistogramExporter {
      * Writes the given histogram data to a file.
      *
      * @param spectrumFile the file containing the spectra
-     * @param psmMap the psms as a map
+     * @param scoreMap map of the peptides found
      * @param identificationParameters the identification parameters
      * @param destinationFile the destination file
      * @param nThreads the number of threads to use
@@ -86,13 +81,13 @@ public class HistogramExporter {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void writeExport(File spectrumFile, HashMap<String, HashMap<String, PeptideDraft>> psmMap, IdentificationParameters identificationParameters, File destinationFile, int nThreads) throws IOException, InterruptedException {
+    public void writeExport(File spectrumFile, HashMap<String, HashMap<String, FigureMetrics>> scoreMap, IdentificationParameters identificationParameters, File destinationFile, int nThreads) throws IOException, InterruptedException {
 
-        this.psmMap = psmMap;
+        this.scoreMap = scoreMap;
 
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
-        waitingHandler.setMaxSecondaryProgressCounter(psmMap.size());
-        Iterator<String> spectrumTitlesIterator = psmMap.keySet().iterator();
+        waitingHandler.setMaxSecondaryProgressCounter(scoreMap.size());
+        Iterator<String> spectrumTitlesIterator = scoreMap.keySet().iterator();
         BufferedWriter bw = new BufferedWriter(new FileWriter(destinationFile));
         bw.write("title" + separator + "mz" + separator + "rt" + separator + "nPeptides");
         bw.newLine();
@@ -195,56 +190,11 @@ public class HistogramExporter {
                     String spectrumKey = Spectrum.getSpectrumKey(mgfFileName, spectrumTitle);
                     Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
                     String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
-                    HashMap<String, PeptideDraft> assumptions = psmMap.get(spectrumTitle);
-                    int nPeptides = 0;
-                    for (PeptideDraft peptideDraft : assumptions.values()) {
-                        HashMap<String, Integer> modificationOccurrence = peptideDraft.getVariableModifications();
-                        if (modificationOccurrence == null) {
-                            nPeptides++;
-                        } else {
-                            HashMap<String, Integer[]> possibleModificationSites = peptideDraft.getVariableModificationsSites();
-                            // Create an iterator for the possible sites
-                            PeptideModificationsIterator peptideModificationsIterator;
-                            if (modificationOccurrence.size() == 1) {
-                                String modificationName = modificationOccurrence.keySet().iterator().next();
-                                Integer[] possibleSites = possibleModificationSites.get(modificationName);
-                                Integer occurrence = modificationOccurrence.get(modificationName);
-                                peptideModificationsIterator = new SingleModificationIterator(possibleSites, occurrence, modificationName, 0);
-                            } else {
-                                boolean overlap = false;
-                                for (String modification1 : modificationOccurrence.keySet()) {
-                                    HashSet<String> potentialConflicts = overlappingModifications.get(modification1);
-                                    if (potentialConflicts != null) {
-                                        for (String modification2 : modificationOccurrence.keySet()) {
-                                            if (potentialConflicts.contains(modification2)) {
-                                                overlap = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (overlap) {
-                                        break;
-                                    }
-                                }
-                                orderedPeptideModificationsName.clear();
-                                for (String modification : orderedModificationsName) {
-                                    if (modificationOccurrence.keySet().contains(modification)) {
-                                        orderedPeptideModificationsName.add(modification);
-                                    }
-                                }
-                                if (overlap) {
-                                    peptideModificationsIterator = new OverlappingModificationsIterator(modificationOccurrence, possibleModificationSites, orderedPeptideModificationsName, 0);
-                                } else {
-                                    peptideModificationsIterator = new MultipleModificationsIterators(modificationOccurrence, possibleModificationSites, orderedPeptideModificationsName, 0);
-                                }
-                            }
-                            while (peptideModificationsIterator.hasNext()) {
-                                nPeptides++;
-                            }
-                        }
-                    }
+                    HashMap<String, FigureMetrics> assumptions = scoreMap.get(spectrumTitle);
                     StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(nPeptides).append(END_LINE);
+                    for (FigureMetrics figureMetrics : assumptions.values()) {
+                        stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(figureMetrics.getnHits()).append(END_LINE);
+                    }
                     bw.write(stringBuilder.toString());
                     waitingHandler.increaseSecondaryProgressCounter();
                 }

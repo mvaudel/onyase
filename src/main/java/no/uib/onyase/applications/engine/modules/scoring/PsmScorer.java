@@ -363,7 +363,7 @@ public class PsmScorer {
                     }
 
                     // Get e-value map
-                    HashMap<Double, Double> eValueMap = hyperScore.getEValueHistogram(scores);
+                    HashMap<Double, Double> eValueMap = hyperScore.getEValueMap(scores);
 
                     // See if an interpolation was possible
                     if (eValueMap != null) {

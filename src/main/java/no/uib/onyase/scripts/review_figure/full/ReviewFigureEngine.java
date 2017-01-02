@@ -17,6 +17,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -78,6 +79,7 @@ public class ReviewFigureEngine {
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
+     * @param maxSites the preferred number of sites to iterate for every PTM
      * @param nThreads the number of threads to use
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
@@ -94,7 +96,7 @@ public class ReviewFigureEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -128,15 +130,22 @@ public class ReviewFigureEngine {
         sequenceFactory.loadFastaFile(fastaFile);
         localDuration.end();
         waitingHandler.setWaitingText("Loading sequences completed (" + localDuration + ").");
+        
+        // Get temporary file to export the PSMs prior to e-value estimation
+        File tempFile = new File(allPsmsFile.getPath() + "_temp");
 
         // Get PSMs
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideDraft>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications);
+        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications, maxSites, tempFile);
         localDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
+        
+        // Get scores and Figure Data
+        HashMap<String, HashMap<String, FigureMetrics>> scoreMap = sequencesProcessor.getScoresMap();
+        int nLines = sequencesProcessor.getnLines();
 
         // Export histograms
         File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + jobName + ".txt");
@@ -144,16 +153,16 @@ public class ReviewFigureEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Exporting Histograms.");
         HistogramExporter histogramExporter = new HistogramExporter(waitingHandler, exceptionHandler);
-        histogramExporter.writeExport(spectrumFile, psmMap, identificationParameters, precursorFile, nThreads);
+        histogramExporter.writeExport(spectrumFile, scoreMap, identificationParameters, precursorFile, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
-        // Estimate Scores
+        // Estimate e-values
         localDuration = new Duration();
         localDuration.start();
-        waitingHandler.setWaitingText("Scoring PSMs.");
-        PsmScorer psmScorer = new PsmScorer(waitingHandler, exceptionHandler);
-        psmScorer.estimateScores(spectrumFileName, psmMap, identificationParameters, 5, nThreads, allPsmsFile, bestPsmsFile);
+        waitingHandler.setWaitingText("Estimating e-values.");
+        EValueEstimtor eValueEstimtor = new EValueEstimtor(waitingHandler);
+        eValueEstimtor.estimateScores(scoreMap, tempFile, nLines, allPsmsFile, bestPsmsFile);
         localDuration.end();
         waitingHandler.setWaitingText("Scoring PSMs completed (" + localDuration + ").");
         
