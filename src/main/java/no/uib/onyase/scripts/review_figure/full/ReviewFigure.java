@@ -58,7 +58,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "2";
+        String jobName = "test";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -93,21 +93,21 @@ public class ReviewFigure {
         ptmName = "Pyrolidone from carbamidomethylated C";
         ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-        ptmName = "Phosphorylation of S";
-        maxModifications.put(ptmName, 3);
-        ptm = ptmFactory.getPTM(ptmName);
-        ptmSettings.addVariableModification(ptm);
-        ptmName = "Phosphorylation of T";
-        maxModifications.put(ptmName, 3);
-        ptm = ptmFactory.getPTM(ptmName);
-        ptmSettings.addVariableModification(ptm);
-        ptmName = "Phosphorylation of Y";
-        maxModifications.put(ptmName, 3);
-        ptm = ptmFactory.getPTM(ptmName);
-        ptmSettings.addVariableModification(ptm);
+//        ptmName = "Phosphorylation of S";
+//        maxModifications.put(ptmName, 3);
+//        ptm = ptmFactory.getPTM(ptmName);
+//        ptmSettings.addVariableModification(ptm);
+//        ptmName = "Phosphorylation of T";
+//        maxModifications.put(ptmName, 3);
+//        ptm = ptmFactory.getPTM(ptmName);
+//        ptmSettings.addVariableModification(ptm);
+//        ptmName = "Phosphorylation of Y";
+//        maxModifications.put(ptmName, 3);
+//        ptm = ptmFactory.getPTM(ptmName);
+//        ptmSettings.addVariableModification(ptm);
         searchParameters.setPtmSettings(ptmSettings);
         DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
-//        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
+        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
 //digestionPreferences.setnMissedCleavages("Trypsin", 4);
 //        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
 //        searchParameters.setMaxChargeSearched(new Charge(Charge.PLUS, 6));

@@ -15,12 +15,11 @@ import java.util.HashSet;
 import org.apache.commons.math.util.FastMath;
 
 /**
- * The e-value estimator estimates the e-values from the temporary file and
- * write the result file.
+ * This class appends e-values to a result file.
  *
  * @author Marc Vaudel
  */
-public class EValueEstimtor {
+public class EValueExporter {
 
     /**
      * Separator for the columns.
@@ -36,8 +35,8 @@ public class EValueEstimtor {
      */
     private WaitingHandler waitingHandler;
     private HyperScore hyperScore = new HyperScore();
-    private HashMap<String, double[]> interpolationValuesMap;
-    private HashMap<String, Integer> nHitsMap;
+    private HashMap<String, double[]> interpolationValuesMap = new HashMap<String, double[]>();
+    private HashMap<String, Integer> nHitsMap = new HashMap<String, Integer>();
     private double[] abZero = new double[]{0.0, 0.0};
 
     /**
@@ -46,7 +45,7 @@ public class EValueEstimtor {
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
      */
-    public EValueEstimtor(WaitingHandler waitingHandler) {
+    public EValueExporter(WaitingHandler waitingHandler) {
         this.waitingHandler = waitingHandler;
     }
 

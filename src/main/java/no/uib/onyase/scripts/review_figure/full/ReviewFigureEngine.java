@@ -161,10 +161,10 @@ public class ReviewFigureEngine {
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Estimating e-values.");
-        EValueEstimtor eValueEstimtor = new EValueEstimtor(waitingHandler);
+        EValueExporter eValueEstimtor = new EValueExporter(waitingHandler);
         eValueEstimtor.estimateScores(scoreMap, tempFile, nLines, allPsmsFile, bestPsmsFile);
         localDuration.end();
-        waitingHandler.setWaitingText("Scoring PSMs completed (" + localDuration + ").");
+        waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
         
         // Finished
         totalDuration.end();

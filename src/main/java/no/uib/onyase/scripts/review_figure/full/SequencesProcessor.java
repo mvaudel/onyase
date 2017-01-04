@@ -324,6 +324,7 @@ public class SequencesProcessor {
             } else {
                 this.maxModifications = new HashMap<String, Integer>(0);
             }
+            this.textExporter = textExporter;
         }
 
         @Override
