@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import no.uib.onyase.utils.TitlesIterator;
 
 /**
  * This class exports the data needed to create histograms of the number of
@@ -87,13 +88,13 @@ public class HistogramExporter {
 
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
         waitingHandler.setMaxSecondaryProgressCounter(scoreMap.size());
-        Iterator<String> spectrumTitlesIterator = scoreMap.keySet().iterator();
+        TitlesIterator titlesIterator = new TitlesIterator(scoreMap.keySet());
         BufferedWriter bw = new BufferedWriter(new FileWriter(destinationFile));
         bw.write("title" + separator + "mz" + separator + "rt" + separator + "nPeptides");
         bw.newLine();
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            Exporter spectrumProcessor = new Exporter(spectrumTitlesIterator, bw, spectrumFile.getName(), identificationParameters);
+            Exporter spectrumProcessor = new Exporter(titlesIterator, bw, spectrumFile.getName(), identificationParameters);
             pool.submit(spectrumProcessor);
         }
         pool.shutdown();
@@ -111,7 +112,7 @@ public class HistogramExporter {
         /**
          * Iterator for the spectrum titles.
          */
-        private final Iterator<String> spectrumTitlesIterator;
+        private final TitlesIterator titlesIterator;
         /**
          * The writer to use.
          */
@@ -141,8 +142,8 @@ public class HistogramExporter {
          * @param mgfFileName the name of the mgf file
          * @param identificationParameters the identification parameters
          */
-        public Exporter(Iterator<String> spectrumTitlesIterator, BufferedWriter bw, String mgfFileName, IdentificationParameters identificationParameters) {
-            this.spectrumTitlesIterator = spectrumTitlesIterator;
+        public Exporter(TitlesIterator titlesIterator, BufferedWriter bw, String mgfFileName, IdentificationParameters identificationParameters) {
+            this.titlesIterator = titlesIterator;
             this.bw = bw;
             this.mgfFileName = mgfFileName;
             this.identificationParameters = identificationParameters;
@@ -181,12 +182,9 @@ public class HistogramExporter {
                         }
                     }
                 }
-                ArrayList<String> orderedModificationsName = new ArrayList<String>(ptmSettings.getVariableModifications());
-                Collections.sort(orderedModificationsName);
-                ArrayList<String> orderedPeptideModificationsName = new ArrayList<String>(orderedModificationsName.size());
 
-                while (spectrumTitlesIterator.hasNext()) {
-                    String spectrumTitle = spectrumTitlesIterator.next();
+                String spectrumTitle;
+                while ((spectrumTitle = titlesIterator.next()) != null) {
                     String spectrumKey = Spectrum.getSpectrumKey(mgfFileName, spectrumTitle);
                     Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
                     String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
@@ -198,8 +196,6 @@ public class HistogramExporter {
                     bw.write(stringBuilder.toString());
                     waitingHandler.increaseSecondaryProgressCounter();
                 }
-            } catch (NoSuchElementException exception) {
-                // the last spectrum got processed by another thread.
             } catch (Exception e) {
                 if (!waitingHandler.isRunCanceled()) {
                     exceptionHandler.catchException(e);

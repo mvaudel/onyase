@@ -1,6 +1,5 @@
 package no.uib.onyase.scripts.review_figure.full;
 
-import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -11,8 +10,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
-import java.util.HashSet;
-import org.apache.commons.math.util.FastMath;
 
 /**
  * This class appends e-values to a result file.
@@ -34,10 +31,6 @@ public class EValueExporter {
      * the process.
      */
     private WaitingHandler waitingHandler;
-    private HyperScore hyperScore = new HyperScore();
-    private HashMap<String, double[]> interpolationValuesMap = new HashMap<String, double[]>();
-    private HashMap<String, Integer> nHitsMap = new HashMap<String, Integer>();
-    private double[] abZero = new double[]{0.0, 0.0};
 
     /**
      * Constructor.
@@ -50,9 +43,9 @@ public class EValueExporter {
     }
 
     /**
-     * Estimates the e-values of the PSMs and sets -log10(e-value) as score.
+     * Appends the e-value to the line of every PSM.
      *
-     * @param scoresMap Map of the different scores
+     * @param eValueEstimator the estimator to use to estimate the e-value
      * @param tempFile file where the preliminary results are stored
      * @param nLines the number of lines in the temporary file
      * @param allHitsFile file where to save all hits
@@ -60,20 +53,20 @@ public class EValueExporter {
      *
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
+     * @throws java.io.IOException exception thrown whenever an error occurred
+     * while reading or writing the file
      */
-    public void estimateScores(HashMap<String, HashMap<String, FigureMetrics>> scoresMap, File tempFile, int nLines, File allHitsFile, File bestHitsFile) throws InterruptedException, IOException {
-
-        // Temp file to store intermediate results
-        File tempFile2 = new File(allHitsFile.getPath() + "_temp2");
+    public void writeEvalues(EValueEstimator eValueEstimator, File tempFile, int nLines, File allHitsFile, File bestHitsFile) throws InterruptedException, IOException {
 
         // Set up the file reader and writers
         BufferedReader br = new BufferedReader(new FileReader(tempFile));
-        BufferedWriter bwTemp = new BufferedWriter(new FileWriter(tempFile2));
+        BufferedWriter bwAll = new BufferedWriter(new FileWriter(allHitsFile));
+        BufferedWriter bwBest = new BufferedWriter(new FileWriter(bestHitsFile));
 
         // Get header
         String line = br.readLine();
-        bwTemp.write(line);
-        String headerLine = line;
+        bwAll.write(line);
+        bwBest.write(line);
 
         // Set the progress handler
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -83,9 +76,6 @@ public class EValueExporter {
         HashMap<String, String> bestHitMaps = new HashMap<String, String>();
         HashMap<String, Double> bestHitEValues = new HashMap<String, Double>();
 
-        // Keep track of spectra where no interpolation was possible
-        HashSet<String> missingValues = new HashSet<String>();
-
         // Iterate all lines and add the e-value
         while ((line = br.readLine()) != null) {
 
@@ -93,114 +83,37 @@ public class EValueExporter {
             String spectrumTitle = getSpectrumTitle(line);
             double score = getScore(line);
 
-            // Get the interpolation values
-            double[] ab = interpolationValuesMap.get(spectrumTitle);
-            if (ab == null) {
-                HashMap<String, FigureMetrics> spectrumMetrics = scoresMap.get(spectrumTitle);
-                ab = getInterpolationValues(spectrumTitle, spectrumMetrics);
-                if (ab == null) {
-                    missingValues.add(spectrumTitle);
-                } else {
-                    interpolationValuesMap.put(spectrumTitle, ab);
+            // Get the e-value
+            double eValue = eValueEstimator.getEValue(spectrumTitle, score);
+
+            // Write to the file
+            StringBuilder newLineBuilder = new StringBuilder(line);
+            newLineBuilder.append(separator).append(eValue).append(END_LINE);
+            String newLine = newLineBuilder.toString();
+            bwAll.write(newLine);
+
+            // Save if best hit
+            if (score > 0) {
+                Double bestEvalue = bestHitEValues.get(spectrumTitle);
+                if (bestEvalue == null || bestEvalue > eValue) {
+                    bestHitMaps.put(spectrumTitle, newLine);
+                    bestHitEValues.put(spectrumTitle, eValue);
                 }
             }
+        }
 
-            // Skip the spectra with missing values
-            if (ab != null) {
-
-                // Get the e-value
-                double eValue;
-                if (score == 0.0) {
-                    int nHits = nHitsMap.get(spectrumTitle);
-                    eValue = nHits;
-                } else {
-                    double logScore = FastMath.log10(score);
-                    eValue = HyperScore.getInterpolation(logScore, ab[0], ab[1]);
-                }
-
-                // Write to the file
-                StringBuilder newLineBuilder = new StringBuilder(line);
-                newLineBuilder.append(separator).append(eValue).append(END_LINE);
-                String newLine = newLineBuilder.toString();
-                bwTemp.write(newLine);
-
-                // Save if best hit
-                if (score > 0) {
-                    Double bestEvalue = bestHitEValues.get(spectrumTitle);
-                    if (bestEvalue == null || bestEvalue > eValue) {
-                        bestHitMaps.put(spectrumTitle, newLine);
-                        bestHitEValues.put(spectrumTitle, eValue);
-                    }
-                }
-            }
+        // Write best hits
+        for (String newLine : bestHitMaps.values()) {
+            bwBest.write(newLine);
         }
 
         // Close connections to files
         br.close();
-        bwTemp.close();
-
-        // see if there are missing values
-        if (!missingValues.isEmpty()) {
-
-            // Use values from other spectra
-            double a = hyperScore.getMendianA();
-            double b = hyperScore.getMendianB();
-
-            // Set up the file reader and writers
-            br = new BufferedReader(new FileReader(tempFile2));
-            line = br.readLine();
-            BufferedWriter bwAll = new BufferedWriter(new FileWriter(allHitsFile));
-            bwAll.write(line);
-
-            // Iterate the temp file again
-            while ((line = br.readLine()) != null) {
-
-                // Get spectrum title
-                String spectrumTitle = getSpectrumTitle(line);
-
-                // See if it is missing
-                if (missingValues.contains(spectrumTitle)) {
-
-                    // Get e-value
-                    double score = getScore(line);
-                    double logScore = FastMath.log10(score);
-                    double eValue = HyperScore.getInterpolation(logScore, a, b);
-
-                    // Write to the file
-                    StringBuilder newLineBuilder = new StringBuilder(line);
-                    newLineBuilder.append(separator).append(eValue).append(END_LINE);
-                    String newLine = newLineBuilder.toString();
-                    bwAll.write(newLine);
-
-                    // Save if best hit
-                    if (score > 0) {
-                        Double bestEvalue = bestHitEValues.get(spectrumTitle);
-                        if (bestEvalue == null || bestEvalue > eValue) {
-                            bestHitMaps.put(spectrumTitle, newLine);
-                            bestHitEValues.put(spectrumTitle, eValue);
-                        }
-                    }
-
-                } else {
-                    bwAll.write(line);
-                }
-            }
-
-            // Close connections to files
-            br.close();
-            bwAll.close();
-
-        } else {
-            tempFile2.renameTo(allHitsFile);
-        }
-
-        // Write best hits
-        BufferedWriter bwBest = new BufferedWriter(new FileWriter(bestHitsFile));
-        bwBest.write(headerLine);
-        for (String newLine : bestHitMaps.values()) {
-            bwBest.write(newLine);
-        }
+        bwAll.close();
         bwBest.close();
+        
+        // Delete the temporary file
+        tempFile.delete();
     }
 
     /**
@@ -210,8 +123,9 @@ public class EValueExporter {
      * @param line the line of interest
      *
      * @return the spectrum title
-     * 
-     * @throws UnsupportedEncodingException exception thrown whenever an error occurred while decoding the spectrum title
+     *
+     * @throws UnsupportedEncodingException exception thrown whenever an error
+     * occurred while decoding the spectrum title
      */
     private String getSpectrumTitle(String line) throws UnsupportedEncodingException {
         int firstSeparator = line.indexOf(separator);
@@ -222,44 +136,14 @@ public class EValueExporter {
 
     /**
      * Returns the score from the given line in the temporary file.
-     * 
+     *
      * @param line the line of interest
-     * 
+     *
      * @return the score
      */
     private double getScore(String line) {
         int lastSeparator = line.lastIndexOf(separator);
         String scoreAsString = line.substring(lastSeparator);
         return Double.valueOf(scoreAsString);
-    }
-
-    /**
-     * Returns the interpolation values for the given spectrum metrics in the form {a, b}. This methods also stores the number of hits for this spectrum in the map in the attributes.
-     * 
-     * @param spectrumTitle the title of the spectrum
-     * @param spectrumMetrics the spectrum metrics
-     * 
-     * @return the interpolation values
-     */
-    private double[] getInterpolationValues(String spectrumTitle, HashMap<String, FigureMetrics> spectrumMetrics) {
-        int[] scores = new int[spectrumMetrics.size()];
-        int i = 0;
-        int nHits = 0;
-        boolean validScore = false;
-        for (FigureMetrics figureMetrics : spectrumMetrics.values()) {
-            int currentScore = figureMetrics.getScore();
-            scores[i] = currentScore;
-            if (currentScore > 0 && !validScore) {
-                validScore = true;
-            }
-            nHits += figureMetrics.getnHits();
-            i++;
-        }
-        nHitsMap.put(spectrumTitle, nHits);
-        if (validScore) {
-            return hyperScore.getInterpolationValues(scores);
-        } else {
-            return abZero;
-        }
     }
 }

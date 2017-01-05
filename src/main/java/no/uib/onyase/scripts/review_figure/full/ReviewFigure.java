@@ -107,7 +107,7 @@ public class ReviewFigure {
 //        ptmSettings.addVariableModification(ptm);
         searchParameters.setPtmSettings(ptmSettings);
         DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
-        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
+//        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
 //digestionPreferences.setnMissedCleavages("Trypsin", 4);
 //        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
 //        searchParameters.setMaxChargeSearched(new Charge(Charge.PLUS, 6));

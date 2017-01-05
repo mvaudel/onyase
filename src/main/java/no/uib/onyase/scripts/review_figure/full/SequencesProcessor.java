@@ -255,10 +255,10 @@ public class SequencesProcessor {
          * A spectrum annotator.
          */
         private PeptideSpectrumAnnotator peptideSpectrumAnnotator = new PeptideSpectrumAnnotator();
-
+/**
+ * Map of the scores of every peptide indexed by spectrum title.
+ */
         private HashMap<String, HashMap<String, FigureMetrics>> scoresMap = new HashMap<String, HashMap<String, FigureMetrics>>();
-
-        private HashMap<String, Integer> nHitsMap = new HashMap<String, Integer>();
 
         private int nLines = 0;
         /**

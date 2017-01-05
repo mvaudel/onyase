@@ -1,6 +1,5 @@
 package no.uib.onyase.scripts.review_figure.full;
 
-import no.uib.onyase.applications.engine.model.PeptideDraft;
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
@@ -17,7 +16,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.HashSet;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -161,10 +159,19 @@ public class ReviewFigureEngine {
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Estimating e-values.");
-        EValueExporter eValueEstimtor = new EValueExporter(waitingHandler);
-        eValueEstimtor.estimateScores(scoreMap, tempFile, nLines, allPsmsFile, bestPsmsFile);
+        EValueEstimator eValueEstimator = new EValueEstimator(waitingHandler, exceptionHandler);
+        eValueEstimator.estimateInterpolationCoefficients(spectrumFileName, scoreMap, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
+
+        // Estimate e-values
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Exporting e-values.");
+        EValueExporter eValueExporter = new EValueExporter(waitingHandler);
+        eValueExporter.writeEvalues(eValueEstimator, tempFile, nLines, allPsmsFile, bestPsmsFile);
+        localDuration.end();
+        waitingHandler.setWaitingText("Exporting e-values completed (" + localDuration + ").");
         
         // Finished
         totalDuration.end();

@@ -128,6 +128,7 @@ public class PsmScorer {
         }
 
         if (missingValues) {
+            
             // Gather the interpolation values as histograms
             ArrayList<HashMap<Double, Integer>> aHistograms = new ArrayList<HashMap<Double, Integer>>(nThreads);
             ArrayList<HashMap<Double, Integer>> bHistograms = new ArrayList<HashMap<Double, Integer>>(nThreads);
