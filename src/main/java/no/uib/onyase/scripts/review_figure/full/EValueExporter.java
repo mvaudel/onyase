@@ -66,7 +66,9 @@ public class EValueExporter {
         // Get header
         String line = br.readLine();
         bwAll.write(line);
+        bwAll.newLine();
         bwBest.write(line);
+        bwBest.newLine();
 
         // Set the progress handler
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);

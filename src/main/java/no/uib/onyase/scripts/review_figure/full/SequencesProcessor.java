@@ -255,9 +255,9 @@ public class SequencesProcessor {
          * A spectrum annotator.
          */
         private PeptideSpectrumAnnotator peptideSpectrumAnnotator = new PeptideSpectrumAnnotator();
-/**
- * Map of the scores of every peptide indexed by spectrum title.
- */
+        /**
+         * Map of the scores of every peptide indexed by spectrum title.
+         */
         private HashMap<String, HashMap<String, FigureMetrics>> scoresMap = new HashMap<String, HashMap<String, FigureMetrics>>();
 
         private int nLines = 0;
@@ -535,7 +535,7 @@ public class SequencesProcessor {
                                                 HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
 
                                                 // if new, write all possible peptides to the file
-                                                if (spectrumScores != null && spectrumScores.containsKey(modifiedPeptideKey)) {
+                                                if (spectrumScores == null || !spectrumScores.containsKey(modifiedPeptideKey)) {
 
                                                     // Create an iterator for the possible sites
                                                     PeptideModificationsIterator peptideModificationsIterator;
@@ -617,7 +617,7 @@ public class SequencesProcessor {
                                                             double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
 
                                                             // Write the match to the file
-                                                            textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
+                                                            textExporter.writePeptide(spectrumFileName, spectrumTitle, modifiedPeptide, score, charge);
                                                             nLines++;
 
                                                             // Update the figure metrics

@@ -58,7 +58,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "test";
+        String jobName = "test_p";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -93,18 +93,18 @@ public class ReviewFigure {
         ptmName = "Pyrolidone from carbamidomethylated C";
         ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addVariableModification(ptm);
-//        ptmName = "Phosphorylation of S";
-//        maxModifications.put(ptmName, 3);
-//        ptm = ptmFactory.getPTM(ptmName);
-//        ptmSettings.addVariableModification(ptm);
-//        ptmName = "Phosphorylation of T";
-//        maxModifications.put(ptmName, 3);
-//        ptm = ptmFactory.getPTM(ptmName);
-//        ptmSettings.addVariableModification(ptm);
-//        ptmName = "Phosphorylation of Y";
-//        maxModifications.put(ptmName, 3);
-//        ptm = ptmFactory.getPTM(ptmName);
-//        ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of S";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of T";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
+        ptmName = "Phosphorylation of Y";
+        maxModifications.put(ptmName, 3);
+        ptm = ptmFactory.getPTM(ptmName);
+        ptmSettings.addVariableModification(ptm);
         searchParameters.setPtmSettings(ptmSettings);
         DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
 //        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
@@ -123,6 +123,6 @@ public class ReviewFigure {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 5, 4, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 5, 3, waitingHandler, exceptionHandler);
     }
 }
