@@ -4,6 +4,7 @@ import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
+import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
@@ -163,13 +164,31 @@ public class ReviewFigureEngine {
         eValueEstimator.estimateInterpolationCoefficients(spectrumFileName, scoreMap, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
+        
+        // Get a sequence based score map
+        HashMap<String, HashMap<String, FigureMetrics>> figureMetricsMap = new HashMap<String, HashMap<String, FigureMetrics>>(scoreMap.size());
+        for (String spectrum : scoreMap.keySet()) {
+            HashMap<String, FigureMetrics> spectrumScoreMap = scoreMap.get(spectrum);
+            HashMap<String, FigureMetrics> spectrumFigureMetricsMap = new HashMap<String, FigureMetrics>(spectrumScoreMap);
+            for (String peptideKey : spectrumScoreMap.keySet()) {
+                int sequenceIndex = peptideKey.indexOf(Peptide.MODIFICATION_SEPARATOR_CHAR);
+                String sequence;
+                if (sequenceIndex > 0) {
+                    sequence = peptideKey.substring(0, sequenceIndex);
+                } else {
+                    sequence = peptideKey;
+                }
+                spectrumFigureMetricsMap.put(sequence, spectrumScoreMap.get(peptideKey));
+            }
+            figureMetricsMap.put(spectrum, spectrumFigureMetricsMap);
+        }
 
-        // Estimate e-values
+        // Export e-values
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Exporting e-values.");
         EValueExporter eValueExporter = new EValueExporter(waitingHandler);
-        eValueExporter.writeEvalues(eValueEstimator, tempFile, nLines, allPsmsFile, bestPsmsFile);
+        eValueExporter.writeEvalues(eValueEstimator, figureMetricsMap, tempFile, nLines, allPsmsFile, bestPsmsFile);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting e-values completed (" + localDuration + ").");
         

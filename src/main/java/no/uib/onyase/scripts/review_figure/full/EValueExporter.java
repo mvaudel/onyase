@@ -1,5 +1,8 @@
 package no.uib.onyase.scripts.review_figure.full;
 
+import com.compomics.util.experiment.biology.AminoAcid;
+import com.compomics.util.experiment.biology.Peptide;
+import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -22,6 +25,10 @@ public class EValueExporter {
      * Separator for the columns.
      */
     public final static char separator = ' ';
+    /**
+     * Separator for the columns as string.
+     */
+    public final static String separatorAsString = separator + "";
     /**
      * The end of line separator.
      */
@@ -46,6 +53,7 @@ public class EValueExporter {
      * Appends the e-value to the line of every PSM.
      *
      * @param eValueEstimator the estimator to use to estimate the e-value
+     * @param scoresMap map of the figure metrics
      * @param tempFile file where the preliminary results are stored
      * @param nLines the number of lines in the temporary file
      * @param allHitsFile file where to save all hits
@@ -56,7 +64,10 @@ public class EValueExporter {
      * @throws java.io.IOException exception thrown whenever an error occurred
      * while reading or writing the file
      */
-    public void writeEvalues(EValueEstimator eValueEstimator, File tempFile, int nLines, File allHitsFile, File bestHitsFile) throws InterruptedException, IOException {
+    public void writeEvalues(EValueEstimator eValueEstimator, HashMap<String, HashMap<String, FigureMetrics>> scoresMap, File tempFile, int nLines, File allHitsFile, File bestHitsFile) throws InterruptedException, IOException {
+
+        // Sequence settings for the keys of the peptides
+        SequenceMatchingPreferences sequenceMatchingPreferences = SequenceMatchingPreferences.getDefaultSequenceMatching();
 
         // Set up the file reader and writers
         BufferedReader br = new BufferedReader(new FileReader(tempFile));
@@ -84,13 +95,25 @@ public class EValueExporter {
             // Get spectrum title and score
             String spectrumTitle = getSpectrumTitle(line);
             double score = getScore(line);
+            String sequence = getSequence(line);
 
             // Get the e-value
             double eValue = eValueEstimator.getEValue(spectrumTitle, score);
 
             // Write to the file
             StringBuilder newLineBuilder = new StringBuilder(line);
-            newLineBuilder.append(separator).append(eValue).append(END_LINE);
+            newLineBuilder.append(separator).append(eValue);
+            HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
+            String key = AminoAcid.getMatchingSequence(sequence, sequenceMatchingPreferences);
+            FigureMetrics figureMetrics = spectrumScores.get(key);
+            if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
+                newLineBuilder.append(0.5).append(separator).append(0.5);
+            } else if (figureMetrics.isIsDecoy()) {
+                newLineBuilder.append(1).append(separator).append(0);
+            } else if (figureMetrics.isIsTarget()) {
+                newLineBuilder.append(0).append(separator).append(1);
+            }
+            newLineBuilder.append(END_LINE);
             String newLine = newLineBuilder.toString();
             bwAll.write(newLine);
 
@@ -113,7 +136,7 @@ public class EValueExporter {
         br.close();
         bwAll.close();
         bwBest.close();
-        
+
         // Delete the temporary file
         tempFile.delete();
     }
@@ -147,5 +170,17 @@ public class EValueExporter {
         int lastSeparator = line.lastIndexOf(separator);
         String scoreAsString = line.substring(lastSeparator);
         return Double.valueOf(scoreAsString);
+    }
+
+    /**
+     * Returns the score from the given line in the temporary file.
+     *
+     * @param line the line of interest
+     *
+     * @return the score
+     */
+    private String getSequence(String line) {
+        String[] lineSplit = line.split(separatorAsString);
+        return lineSplit[3];
     }
 }

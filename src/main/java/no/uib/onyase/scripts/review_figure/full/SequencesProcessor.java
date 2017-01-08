@@ -28,6 +28,7 @@ import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
+import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
@@ -74,8 +75,6 @@ public class SequencesProcessor {
     private WaitingHandler waitingHandler;
 
     private HashMap<String, HashMap<String, FigureMetrics>> scoresMap;
-
-    private HashMap<String, Integer> nHitsMap;
 
     private int nLines;
 
@@ -173,15 +172,16 @@ public class SequencesProcessor {
 
             // Scores
             HashMap<String, HashMap<String, FigureMetrics>> tempScoreMap = sequenceProcessor.getScoresMap();
+        
             for (String spectrumTitle : tempScoreMap.keySet()) {
                 HashMap<String, FigureMetrics> newScores = tempScoreMap.get(spectrumTitle);
                 HashMap<String, FigureMetrics> currentscores = scoresMap.get(spectrumTitle);
                 if (currentscores != null) {
-                    for (String peptide : currentscores.keySet()) {
+                    for (String peptide : newScores.keySet()) {
                         FigureMetrics newFigureMetrics = newScores.get(peptide);
                         FigureMetrics currentFigureMetrics = currentscores.get(peptide);
-                        if (newFigureMetrics == null) {
-                            currentscores.put(peptide, currentFigureMetrics);
+                        if (currentFigureMetrics == null) {
+                            currentscores.put(peptide, newFigureMetrics);
                         } else {
                             if (newFigureMetrics.isIsDecoy()) {
                                 currentFigureMetrics.setIsDecoy(true);
@@ -258,9 +258,11 @@ public class SequencesProcessor {
         /**
          * Map of the scores of every peptide indexed by spectrum title.
          */
-        private HashMap<String, HashMap<String, FigureMetrics>> scoresMap = new HashMap<String, HashMap<String, FigureMetrics>>();
-
-        private int nLines = 0;
+        private HashMap<String, HashMap<String, FigureMetrics>> threadScoresMap = new HashMap<String, HashMap<String, FigureMetrics>>();
+        /**
+         * The number of lines written to the result file.
+         */
+        private int threadNLines = 0;
         /**
          * An iterator for the possible modification profiles.
          */
@@ -388,6 +390,9 @@ public class SequencesProcessor {
 
                 // Settings for the annotation of spectra
                 AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences();
+                
+                // Sequence settings for the keys of the peptides
+                SequenceMatchingPreferences sequenceMatchingPreferences = SequenceMatchingPreferences.getDefaultSequenceMatching();
 
                 // Iterate the proteins and store the possible PSMs
                 while (proteinIterator.hasNext()) {
@@ -403,7 +408,7 @@ public class SequencesProcessor {
                     for (ProteinSequenceIterator.PeptideWithPosition peptideWithPosition : peptides) {
 
                         Peptide peptide = peptideWithPosition.getPeptide();
-                        String peptideKey = peptide.getKey();
+                        String peptideKey = peptide.getMatchingKey(sequenceMatchingPreferences);
                         Double peptideMass = peptide.getMass();
                         int indexOnProtein = peptideWithPosition.getPosition();
 
@@ -440,11 +445,11 @@ public class SequencesProcessor {
                                             String spectrumTitle = precursorWithTitle.spectrumTitle;
 
                                             // See if the peptide has already been identified for this spectrum
-                                            HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
+                                            HashMap<String, FigureMetrics> spectrumScores = threadScoresMap.get(spectrumTitle);
                                             boolean newPeptide = true;
                                             if (spectrumScores == null) {
                                                 spectrumScores = new HashMap<String, FigureMetrics>(1);
-                                                scoresMap.put(spectrumTitle, spectrumScores);
+                                                threadScoresMap.put(spectrumTitle, spectrumScores);
                                             }
                                             FigureMetrics figureMetrics = spectrumScores.get(peptideKey);
                                             if (figureMetrics == null) {
@@ -468,7 +473,7 @@ public class SequencesProcessor {
                                                 double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                                                 int scoreBin = (int) score;
                                                 textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
-                                                nLines++;
+                                                threadNLines++;
                                                 figureMetrics.setScore(scoreBin);
                                             }
 
@@ -527,12 +532,12 @@ public class SequencesProcessor {
                                                 PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, modificationOccurrence, possibleModificationSites, isDecoy);
 
                                                 // Compute a key for this peptide to see if it was already found
-                                                String modifiedPeptideKey = peptideDraft.getKey(orderedModifications);
+                                                String modifiedPeptideKey = peptideDraft.getKey(orderedModifications, sequenceMatchingPreferences);
 
                                                 // See if the peptide was already inspected
                                                 PrecursorMap.PrecursorWithTitle precursorWithTitle = precursorMatches.get(0);
                                                 String spectrumTitle = precursorWithTitle.spectrumTitle;
-                                                HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
+                                                HashMap<String, FigureMetrics> spectrumScores = threadScoresMap.get(spectrumTitle);
 
                                                 // if new, write all possible peptides to the file
                                                 if (spectrumScores == null || !spectrumScores.containsKey(modifiedPeptideKey)) {
@@ -594,10 +599,10 @@ public class SequencesProcessor {
 
                                                             // Get the score map
                                                             spectrumTitle = precursorWithTitle2.spectrumTitle;
-                                                            spectrumScores = scoresMap.get(spectrumTitle);
+                                                            spectrumScores = threadScoresMap.get(spectrumTitle);
                                                             if (spectrumScores == null) {
                                                                 spectrumScores = new HashMap<String, FigureMetrics>(1);
-                                                                scoresMap.put(spectrumTitle, spectrumScores);
+                                                                threadScoresMap.put(spectrumTitle, spectrumScores);
                                                             }
                                                             FigureMetrics figureMetrics = spectrumScores.get(modifiedPeptideKey);
                                                             if (figureMetrics == null) {
@@ -618,7 +623,7 @@ public class SequencesProcessor {
 
                                                             // Write the match to the file
                                                             textExporter.writePeptide(spectrumFileName, spectrumTitle, modifiedPeptide, score, charge);
-                                                            nLines++;
+                                                            threadNLines++;
 
                                                             // Update the figure metrics
                                                             int scoreBin = (int) score;
@@ -632,7 +637,7 @@ public class SequencesProcessor {
                                                     // Save whether the peptide is target or decoy
                                                     for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
                                                         spectrumTitle = precursorWithTitle2.spectrumTitle;
-                                                        spectrumScores = scoresMap.get(spectrumTitle);
+                                                        spectrumScores = threadScoresMap.get(spectrumTitle);
                                                         FigureMetrics figureMetrics = spectrumScores.get(modifiedPeptideKey);
                                                         if (isDecoy) {
                                                             figureMetrics.setIsDecoy(true);
@@ -670,7 +675,7 @@ public class SequencesProcessor {
          * spectrum
          */
         public HashMap<String, HashMap<String, FigureMetrics>> getScoresMap() {
-            return scoresMap;
+            return threadScoresMap;
         }
 
         /**
@@ -679,7 +684,7 @@ public class SequencesProcessor {
          * @return the number of lines written to the file
          */
         public int getnLines() {
-            return nLines;
+            return threadNLines;
         }
     }
 }

@@ -1,5 +1,7 @@
 package no.uib.onyase.applications.engine.model;
 
+import com.compomics.util.experiment.biology.AminoAcid;
+import com.compomics.util.preferences.SequenceMatchingPreferences;
 import java.util.HashMap;
 
 /**
@@ -78,10 +80,11 @@ public class PeptideDraft {
         }
     }
 
-    public String getKey(String[] orderedModifications) {
+    public String getKey(String[] orderedModifications, SequenceMatchingPreferences sequenceMatchingPreferences) {
         if (variableModifications != null) {
             StringBuilder stringBuilder = new StringBuilder(sequence.length() + 4 * variableModifications.size());
-            stringBuilder.append(sequence);
+            String matchingSequence = AminoAcid.getMatchingSequence(sequence, sequenceMatchingPreferences);
+            stringBuilder.append(matchingSequence);
             for (int i = 0; i < orderedModifications.length; i++) {
                 String modification = orderedModifications[i];
                 Integer occurrence = variableModifications.get(modification);

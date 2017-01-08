@@ -43,7 +43,7 @@ public class TextExporter {
 
     public void writeHeaders() throws IOException {
         if (bwAll != null) {
-            bwAll.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value" + OnyaseIdfileReader.separator + "Decoy" + OnyaseIdfileReader.separator + "Target");
+            bwAll.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "Decoy" + OnyaseIdfileReader.separator + "Target" + OnyaseIdfileReader.separator + "E-Value");
             bwAll.newLine();
         }
     }

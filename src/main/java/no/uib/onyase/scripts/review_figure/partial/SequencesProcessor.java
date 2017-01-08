@@ -21,6 +21,7 @@ import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
+import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -305,6 +306,9 @@ public class SequencesProcessor {
                 Double massMin = precursorProcessor.getMassMin();
                 Double massMax = precursorProcessor.getMassMax();
                 PrecursorMap precursorMap = precursorProcessor.getPrecursorMap();
+                
+        // Sequence settings for the keys of the peptides
+        SequenceMatchingPreferences sequenceMatchingPreferences = SequenceMatchingPreferences.getDefaultSequenceMatching();
 
                 // Iterate the proteins and store the possible PSMs
                 while (proteinIterator.hasNext()) {
@@ -426,7 +430,7 @@ public class SequencesProcessor {
                                                 PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, modificationOccurrence, possibleModificationSites, isDecoy);
 
                                                 // Compute a key for this peptide to see if it was already found
-                                                String modifiedPeptideKey = peptideDraft.getKey(orderedModifications);
+                                                String modifiedPeptideKey = peptideDraft.getKey(orderedModifications, sequenceMatchingPreferences);
 
                                                 // Iterate all precursor matches
                                                 for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
