@@ -1,7 +1,6 @@
 package no.uib.onyase.scripts.review_figure.full;
 
 import com.compomics.util.experiment.biology.AminoAcid;
-import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedReader;
@@ -95,34 +94,36 @@ public class EValueExporter {
             // Get spectrum title and score
             String spectrumTitle = getSpectrumTitle(line);
             double score = getScore(line);
-            String sequence = getSequence(line);
+            if (score > 1) {
+                String sequence = getSequence(line);
 
-            // Get the e-value
-            double eValue = eValueEstimator.getEValue(spectrumTitle, score);
+                // Get the e-value
+                double eValue = eValueEstimator.getEValue(spectrumTitle, score);
 
-            // Write to the file
-            StringBuilder newLineBuilder = new StringBuilder(line);
-            newLineBuilder.append(separator).append(eValue);
-            HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
-            String key = AminoAcid.getMatchingSequence(sequence, sequenceMatchingPreferences);
-            FigureMetrics figureMetrics = spectrumScores.get(key);
-            if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
-                newLineBuilder.append(0.5).append(separator).append(0.5);
-            } else if (figureMetrics.isIsDecoy()) {
-                newLineBuilder.append(1).append(separator).append(0);
-            } else if (figureMetrics.isIsTarget()) {
-                newLineBuilder.append(0).append(separator).append(1);
-            }
-            newLineBuilder.append(END_LINE);
-            String newLine = newLineBuilder.toString();
-            bwAll.write(newLine);
+                // Write to the file
+                StringBuilder newLineBuilder = new StringBuilder(line);
+                newLineBuilder.append(separator).append(eValue);
+                HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
+                String key = AminoAcid.getMatchingSequence(sequence, sequenceMatchingPreferences);
+                FigureMetrics figureMetrics = spectrumScores.get(key);
+                if (figureMetrics.isIsDecoy() && figureMetrics.isIsTarget()) {
+                    newLineBuilder.append(separator).append(0.5).append(separator).append(0.5);
+                } else if (figureMetrics.isIsDecoy()) {
+                    newLineBuilder.append(separator).append(1).append(separator).append(0);
+                } else if (figureMetrics.isIsTarget()) {
+                    newLineBuilder.append(separator).append(0).append(separator).append(1);
+                }
+                newLineBuilder.append(END_LINE);
+                String newLine = newLineBuilder.toString();
+                bwAll.write(newLine);
 
-            // Save if best hit
-            if (score > 0) {
-                Double bestEvalue = bestHitEValues.get(spectrumTitle);
-                if (bestEvalue == null || bestEvalue > eValue) {
-                    bestHitMaps.put(spectrumTitle, newLine);
-                    bestHitEValues.put(spectrumTitle, eValue);
+                // Save if best hit
+                if (score > 0) {
+                    Double bestEvalue = bestHitEValues.get(spectrumTitle);
+                    if (bestEvalue == null || bestEvalue > eValue) {
+                        bestHitMaps.put(spectrumTitle, newLine);
+                        bestHitEValues.put(spectrumTitle, eValue);
+                    }
                 }
             }
         }

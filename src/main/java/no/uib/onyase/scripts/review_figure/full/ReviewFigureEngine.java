@@ -134,13 +134,13 @@ public class ReviewFigureEngine {
         File tempFile = new File(allPsmsFile.getPath() + "_temp");
 
         // Get PSMs
-        localDuration = new Duration();
-        localDuration.start();
+        Duration psmDuration = new Duration();
+        psmDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
         sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications, maxSites, tempFile);
-        localDuration.end();
-        waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
+        psmDuration.end();
+        waitingHandler.setWaitingText("Getting PSMs completed (" + psmDuration + ").");
         
         // Get scores and Figure Data
         HashMap<String, HashMap<String, FigureMetrics>> scoreMap = sequencesProcessor.getScoresMap();
@@ -200,7 +200,7 @@ public class ReviewFigureEngine {
         // Write report
         File reportFile = new File("C:\\Github\\onyase\\R\\resources\\report_" + jobName + ".txt");
         BufferedWriter reportBw = new BufferedWriter(new FileWriter(reportFile));
-        reportBw.write("Duration: " + totalDuration.getDuration());
+        reportBw.write("Duration: " + psmDuration.getDuration());
         reportBw.close();
 
     }
