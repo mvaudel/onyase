@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * This class appends e-values to a result file.
@@ -85,10 +86,10 @@ public class EValueExporter {
         waitingHandler.setMaxSecondaryProgressCounter(nLines);
 
         // Set maps to store the best hits
-        HashMap<String, String> bestHitMaps = new HashMap<String, String>();
-        HashMap<String, Double> bestHitEValues = new HashMap<String, Double>();
+        HashMap<String, BestHit> bestHitMaps = new HashMap<String, BestHit>();
 
         // Iterate all lines and add the e-value
+        int cpt = 0;
         while ((line = br.readLine()) != null) {
 
             // Get spectrum title and score
@@ -118,17 +119,30 @@ public class EValueExporter {
 
             // Save if best hit
             if (score > 0) {
-                Double bestEvalue = bestHitEValues.get(spectrumTitle);
-                if (bestEvalue == null || bestEvalue > eValue) {
-                    bestHitMaps.put(spectrumTitle, newLine);
-                    bestHitEValues.put(spectrumTitle, eValue);
+                BestHit bestEvalue = bestHitMaps.get(spectrumTitle);
+                if (bestEvalue == null || bestEvalue.getScore() > eValue) {
+                    BestHit newEvalue = new BestHit(score, cpt);
+                    bestHitMaps.put(spectrumTitle, newEvalue);
                 }
             }
+            cpt++;
         }
 
+        // Restart iterating
+        br.close();
+        br = new BufferedReader(new FileReader(allHitsFile));
+
         // Write best hits
-        for (String newLine : bestHitMaps.values()) {
-            bwBest.write(newLine);
+        HashSet<Integer> bestLines = new HashSet<Integer>(bestHitMaps.size());
+        for (BestHit bestEvalues : bestHitMaps.values()) {
+            bestLines.add(bestEvalues.getLine());
+        }
+        cpt = 0;
+        while ((line = br.readLine()) != null) {
+            if (bestLines.contains(cpt)) {
+                bwBest.write(line);
+            }
+            cpt++;
         }
 
         // Close connections to files
@@ -181,5 +195,50 @@ public class EValueExporter {
     private String getSequence(String line) {
         String[] lineSplit = line.split(separatorAsString);
         return lineSplit[3];
+    }
+
+    /**
+     * Class used to store the best hit details.
+     */
+    private class BestHit {
+
+        /**
+         * The score.
+         */
+        private double score;
+        /**
+         * The line number.
+         */
+        private int line;
+
+        /**
+         * Constructor.
+         *
+         * @param score the score
+         * @param line the line number
+         */
+        public BestHit(double score, int line) {
+            this.score = score;
+            this.line = line;
+        }
+
+        /**
+         * Returns the score of the best hit.
+         *
+         * @return the score of the best hit
+         */
+        public double getScore() {
+            return score;
+        }
+
+        /**
+         * Returns the line number.
+         *
+         * @return the line number
+         */
+        public int getLine() {
+            return line;
+        }
+
     }
 }
