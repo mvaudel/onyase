@@ -4,9 +4,11 @@ import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
+import com.compomics.util.experiment.biology.ions.PeptideFragmentIon;
 import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
+import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -14,6 +16,7 @@ import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -58,7 +61,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "6";
+        String jobName = "13";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -74,6 +77,8 @@ public class ReviewFigure {
 //        searchParameters.setFastaFile(new File("C:\\Databases\\uniprot-vertebrates_12.16_concatenated_target_decoy.fasta"));
 //        searchParameters.setPrecursorAccuracy(0.5);
 //        searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
+//        searchParameters.setFragmentIonAccuracy(0.5);
+//        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
         PtmSettings ptmSettings = new PtmSettings();
         PTMFactory ptmFactory = PTMFactory.getInstance();
@@ -106,18 +111,22 @@ public class ReviewFigure {
 //        ptm = ptmFactory.getPTM(ptmName);
 //        ptmSettings.addVariableModification(ptm);
         searchParameters.setPtmSettings(ptmSettings);
-        DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
-        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
+//        DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
+//        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
 //digestionPreferences.setnMissedCleavages("Trypsin", 4);
 //        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
 //        searchParameters.setMaxChargeSearched(new Charge(Charge.PLUS, 6));
 //        searchParameters.setMinIsotopicCorrection(-4);
 //        searchParameters.setMaxIsotopicCorrection(4);
 //        ArrayList<Integer> forwardIons = new ArrayList<Integer>();
+//        forwardIons.add(PeptideFragmentIon.A_ION);
 //        forwardIons.add(PeptideFragmentIon.B_ION);
+//        forwardIons.add(PeptideFragmentIon.C_ION);
 //        searchParameters.setForwardIons(forwardIons);
 //        ArrayList<Integer> rewindIons = new ArrayList<Integer>();
+//        rewindIons.add(PeptideFragmentIon.X_ION);
 //        rewindIons.add(PeptideFragmentIon.Y_ION);
+//        rewindIons.add(PeptideFragmentIon.Z_ION);
 //        searchParameters.setRewindIons(rewindIons);
         File newParameters = new File(resourcesFolderPath, "Test_Onyase_" + jobName + ".par");
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);

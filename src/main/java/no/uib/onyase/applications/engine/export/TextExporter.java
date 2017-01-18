@@ -2,18 +2,15 @@ package no.uib.onyase.applications.engine.export;
 
 import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
-import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
 import com.compomics.util.experiment.io.identifications.idfilereaders.OnyaseIdfileReader;
 import com.compomics.util.experiment.massspectrometry.Precursor;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
-import com.compomics.util.preferences.IdentificationParameters;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -35,53 +32,23 @@ public class TextExporter {
      * The writer to use to write all hits.
      */
     private final BufferedWriter bwAll;
-    /**
-     * The writer to use to write the best hits only.
-     */
-    private final BufferedWriter bwBest;
-    /**
-     * Boolean indicating whether the precursor tolerance is in ppm.
-     */
-    private boolean ppm;
-    /**
-     * The minimal isotope to consider.
-     */
-    private int minIsotope;
-    /**
-     * The maximal isotope to consider.
-     */
-    private int maxIsotope;
 
-    public TextExporter(File bestHits, File allHits, IdentificationParameters identificationParameters) throws IOException {
-
-        if (bestHits != null) {
-            bwBest = new BufferedWriter(new FileWriter(bestHits));
-        } else {
-            bwBest = null;
-        }
+    public TextExporter(File allHits) throws IOException {
         if (allHits != null) {
             bwAll = new BufferedWriter(new FileWriter(allHits));
         } else {
             bwAll = null;
         }
-
-        ppm = identificationParameters.getSearchParameters().isPrecursorAccuracyTypePpm();
-        minIsotope = identificationParameters.getSearchParameters().getMinIsotopicCorrection();
-        maxIsotope = identificationParameters.getSearchParameters().getMaxIsotopicCorrection();
     }
 
     public void writeHeaders() throws IOException {
-        if (bwBest != null) {
-            bwBest.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "mz_deviation" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value");
-            bwBest.newLine();
-        }
         if (bwAll != null) {
-            bwAll.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "mz_deviation" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value");
+            bwAll.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value" + OnyaseIdfileReader.separator + "Decoy" + OnyaseIdfileReader.separator + "Target");
             bwAll.newLine();
         }
     }
 
-    public void writeAssumptions(String mgfFileName, String spectrumTitle, ArrayList<PeptideAssumption> peptideAssumptions) throws IOException, MzMLUnmarshallerException {
+    public void writePeptide(String mgfFileName, String spectrumTitle, Peptide peptide, double score, int charge) throws IOException, MzMLUnmarshallerException {
 
         // Encode the spectrum title
         String encodedSpectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
@@ -89,60 +56,26 @@ public class TextExporter {
         // Get the precursor
         Precursor precursor = spectrumFactory.getPrecursor(mgfFileName, spectrumTitle);
 
-        // Iterate all assumptions and retain the best assumption
-        Double bestEvalue = null;
-        PeptideAssumption bestPeptideAssumption = null;
-        boolean first = true;
-        for (PeptideAssumption peptideAssumption : peptideAssumptions) {
-            Double eValue = peptideAssumption.getScore();
-            if (bestEvalue == null || eValue < bestEvalue) {
-                bestPeptideAssumption = peptideAssumption;
-                bestEvalue = eValue;
-            }
-
-            // Export the assumption if needed
-            if (bwAll != null) {
-
-                String assumptionLine = getAssumptionLine(encodedSpectrumTitle, first, precursor, peptideAssumption);
-                bwAll.write(assumptionLine);
-                first = false;
-            }
-        }
-
-        // Export the best assumption
-        if (bwBest != null) {
-            String assumptionLine = getAssumptionLine(encodedSpectrumTitle, true, precursor, bestPeptideAssumption);
-            bwBest.write(assumptionLine);
-        }
-    }
-
-    private String getAssumptionLine(String encodedSpectrumTitle, boolean writeTitle, Precursor precursor, PeptideAssumption peptideAssumption) throws UnsupportedEncodingException {
-
+        // Create the line for this peptide
         StringBuilder stringBuilder = new StringBuilder();
-
-        if (writeTitle) {
-            stringBuilder.append(encodedSpectrumTitle);
-        }
+        stringBuilder.append(encodedSpectrumTitle);
         stringBuilder.append(OnyaseIdfileReader.separator);
         stringBuilder.append(precursor.getMz());
         stringBuilder.append(OnyaseIdfileReader.separator);
-        stringBuilder.append(peptideAssumption.getDeltaMass(precursor.getMz(), ppm, minIsotope, maxIsotope));
-        stringBuilder.append(OnyaseIdfileReader.separator);
         stringBuilder.append(precursor.getRtInMinutes());
         stringBuilder.append(OnyaseIdfileReader.separator);
-        Peptide peptide = peptideAssumption.getPeptide();
         stringBuilder.append(peptide.getSequence());
         stringBuilder.append(OnyaseIdfileReader.separator);
         String modificationsAsString = getModifications(peptide);
         stringBuilder.append(modificationsAsString);
         stringBuilder.append(OnyaseIdfileReader.separator);
-        stringBuilder.append(peptideAssumption.getIdentificationCharge().value);
+        stringBuilder.append(charge);
         stringBuilder.append(OnyaseIdfileReader.separator);
-        stringBuilder.append(peptideAssumption.getRawScore());
-        stringBuilder.append(OnyaseIdfileReader.separator);
-        stringBuilder.append(peptideAssumption.getScore());
+        stringBuilder.append(score);
         stringBuilder.append(END_LINE);
-        return stringBuilder.toString();
+
+        // Write to the file
+        bwAll.write(stringBuilder.toString());
     }
 
     /**
@@ -176,12 +109,15 @@ public class TextExporter {
         return result;
     }
 
+    /**
+     * Closes open connections to files.
+     *
+     * @throws IOException exception thrown whenever an error occurred while
+     * closing the connection to aF file.
+     */
     public void close() throws IOException {
         if (bwAll != null) {
             bwAll.close();
-        }
-        if (bwBest != null) {
-            bwBest.close();
         }
     }
 }
