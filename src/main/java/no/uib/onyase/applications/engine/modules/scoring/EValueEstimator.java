@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import no.uib.onyase.applications.engine.model.FigureMetrics;
 import no.uib.onyase.utils.TitlesIterator;
 import org.apache.commons.math.util.FastMath;
 
@@ -23,7 +22,7 @@ public class EValueEstimator {
     /**
      * Map of the PSMs to score
      */
-    private HashMap<String, HashMap<String, FigureMetrics>> scoresMap;
+    private HashMap<String, HashMap<String, Integer>> scoresMap;
     /**
      * A handler for the exceptions.
      */
@@ -68,7 +67,7 @@ public class EValueEstimator {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void estimateInterpolationCoefficients(String spectrumFileName, HashMap<String, HashMap<String, FigureMetrics>> scoresMap, int nThreads) throws InterruptedException {
+    public void estimateInterpolationCoefficients(String spectrumFileName, HashMap<String, HashMap<String, Integer>> scoresMap, int nThreads) throws InterruptedException {
 
         this.scoresMap = scoresMap;
 
@@ -182,22 +181,15 @@ public class EValueEstimator {
 
                 String spectrumTitle;
                 while ((spectrumTitle = titlesIterator.next()) != null) {
-                    HashMap<String, FigureMetrics> spectrumMetrics = scoresMap.get(spectrumTitle);
-                    int[] scores = new int[spectrumMetrics.size()];
-                    int i = 0;
-                    int nHits = 0;
-                    boolean validScore = false;
-                    for (FigureMetrics figureMetrics : spectrumMetrics.values()) {
-                        int currentScore = figureMetrics.getScore();
-                        scores[i] = currentScore;
-                        if (currentScore > 0 && !validScore) {
-                            validScore = true;
+                    HashMap<String, Integer> spectrumMetrics = scoresMap.get(spectrumTitle);
+                    if (spectrumMetrics.size() > 1) {
+                        int[] scores = new int[spectrumMetrics.size()];
+                        int i = 0;
+                        for (Integer scoreValue : spectrumMetrics.values()) {
+                            scores[i] = scoreValue;
+                            i++;
                         }
-                        nHits += figureMetrics.getnHits();
-                        i++;
-                    }
-                    threadHitsMap.put(spectrumTitle, nHits);
-                    if (validScore) {
+                        threadHitsMap.put(spectrumTitle, i);
                         double[] ab = hyperScore.getInterpolationValues(scores, false);
                         if (ab != null) {
                             threadInterpolationValuesMap.put(spectrumTitle, ab);

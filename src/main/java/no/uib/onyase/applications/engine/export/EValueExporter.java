@@ -55,7 +55,6 @@ public class EValueExporter {
      * Appends the e-value to the line of every PSM.
      *
      * @param eValueEstimator the estimator to use to estimate the e-value
-     * @param scoresMap map of the figure metrics
      * @param tempFile file where the preliminary results are stored
      * @param nLines the number of lines in the temporary file
      * @param allHitsFile file where to save all hits
@@ -65,7 +64,7 @@ public class EValueExporter {
      * @throws java.io.IOException exception thrown whenever an error occurred
      * while reading or writing the file
      */
-    public void writeEvalues(EValueEstimator eValueEstimator, HashMap<String, HashMap<String, FigureMetrics>> scoresMap, File tempFile, int nLines, File allHitsFile) throws InterruptedException, IOException {
+    public void writeEvalues(EValueEstimator eValueEstimator, File tempFile, int nLines, File allHitsFile) throws InterruptedException, IOException {
 
         // Set up the file reader and writers
         BufferedReader br = new BufferedReader(new FileReader(tempFile));

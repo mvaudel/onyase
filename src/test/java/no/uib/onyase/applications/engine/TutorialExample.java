@@ -24,7 +24,7 @@ import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 public class TutorialExample {
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
-    private String parametersFilePath = "C:\\Users\\mvaudel\\.compomics\\identification_parameters\\Test Onyase.par";
+    private String parametersFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.par";
     private String destinationFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.psm";
 
     /**
@@ -34,6 +34,11 @@ public class TutorialExample {
      */
     public static void main(String[] args) {
         TutorialExample instance = new TutorialExample();
+        if (args.length > 0) {
+            instance.setMgfFilePath(args[0]);
+            instance.setParametersFilePath(args[1]);
+            instance.setDestinationFilePath(args[2]);
+        }
         try {
             instance.launch();
             System.out.println(1);
@@ -41,6 +46,33 @@ public class TutorialExample {
             e.printStackTrace();
             System.out.println(0);
         }
+    }
+
+    /**
+     * Sets the mgf file path.
+     * 
+     * @param mgfFilePath the mgf file path
+     */
+    public void setMgfFilePath(String mgfFilePath) {
+        this.mgfFilePath = mgfFilePath;
+    }
+
+    /**
+     * Sets the parameters file path.
+     * 
+     * @param parametersFilePath the parameters file path
+     */
+    public void setParametersFilePath(String parametersFilePath) {
+        this.parametersFilePath = parametersFilePath;
+    }
+
+    /**
+     * Sets the destination file path.
+     * 
+     * @param destinationFilePath the destination file path
+     */
+    public void setDestinationFilePath(String destinationFilePath) {
+        this.destinationFilePath = destinationFilePath;
     }
 
     /**

@@ -75,9 +75,13 @@ public class SequencesProcessor {
      * the process.
      */
     private WaitingHandler waitingHandler;
-
-    private HashMap<String, HashMap<String, FigureMetrics>> scoresMap;
-
+    /**
+     * Map of the PSM scores.
+     */
+    private HashMap<String, HashMap<String, Integer>> scoresMap;
+    /**
+     * The number of lines written to the file.
+     */
     private int nLines;
 
     /**
@@ -173,19 +177,13 @@ public class SequencesProcessor {
             sequenceProcessor = sequenceProcessors.get(i);
 
             // Scores
-            HashMap<String, HashMap<String, FigureMetrics>> tempScoreMap = sequenceProcessor.getScoresMap();
-        
+            HashMap<String, HashMap<String, Integer>> tempScoreMap = sequenceProcessor.getScoresMap();
+
             for (String spectrumTitle : tempScoreMap.keySet()) {
-                HashMap<String, FigureMetrics> newScores = tempScoreMap.get(spectrumTitle);
-                HashMap<String, FigureMetrics> currentscores = scoresMap.get(spectrumTitle);
+                HashMap<String, Integer> newScores = tempScoreMap.get(spectrumTitle);
+                HashMap<String, Integer> currentscores = scoresMap.get(spectrumTitle);
                 if (currentscores != null) {
-                    for (String peptide : newScores.keySet()) {
-                        FigureMetrics newFigureMetrics = newScores.get(peptide);
-                        FigureMetrics currentFigureMetrics = currentscores.get(peptide);
-                        if (currentFigureMetrics == null) {
-                            currentscores.put(peptide, newFigureMetrics);
-                        }
-                    }
+                    currentscores.putAll(newScores);
                 } else {
                     scoresMap.put(spectrumTitle, newScores);
                 }
@@ -204,7 +202,7 @@ public class SequencesProcessor {
      *
      * @return a map of the scores for every peptide found for every spectrum
      */
-    public HashMap<String, HashMap<String, FigureMetrics>> getScoresMap() {
+    public HashMap<String, HashMap<String, Integer>> getScoresMap() {
         return scoresMap;
     }
 
@@ -253,7 +251,11 @@ public class SequencesProcessor {
         /**
          * Map of the scores of every peptide indexed by spectrum title.
          */
-        private HashMap<String, HashMap<String, FigureMetrics>> threadScoresMap = new HashMap<String, HashMap<String, FigureMetrics>>();
+        private HashMap<String, HashMap<String, Integer>> threadScoresMap = new HashMap<String, HashMap<String, Integer>>();
+        /**
+         * Map of the peptides inspected for each spectrum.
+         */
+        private HashMap<String, HashSet<String>> peptidesInspected = new HashMap<String, HashSet<String>>();
         /**
          * The number of lines written to the result file.
          */
@@ -385,7 +387,7 @@ public class SequencesProcessor {
 
                 // Settings for the annotation of spectra
                 AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences();
-                
+
                 // Sequence settings for the keys of the peptides
                 SequenceMatchingPreferences sequenceMatchingPreferences = SequenceMatchingPreferences.getDefaultSequenceMatching();
 
@@ -436,40 +438,57 @@ public class SequencesProcessor {
                                         // Iterate all precursor matches
                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
 
-                                            // Get the matches for this precursor
+                                            // Get the spectrum title
                                             String spectrumTitle = precursorWithTitle.spectrumTitle;
 
-                                            // See if thFe peptide has already been identified for this spectrum
-                                            HashMap<String, FigureMetrics> spectrumScores = threadScoresMap.get(spectrumTitle);
-                                            boolean newPeptide = true;
-                                            if (spectrumScores == null) {
-                                                spectrumScores = new HashMap<String, FigureMetrics>(1);
-                                                threadScoresMap.put(spectrumTitle, spectrumScores);
-                                            }
-                                            FigureMetrics figureMetrics = spectrumScores.get(peptideKey);
-                                            if (figureMetrics == null) {
-                                                figureMetrics = new FigureMetrics();
-                                                spectrumScores.put(peptideKey, figureMetrics);
-                                                figureMetrics.setnHits(1);
-                                            } else {
-                                                newPeptide = false;
-                                            }
+                                            // See if the peptide has already been identified for this spectrum
+                                            HashSet<String> peptidesInspectedForSpectrum = peptidesInspected.get(spectrumTitle);
+                                            if (peptidesInspectedForSpectrum == null || !peptidesInspectedForSpectrum.contains(peptideKey)) {
 
-                                            // if new, write to the file
-                                            if (newPeptide) {
+                                                // Get the scores map
+                                                HashMap<String, Integer> spectrumScores = threadScoresMap.get(spectrumTitle);
+                                                if (spectrumScores == null) {
+                                                    spectrumScores = new HashMap<String, Integer>(2);
+                                                    threadScoresMap.put(spectrumTitle, spectrumScores);
+                                                }
 
-                                                // Get the spectrum annotation
-                                                PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
-                                                MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumTitle, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
-                                                ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
+                                                // See if we already have a score
+                                                if (!spectrumScores.containsKey(peptideKey)) {
 
-                                                // Get the score and save it to the score map
-                                                double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-                                                int scoreBin = (int) score;
-                                                textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
-                                                threadNLines++;
-                                                figureMetrics.setScore(scoreBin);
+                                                    // Get the spectrum annotation
+                                                    PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
+                                                    MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
+                                                    SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumTitle, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
+                                                    ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
+
+                                                    // Get the score
+                                                    double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                    int scoreBin = (int) score;
+
+                                                    // Retain only positive scores
+                                                    if (scoreBin > 0) {
+
+                                                        // Save score to the e-value calculation map
+                                                        spectrumScores.put(peptideKey, scoreBin);
+
+                                                        // Write the assumption to the file
+                                                        textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
+                                                        threadNLines++;
+
+                                                    } else {
+
+                                                        // Make sure that the list of inspected peptides for this spectrum exists and does not get too long
+                                                        if (peptidesInspectedForSpectrum == null) {
+                                                            peptidesInspectedForSpectrum = new HashSet<String>();
+                                                            peptidesInspected.put(spectrumTitle, peptidesInspectedForSpectrum);
+                                                        } else if (peptidesInspectedForSpectrum.size() == 8192) {
+                                                            peptidesInspectedForSpectrum.clear();
+                                                        }
+
+                                                        // Add the peptide to the inspected peptides list
+                                                        peptidesInspectedForSpectrum.add(peptideKey);
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -522,13 +541,30 @@ public class SequencesProcessor {
                                                 // Compute a key for this peptide to see if it was already found
                                                 String modifiedPeptideKey = peptideDraft.getKey(orderedModifications, sequenceMatchingPreferences);
 
-                                                // See if the peptide was already inspected
+                                                // Get a precursor to see if the peptide was already inspected
                                                 PrecursorMap.PrecursorWithTitle precursorWithTitle = precursorMatches.get(0);
+                                                boolean newPeptide = true;
+
+                                                // Get the spectrum title
                                                 String spectrumTitle = precursorWithTitle.spectrumTitle;
-                                                HashMap<String, FigureMetrics> spectrumScores = threadScoresMap.get(spectrumTitle);
+
+                                                // See if the peptide has already been identified for this spectrum
+                                                HashSet<String> peptidesInspectedForSpectrum = peptidesInspected.get(spectrumTitle);
+                                                if (peptidesInspectedForSpectrum != null && peptidesInspectedForSpectrum.contains(modifiedPeptideKey)) {
+                                                    newPeptide = false;
+                                                } else {
+
+                                                    // Get the scores map for this spectrum
+                                                    HashMap<String, Integer> spectrumScores = threadScoresMap.get(spectrumTitle);
+
+                                                    // See if we already have a score
+                                                    if (spectrumScores != null && spectrumScores.containsKey(modifiedPeptideKey)) {
+                                                        newPeptide = false;
+                                                    }
+                                                }
 
                                                 // if new, write all possible peptides to the file
-                                                if (spectrumScores == null || !spectrumScores.containsKey(modifiedPeptideKey)) {
+                                                if (newPeptide) {
 
                                                     // Create an iterator for the possible sites
                                                     PeptideModificationsIterator peptideModificationsIterator;
@@ -567,6 +603,7 @@ public class SequencesProcessor {
                                                     }
 
                                                     // Go through all possibilities
+                                                    boolean first = true;
                                                     while (peptideModificationsIterator.hasNext()) {
 
                                                         // Create a modified peptide
@@ -585,19 +622,14 @@ public class SequencesProcessor {
                                                         // Iterate all precursor matches
                                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
 
-                                                            // Get the score map
+                                                            // Get the spectrum title
                                                             spectrumTitle = precursorWithTitle2.spectrumTitle;
-                                                            spectrumScores = threadScoresMap.get(spectrumTitle);
+
+                                                            // Get the scores map
+                                                            HashMap<String, Integer> spectrumScores = threadScoresMap.get(spectrumTitle);
                                                             if (spectrumScores == null) {
-                                                                spectrumScores = new HashMap<String, FigureMetrics>(1);
+                                                                spectrumScores = new HashMap<String, Integer>(2);
                                                                 threadScoresMap.put(spectrumTitle, spectrumScores);
-                                                            }
-                                                            FigureMetrics figureMetrics = spectrumScores.get(modifiedPeptideKey);
-                                                            if (figureMetrics == null) {
-                                                                figureMetrics = new FigureMetrics();
-                                                                spectrumScores.put(modifiedPeptideKey, figureMetrics);
-                                                                figureMetrics.setnHits(0);
-                                                                figureMetrics.setScore(0);
                                                             }
 
                                                             // Get the spectrum annotation
@@ -607,18 +639,35 @@ public class SequencesProcessor {
                                                             ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
 
                                                             // Get the score
-                                                            double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-
-                                                            // Write the match to the file
-                                                            textExporter.writePeptide(spectrumFileName, spectrumTitle, modifiedPeptide, score, charge);
-                                                            threadNLines++;
-
-                                                            // Update the figure metrics
+                                                            double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                                                             int scoreBin = (int) score;
-                                                            if (scoreBin > figureMetrics.getScore()) {
-                                                                figureMetrics.setScore(scoreBin);
+
+                                                            // Retain only positive scores
+                                                            if (scoreBin > 0) {
+
+                                                                // Save score to the e-value calculation map
+                                                                spectrumScores.put(peptideKey, scoreBin);
+
+                                                                // Write the assumption to the file
+                                                                textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
+                                                                threadNLines++;
+
+                                                            } else if (first) {
+
+                                                                // Make sure that the list of inspected peptides for this spectrum exists and does not get too long
+                                                                if (peptidesInspectedForSpectrum == null) {
+                                                                    peptidesInspectedForSpectrum = new HashSet<String>();
+                                                                    peptidesInspected.put(spectrumTitle, peptidesInspectedForSpectrum);
+                                                                } else if (peptidesInspectedForSpectrum.size() == 8192) {
+                                                                    peptidesInspectedForSpectrum.clear();
+                                                                }
+
+                                                                // Add the peptide to the inspected peptides list
+                                                                peptidesInspectedForSpectrum.add(peptideKey);
+
+                                                                // Avoid repeating this for all isoforms
+                                                                first = false;
                                                             }
-                                                            figureMetrics.setnHits(figureMetrics.getnHits() + 1);
                                                         }
                                                     }
                                                 }
@@ -650,7 +699,7 @@ public class SequencesProcessor {
          * @return a map of the scores for every peptide found for every
          * spectrum
          */
-        public HashMap<String, HashMap<String, FigureMetrics>> getScoresMap() {
+        public HashMap<String, HashMap<String, Integer>> getScoresMap() {
             return threadScoresMap;
         }
 
