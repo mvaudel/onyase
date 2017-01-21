@@ -24,7 +24,7 @@ public class ExclusionList {
     /**
      * The exclusion list to use by default.
      */
-    public static final String defaultListFilePath = "Resources/ExcludedMz.txt";
+    public static final String defaultListFilePath = "resources/ExcludedMz.txt";
     /**
      * Map of the precursors in this map.
      */

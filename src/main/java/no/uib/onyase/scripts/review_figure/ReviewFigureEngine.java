@@ -1,10 +1,10 @@
-package no.uib.onyase.scripts.review_figure.partial;
+package no.uib.onyase.scripts.review_figure;
 
-import no.uib.onyase.applications.engine.model.PeptideDraft;
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
+import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
@@ -78,6 +78,7 @@ public class ReviewFigureEngine {
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
+     * @param maxSites the preferred number of sites to iterate for every PTM
      * @param nThreads the number of threads to use
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
@@ -94,7 +95,7 @@ public class ReviewFigureEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(String jobName, File spectrumFile, File allPsmsFile, File bestPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -128,15 +129,22 @@ public class ReviewFigureEngine {
         sequenceFactory.loadFastaFile(fastaFile);
         localDuration.end();
         waitingHandler.setWaitingText("Loading sequences completed (" + localDuration + ").");
+        
+        // Get temporary file to export the PSMs prior to e-value estimation
+        File tempFile = new File(allPsmsFile.getPath() + "_temp");
 
         // Get PSMs
-        localDuration = new Duration();
-        localDuration.start();
+        Duration psmDuration = new Duration();
+        psmDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        HashMap<String, HashMap<String, PeptideDraft>> psmMap = sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications);
-        localDuration.end();
-        waitingHandler.setWaitingText("Getting PSMs completed (" + localDuration + ").");
+        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications, maxSites, tempFile);
+        psmDuration.end();
+        waitingHandler.setWaitingText("Getting PSMs completed (" + psmDuration + ").");
+        
+        // Get scores and Figure Data
+        HashMap<String, HashMap<String, FigureMetrics>> scoreMap = sequencesProcessor.getScoresMap();
+        int nLines = sequencesProcessor.getnLines();
 
         // Export histograms
         File precursorFile = new File("C:\\Github\\onyase\\R\\resources\\precursor_" + jobName + ".txt");
@@ -144,18 +152,45 @@ public class ReviewFigureEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Exporting Histograms.");
         HistogramExporter histogramExporter = new HistogramExporter(waitingHandler, exceptionHandler);
-        histogramExporter.writeExport(spectrumFile, psmMap, identificationParameters, precursorFile, nThreads);
+        histogramExporter.writeExport(spectrumFile, scoreMap, identificationParameters, precursorFile, nThreads);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting completed (" + localDuration + ").");
 
-        // Estimate Scores
+        // Estimate e-values
         localDuration = new Duration();
         localDuration.start();
-        waitingHandler.setWaitingText("Scoring PSMs.");
-        PsmScorer psmScorer = new PsmScorer(waitingHandler, exceptionHandler);
-        psmScorer.estimateScores(spectrumFileName, psmMap, identificationParameters, 5, nThreads, allPsmsFile, bestPsmsFile);
+        waitingHandler.setWaitingText("Estimating e-values.");
+        EValueEstimator eValueEstimator = new EValueEstimator(waitingHandler, exceptionHandler);
+        eValueEstimator.estimateInterpolationCoefficients(spectrumFileName, scoreMap, nThreads);
         localDuration.end();
-        waitingHandler.setWaitingText("Scoring PSMs completed (" + localDuration + ").");
+        waitingHandler.setWaitingText("Estimating e-values completed (" + localDuration + ").");
+        
+        // Get a sequence based score map
+        HashMap<String, HashMap<String, FigureMetrics>> figureMetricsMap = new HashMap<String, HashMap<String, FigureMetrics>>(scoreMap.size());
+        for (String spectrum : scoreMap.keySet()) {
+            HashMap<String, FigureMetrics> spectrumScoreMap = scoreMap.get(spectrum);
+            HashMap<String, FigureMetrics> spectrumFigureMetricsMap = new HashMap<String, FigureMetrics>(spectrumScoreMap);
+            for (String peptideKey : spectrumScoreMap.keySet()) {
+                int sequenceIndex = peptideKey.indexOf(Peptide.MODIFICATION_SEPARATOR_CHAR);
+                String sequence;
+                if (sequenceIndex > 0) {
+                    sequence = peptideKey.substring(0, sequenceIndex);
+                } else {
+                    sequence = peptideKey;
+                }
+                spectrumFigureMetricsMap.put(sequence, spectrumScoreMap.get(peptideKey));
+            }
+            figureMetricsMap.put(spectrum, spectrumFigureMetricsMap);
+        }
+
+        // Export e-values
+        localDuration = new Duration();
+        localDuration.start();
+        waitingHandler.setWaitingText("Exporting e-values.");
+        EValueExporter eValueExporter = new EValueExporter(waitingHandler);
+        eValueExporter.writeEvalues(eValueEstimator, figureMetricsMap, tempFile, nLines, allPsmsFile, bestPsmsFile);
+        localDuration.end();
+        waitingHandler.setWaitingText("Exporting e-values completed (" + localDuration + ").");
         
         // Finished
         totalDuration.end();
@@ -165,7 +200,7 @@ public class ReviewFigureEngine {
         // Write report
         File reportFile = new File("C:\\Github\\onyase\\R\\resources\\report_" + jobName + ".txt");
         BufferedWriter reportBw = new BufferedWriter(new FileWriter(reportFile));
-        reportBw.write("Duration: " + totalDuration.getDuration());
+        reportBw.write("Duration: " + psmDuration.getDuration());
         reportBw.close();
 
     }

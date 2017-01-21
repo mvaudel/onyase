@@ -1,13 +1,11 @@
-package no.uib.onyase.scripts.review_figure.partial;
-
-import com.compomics.util.experiment.personalization.UrParameter;
+package no.uib.onyase.scripts.review_figure;
 
 /**
  * This class is used to store metrics for the peptide assumptions of the figure of the review.
  *
  * @author Marc Vaudel
  */
-public class FigureMetrics implements UrParameter {
+public class FigureMetrics {
     
     /**
      * Boolean indicating whether the peptide can be mapped to a target sequence.
@@ -20,9 +18,13 @@ public class FigureMetrics implements UrParameter {
     private boolean isDecoy = false;
     
     /**
-     * The number of ions that can be matched in the spectrum.
+     * The score.
      */
-    private int nIons = 0;
+    private int score = 0;
+    /**
+     * The number of isoforms for this peptide.
+     */
+    private int nHits;
     
     /**
      * Constructor.
@@ -67,26 +69,40 @@ public class FigureMetrics implements UrParameter {
     }
 
     /**
-     * Returns the number of ions that can be matched in the spectrum.
+     * Returns the rounded score.
      * 
-     * @return the number of ions that can be matched in the spectrum
+     * @return the rounded score
      */
-    public int getnIons() {
-        return nIons;
+    public int getScore() {
+        return score;
     }
 
     /**
-     * Sets the number of ions that can be matched in the spectrum.
+     * Sets the rounded score.
      * 
-     * @param nIons the number of ions that can be matched in the spectrum
+     * @param score the rounded score
      */
-    public void setnIons(int nIons) {
-        this.nIons = nIons;
+    public void setScore(int score) {
+        this.score = score;
     }
-    
-    @Override
-    public String getParameterKey() {
-        return "Figure_Review";
+
+    /**
+     * Returns the number of isoforms for this peptide.
+     * 
+     * @return the number of isoforms for this peptide
+     */
+    public int getnHits() {
+        return nHits;
     }
+
+    /**
+     * Sets the number of isoforms for this peptide.
+     * 
+     * @param nHits the number of isoforms for this peptide
+     */
+    public void setnHits(int nHits) {
+        this.nHits = nHits;
+    }
+
 
 }

@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure.full;
+package no.uib.onyase.scripts.review_figure;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;

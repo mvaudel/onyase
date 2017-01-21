@@ -1,4 +1,4 @@
-package no.uib.onyase.scripts.review_figure.full;
+package no.uib.onyase.scripts.review_figure;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
@@ -29,6 +29,7 @@ public class ReviewFigure {
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
     private String parametersFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.par";
     private String resourcesFolderPath = "C:\\Github\\onyase\\R\\resources";
+    private int nThreads = 4;
 
     /**
      * The main method used to start PeptideShaker.
@@ -37,6 +38,12 @@ public class ReviewFigure {
      */
     public static void main(String[] args) {
         ReviewFigure instance = new ReviewFigure();
+        if (args.length > 0) {
+            instance.setMgfFilePath(args[0]);
+            instance.setParametersFilePath(args[1]);
+            instance.setDestinationFilePath(args[2]);
+            instance.setnThreads(Integer.parseInt(args[3]));
+        }
         try {
             instance.launch();
             System.out.println(1);
@@ -46,6 +53,42 @@ public class ReviewFigure {
         }
     }
 
+    /**
+     * Sets the mgf file path.
+     * 
+     * @param mgfFilePath the mgf file path
+     */
+    public void setMgfFilePath(String mgfFilePath) {
+        this.mgfFilePath = mgfFilePath;
+    }
+
+    /**
+     * Sets the parameters file path.
+     * 
+     * @param parametersFilePath the parameters file path
+     */
+    public void setParametersFilePath(String parametersFilePath) {
+        this.parametersFilePath = parametersFilePath;
+    }
+
+    /**
+     * Sets the destination file path.
+     * 
+     * @param destinationFilePath the destination file path
+     */
+    public void setDestinationFilePath(String destinationFilePath) {
+        this.resourcesFolderPath = destinationFilePath;
+    }
+
+    /**
+     * Sets the number of threads.
+     * 
+     * @param nThreads the number of threads
+     */
+    public void setnThreads(int nThreads) {
+        this.nThreads = nThreads;
+    }
+    
     /**
      * Launches the search.
      *
@@ -61,7 +104,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "13";
+        String jobName = "14";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -74,11 +117,11 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-//        searchParameters.setFastaFile(new File("C:\\Databases\\uniprot-vertebrates_12.16_concatenated_target_decoy.fasta"));
-//        searchParameters.setPrecursorAccuracy(0.5);
-//        searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
-//        searchParameters.setFragmentIonAccuracy(0.5);
-//        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
+        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-human-reviewed-trypsin-november-2016_concatenated_target_decoy.fasta"));
+        searchParameters.setPrecursorAccuracy(0.5);
+        searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
+        searchParameters.setFragmentIonAccuracy(0.5);
+        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
         PtmSettings ptmSettings = new PtmSettings();
         PTMFactory ptmFactory = PTMFactory.getInstance();
@@ -111,8 +154,9 @@ public class ReviewFigure {
 //        ptm = ptmFactory.getPTM(ptmName);
 //        ptmSettings.addVariableModification(ptm);
         searchParameters.setPtmSettings(ptmSettings);
-//        DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
+        DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
 //        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
+        digestionPreferences.setCleavagePreference(DigestionPreferences.CleavagePreference.unSpecific);
 //digestionPreferences.setnMissedCleavages("Trypsin", 4);
 //        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
 //        searchParameters.setMaxChargeSearched(new Charge(Charge.PLUS, 6));
@@ -132,6 +176,6 @@ public class ReviewFigure {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         ReviewFigureEngine engine = new ReviewFigureEngine();
-        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 5, 4, waitingHandler, exceptionHandler);
+        engine.launch(jobName, spectrumFile, allPsmsFile, bestPsmsFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 5, nThreads, waitingHandler, exceptionHandler);
     }
 }
