@@ -26,6 +26,7 @@ import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
+import com.compomics.util.maps.MapMutex;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.preferences.SequenceMatchingPreferences;
@@ -73,9 +74,17 @@ public class SequencesProcessor {
      * the process.
      */
     private WaitingHandler waitingHandler;
-
+    /**
+     * Map of the scores.
+     */
     private HashMap<String, HashMap<String, FigureMetrics>> scoresMap;
-
+    /**
+     * Mutex for the score map.
+     */
+    private MapMutex<String> scoreMapMutex = new MapMutex<String>();
+    /**
+     * Number of lines written to the export.
+     */
     private int nLines;
 
     /**
@@ -141,6 +150,13 @@ public class SequencesProcessor {
         TextExporter textExporter = new TextExporter(allPsmsFile);
         textExporter.writeHeaders();
 
+        // Set up score map
+        ArrayList<String> spectrumTitles = spectrumFactory.getSpectrumTitles(spectrumFileName);
+        scoresMap = new HashMap<String, HashMap<String, FigureMetrics>>(spectrumTitles.size());
+        for (String spectrumTitle : spectrumTitles) {
+            scoresMap.put(spectrumTitle, new HashMap<String, FigureMetrics>(2));
+        }
+
         // Set progress counters
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
         waitingHandler.setMaxSecondaryProgressCounter(sequenceFactory.getNSequences());
@@ -163,40 +179,8 @@ public class SequencesProcessor {
 
         // Gather the information saved by every sequence processor
         waitingHandler.setSecondaryProgressCounterIndeterminate(true);
-        SequenceProcessor sequenceProcessor = sequenceProcessors.get(0);
-        scoresMap = sequenceProcessor.getScoresMap();
-        nLines = sequenceProcessor.getnLines();
-        for (int i = 1; i < sequenceProcessors.size(); i++) {
-
-            sequenceProcessor = sequenceProcessors.get(i);
-
-            // Scores
-            HashMap<String, HashMap<String, FigureMetrics>> tempScoreMap = sequenceProcessor.getScoresMap();
-        
-            for (String spectrumTitle : tempScoreMap.keySet()) {
-                HashMap<String, FigureMetrics> newScores = tempScoreMap.get(spectrumTitle);
-                HashMap<String, FigureMetrics> currentscores = scoresMap.get(spectrumTitle);
-                if (currentscores != null) {
-                    for (String peptide : newScores.keySet()) {
-                        FigureMetrics newFigureMetrics = newScores.get(peptide);
-                        FigureMetrics currentFigureMetrics = currentscores.get(peptide);
-                        if (currentFigureMetrics == null) {
-                            currentscores.put(peptide, newFigureMetrics);
-                        } else {
-                            if (newFigureMetrics.isIsDecoy()) {
-                                currentFigureMetrics.setIsDecoy(true);
-                            }
-                            if (newFigureMetrics.isIsTarget()) {
-                                currentFigureMetrics.setIsTarget(true);
-                            }
-                        }
-                    }
-                } else {
-                    scoresMap.put(spectrumTitle, newScores);
-                }
-            }
-
-            // number of lines
+        nLines = 0;
+        for (SequenceProcessor sequenceProcessor : sequenceProcessors) {
             nLines += sequenceProcessor.getnLines();
         }
 
@@ -255,10 +239,6 @@ public class SequencesProcessor {
          * A spectrum annotator.
          */
         private PeptideSpectrumAnnotator peptideSpectrumAnnotator = new PeptideSpectrumAnnotator();
-        /**
-         * Map of the scores of every peptide indexed by spectrum title.
-         */
-        private HashMap<String, HashMap<String, FigureMetrics>> threadScoresMap = new HashMap<String, HashMap<String, FigureMetrics>>();
         /**
          * The number of lines written to the result file.
          */
@@ -390,7 +370,7 @@ public class SequencesProcessor {
 
                 // Settings for the annotation of spectra
                 AnnotationSettings annotationSettings = identificationParameters.getAnnotationPreferences();
-                
+
                 // Sequence settings for the keys of the peptides
                 SequenceMatchingPreferences sequenceMatchingPreferences = SequenceMatchingPreferences.getDefaultSequenceMatching();
 
@@ -445,12 +425,9 @@ public class SequencesProcessor {
                                             String spectrumTitle = precursorWithTitle.spectrumTitle;
 
                                             // See if the peptide has already been identified for this spectrum
-                                            HashMap<String, FigureMetrics> spectrumScores = threadScoresMap.get(spectrumTitle);
+                                            scoreMapMutex.acquire(spectrumTitle);
+                                            HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
                                             boolean newPeptide = true;
-                                            if (spectrumScores == null) {
-                                                spectrumScores = new HashMap<String, FigureMetrics>(1);
-                                                threadScoresMap.put(spectrumTitle, spectrumScores);
-                                            }
                                             FigureMetrics figureMetrics = spectrumScores.get(peptideKey);
                                             if (figureMetrics == null) {
                                                 figureMetrics = new FigureMetrics();
@@ -476,6 +453,7 @@ public class SequencesProcessor {
                                                 threadNLines++;
                                                 figureMetrics.setScore(scoreBin);
                                             }
+                                            scoreMapMutex.release(spectrumTitle);
 
                                             // Add the peptide to the target/decoy maps
                                             if (isDecoy) {
@@ -537,10 +515,10 @@ public class SequencesProcessor {
                                                 // See if the peptide was already inspected
                                                 PrecursorMap.PrecursorWithTitle precursorWithTitle = precursorMatches.get(0);
                                                 String spectrumTitle = precursorWithTitle.spectrumTitle;
-                                                HashMap<String, FigureMetrics> spectrumScores = threadScoresMap.get(spectrumTitle);
+                                                HashMap<String, FigureMetrics> spectrumScores = scoresMap.get(spectrumTitle);
 
                                                 // if new, write all possible peptides to the file
-                                                if (spectrumScores == null || !spectrumScores.containsKey(modifiedPeptideKey)) {
+                                                if (!spectrumScores.containsKey(modifiedPeptideKey)) {
 
                                                     // Create an iterator for the possible sites
                                                     PeptideModificationsIterator peptideModificationsIterator;
@@ -599,11 +577,8 @@ public class SequencesProcessor {
 
                                                             // Get the score map
                                                             spectrumTitle = precursorWithTitle2.spectrumTitle;
-                                                            spectrumScores = threadScoresMap.get(spectrumTitle);
-                                                            if (spectrumScores == null) {
-                                                                spectrumScores = new HashMap<String, FigureMetrics>(1);
-                                                                threadScoresMap.put(spectrumTitle, spectrumScores);
-                                                            }
+                                                            scoreMapMutex.acquire(spectrumTitle);
+                                                            spectrumScores = scoresMap.get(spectrumTitle);
                                                             FigureMetrics figureMetrics = spectrumScores.get(modifiedPeptideKey);
                                                             if (figureMetrics == null) {
                                                                 figureMetrics = new FigureMetrics();
@@ -631,19 +606,25 @@ public class SequencesProcessor {
                                                                 figureMetrics.setScore(scoreBin);
                                                             }
                                                             figureMetrics.setnHits(figureMetrics.getnHits() + 1);
+                                                            scoreMapMutex.release(spectrumTitle);
                                                         }
                                                     }
 
                                                     // Save whether the peptide is target or decoy
                                                     for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
                                                         spectrumTitle = precursorWithTitle2.spectrumTitle;
-                                                        spectrumScores = threadScoresMap.get(spectrumTitle);
+                                                        scoreMapMutex.acquire(spectrumTitle);
+                                                        spectrumScores = scoresMap.get(spectrumTitle);
                                                         FigureMetrics figureMetrics = spectrumScores.get(modifiedPeptideKey);
+                                                        if (figureMetrics == null) {
+                                                            int debug = 1;
+                                                        }
                                                         if (isDecoy) {
                                                             figureMetrics.setIsDecoy(true);
                                                         } else {
                                                             figureMetrics.setIsTarget(true);
                                                         }
+                                                        scoreMapMutex.release(spectrumTitle);
                                                     }
                                                 }
                                             }
@@ -665,17 +646,6 @@ public class SequencesProcessor {
                     waitingHandler.setRunCanceled();
                 }
             }
-        }
-
-        /**
-         * Returns a map of the scores for every peptide found for every
-         * spectrum.
-         *
-         * @return a map of the scores for every peptide found for every
-         * spectrum
-         */
-        public HashMap<String, HashMap<String, FigureMetrics>> getScoresMap() {
-            return threadScoresMap;
         }
 
         /**

@@ -104,7 +104,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "14";
+        String jobName = "12";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -117,11 +117,11 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-human-reviewed-trypsin-november-2016_concatenated_target_decoy.fasta"));
+//        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-human-reviewed-trypsin-november-2016_concatenated_target_decoy.fasta"));
         searchParameters.setPrecursorAccuracy(0.5);
         searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
-        searchParameters.setFragmentIonAccuracy(0.5);
-        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
+//        searchParameters.setFragmentIonAccuracy(0.5);
+//        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
         PtmSettings ptmSettings = new PtmSettings();
         PTMFactory ptmFactory = PTMFactory.getInstance();
@@ -156,7 +156,7 @@ public class ReviewFigure {
         searchParameters.setPtmSettings(ptmSettings);
         DigestionPreferences digestionPreferences = searchParameters.getDigestionPreferences();
 //        digestionPreferences.setSpecificity("Trypsin", DigestionPreferences.Specificity.semiSpecific);
-        digestionPreferences.setCleavagePreference(DigestionPreferences.CleavagePreference.unSpecific);
+//        digestionPreferences.setCleavagePreference(DigestionPreferences.CleavagePreference.unSpecific);
 //digestionPreferences.setnMissedCleavages("Trypsin", 4);
 //        searchParameters.setMinChargeSearched(new Charge(Charge.PLUS, 1));
 //        searchParameters.setMaxChargeSearched(new Charge(Charge.PLUS, 6));
