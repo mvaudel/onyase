@@ -83,7 +83,7 @@ public class EValueExporter {
 
         // Set the progress handler
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
-        waitingHandler.setMaxSecondaryProgressCounter(nLines);
+        waitingHandler.setMaxSecondaryProgressCounter(2*nLines);
 
         // Set maps to store the best hits
         HashMap<String, BestHit> bestHitMaps = new HashMap<String, BestHit>();
@@ -126,6 +126,9 @@ public class EValueExporter {
                 }
             }
             cpt++;
+            
+            // Increase progress
+            waitingHandler.increaseSecondaryProgressCounter();
         }
 
         // Restart iterating
@@ -139,10 +142,15 @@ public class EValueExporter {
         }
         cpt = 0;
         while ((line = br.readLine()) != null) {
+            
+            // Export best hit
             if (bestLines.contains(cpt)) {
                 bwBest.write(line);
             }
             cpt++;
+            
+            // Increase progress
+            waitingHandler.increaseSecondaryProgressCounter();
         }
 
         // Close connections to files

@@ -1,7 +1,5 @@
 package no.uib.onyase.applications.engine.export;
 
-import com.compomics.util.experiment.biology.AminoAcid;
-import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -12,8 +10,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
-import java.util.HashSet;
-import no.uib.onyase.applications.engine.model.FigureMetrics;
 import no.uib.onyase.applications.engine.modules.scoring.EValueEstimator;
 
 /**
@@ -78,11 +74,7 @@ public class EValueExporter {
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
         waitingHandler.setMaxSecondaryProgressCounter(nLines);
 
-        // Set maps to store the best hits
-        HashMap<String, BestHit> bestHitMaps = new HashMap<String, BestHit>();
-
         // Iterate all lines and add the e-value
-        int cpt = 0;
         while ((line = br.readLine()) != null) {
 
             // Get spectrum title and score
@@ -98,16 +90,9 @@ public class EValueExporter {
             newLineBuilder.append(END_LINE);
             String newLine = newLineBuilder.toString();
             bwAll.write(newLine);
-
-            // Save if best hit
-            if (score > 0) {
-                BestHit bestEvalue = bestHitMaps.get(spectrumTitle);
-                if (bestEvalue == null || bestEvalue.getScore() > eValue) {
-                    BestHit newEvalue = new BestHit(score, cpt);
-                    bestHitMaps.put(spectrumTitle, newEvalue);
-                }
-            }
-            cpt++;
+            
+            // Increase progress
+            waitingHandler.increaseSecondaryProgressCounter();
         }
 
         // Close connections to files
@@ -147,62 +132,5 @@ public class EValueExporter {
         int lastSeparator = line.lastIndexOf(separator);
         String scoreAsString = line.substring(lastSeparator);
         return Double.valueOf(scoreAsString);
-    }
-
-    /**
-     * Returns the score from the given line in the temporary file.
-     *
-     * @param line the line of interest
-     *
-     * @return the score
-     */
-    private String getSequence(String line) {
-        String[] lineSplit = line.split(separatorAsString);
-        return lineSplit[3];
-    }
-
-    /**
-     * Class used to store the best hit details.
-     */
-    private class BestHit {
-
-        /**
-         * The score.
-         */
-        private double score;
-        /**
-         * The line number.
-         */
-        private int line;
-
-        /**
-         * Constructor.
-         *
-         * @param score the score
-         * @param line the line number
-         */
-        public BestHit(double score, int line) {
-            this.score = score;
-            this.line = line;
-        }
-
-        /**
-         * Returns the score of the best hit.
-         *
-         * @return the score of the best hit
-         */
-        public double getScore() {
-            return score;
-        }
-
-        /**
-         * Returns the line number.
-         *
-         * @return the line number
-         */
-        public int getLine() {
-            return line;
-        }
-
     }
 }

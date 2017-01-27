@@ -31,7 +31,7 @@ precursorHistogram3 <- read.table(gzfile("resources\\precursor_3.txt.gz"), heade
 precursorHistogram3 <- precursorHistogram3[1:1000,]
 precursorHistogram5 <- read.table(gzfile("resources\\precursor_5.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 precursorHistogram5 <- precursorHistogram5[1:1000,]
-# precursorHistogram6 <- read.table(gzfile("resources\\precursor_6.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+#precursorHistogram6 <- read.table(gzfile("resources\\precursor_6.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 precursorHistogram6 <- precursorHistogram0
 precursorHistogram6 <- precursorHistogram6[1:1000,]
 precursorHistogram8 <- read.table(gzfile("resources\\precursor_8.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
@@ -42,12 +42,12 @@ precursorHistogram10 <- read.table(gzfile("resources\\precursor_10.txt.gz"), hea
 precursorHistogram10 <- precursorHistogram10[1:1000,]
 precursorHistogram11 <- read.table(gzfile("resources\\precursor_11.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 precursorHistogram11 <- precursorHistogram11[1:1000,]
-precursorHistogram12 <- read.table(gzfile("resources\\precursor_12.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+#precursorHistogram12 <- read.table(gzfile("resources\\precursor_12.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 precursorHistogram12 <- precursorHistogram0
 precursorHistogram12 <- precursorHistogram12[1:1000,]
 precursorHistogram13 <- read.table(gzfile("resources\\precursor_13.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 precursorHistogram13 <- precursorHistogram13[1:1000,]
-precursorHistogram14 <- read.table(gzfile("resources\\precursor_14.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+#precursorHistogram14 <- read.table(gzfile("resources\\precursor_14.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 precursorHistogram14 <- precursorHistogram0
 precursorHistogram14 <- precursorHistogram14[1:1000,]
 precursorHistogram15 <- read.table(gzfile("resources\\precursor_15.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
@@ -71,9 +71,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram0$nPeptides[]))
 mainCategorytemp[] <- "Default"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram0$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram0$nPeptides)
+tempValues <- precursorHistogram0$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram1$nPeptides[]))
 categorytemp[] <- categoriesNames[2]
@@ -81,9 +82,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram1$nPeptides[]))
 mainCategorytemp[] <- "Database"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram1$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram1$nPeptides)
+tempValues <- precursorHistogram1$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram2$nPeptides[]))
 categorytemp[] <- categoriesNames[3]
@@ -91,9 +93,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram2$nPeptides[]))
 mainCategorytemp[] <- "Database"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram2$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram2$nPeptides)
+tempValues <- precursorHistogram2$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram3$nPeptides[]))
 categorytemp[] <- categoriesNames[4]
@@ -101,9 +104,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram3$nPeptides[]))
 mainCategorytemp[] <- "Database"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram3$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram3$nPeptides)
+tempValues <- precursorHistogram3$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 precursorMedians <- c(precursorMedians, 0)
 
@@ -113,9 +117,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram5$nPeptides[]))
 mainCategorytemp[] <- "Digestion"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram5$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram5$nPeptides)
+tempValues <- precursorHistogram5$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram6$nPeptides[]))
 categorytemp[] <- categoriesNames[7]
@@ -123,9 +128,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram6$nPeptides[]))
 mainCategorytemp[] <- "Digestion"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram6$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram6$nPeptides)
+tempValues <- precursorHistogram6$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 precursorMedians <- c(precursorMedians, 0)
 
@@ -135,9 +141,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram8$nPeptides[]))
 mainCategorytemp[] <- "Modifications"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram8$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram8$nPeptides)
+tempValues <- precursorHistogram8$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram9$nPeptides[]))
 categorytemp[] <- categoriesNames[10]
@@ -145,9 +152,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram9$nPeptides[]))
 mainCategorytemp[] <- "Modifications"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram9$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram9$nPeptides)
+tempValues <- precursorHistogram9$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram10$nPeptides[]))
 categorytemp[] <- categoriesNames[11]
@@ -155,9 +163,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram10$nPeptides[]))
 mainCategorytemp[] <- "Ions"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram10$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram10$nPeptides)
+tempValues <- precursorHistogram10$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram11$nPeptides[]))
 categorytemp[] <- categoriesNames[12]
@@ -165,9 +174,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram11$nPeptides[]))
 mainCategorytemp[] <- "Ions"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram11$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram11$nPeptides)
+tempValues <- precursorHistogram11$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram12$nPeptides[]))
 categorytemp[] <- categoriesNames[13]
@@ -175,9 +185,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram12$nPeptides[]))
 mainCategorytemp[] <- "Tolerances"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram12$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram12$nPeptides)
+tempValues <- precursorHistogram12$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram13$nPeptides[]))
 categorytemp[] <- categoriesNames[14]
@@ -185,9 +196,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram13$nPeptides[]))
 mainCategorytemp[] <- "Tolerances"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram13$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram13$nPeptides)
+tempValues <- precursorHistogram13$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram14$nPeptides[]))
 categorytemp[] <- categoriesNames[15]
@@ -195,9 +207,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram14$nPeptides[]))
 mainCategorytemp[] <- "Tolerances"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram14$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram14$nPeptides)
+tempValues <- precursorHistogram14$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram15$nPeptides[]))
 categorytemp[] <- categoriesNames[16]
@@ -205,9 +218,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram15$nPeptides[]))
 mainCategorytemp[] <- "Isotopes"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram15$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram15$nPeptides)
+tempValues <- precursorHistogram15$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram16$nPeptides[]))
 categorytemp[] <- categoriesNames[17]
@@ -215,9 +229,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram16$nPeptides[]))
 mainCategorytemp[] <- "Charges"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram16$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram16$nPeptides)
+tempValues <- precursorHistogram16$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categorytemp <- character(length(precursorHistogram17$nPeptides[]))
 categorytemp[] <- categoriesNames[18]
@@ -225,9 +240,10 @@ precursorCategories <- c(precursorCategories, categorytemp)
 mainCategorytemp <- character(length(precursorHistogram17$nPeptides[]))
 mainCategorytemp[] <- "Charges"
 precursorMainCategories <- c(precursorMainCategories, mainCategorytemp)
-logValues <- log10(precursorHistogram17$nPeptides)
-precursorValues <- c(precursorValues, logValues)
-precursorMedians <- c(precursorMedians, median(logValues))
+# tempValues <- log10(precursorHistogram17$nPeptides)
+tempValues <- precursorHistogram17$nPeptides
+precursorValues <- c(precursorValues, tempValues)
+precursorMedians <- c(precursorMedians, median(tempValues))
 
 categories$median <- precursorMedians
 sortedCategoriesNames <- categories[order(categories$median, categories$name), "name"]
