@@ -115,7 +115,7 @@ public class EValueEstimator {
     }
 
     /**
-     * Returns the e-value corresponding to the given score for the given
+     * Returns the log10 of the e-value corresponding to the given score for the given
      * spectrum.
      *
      * @param spectrumTitle the title of the spectrum

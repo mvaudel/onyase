@@ -15,12 +15,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -189,10 +185,12 @@ public class HistogramExporter {
                     Precursor precursor = spectrumFactory.getPrecursor(spectrumKey);
                     String encodedTitle = URLEncoder.encode(spectrumTitle, "utf-8");
                     HashMap<String, FigureMetrics> assumptions = scoreMap.get(spectrumTitle);
-                    StringBuilder stringBuilder = new StringBuilder();
+                    int nHits = 0;
                     for (FigureMetrics figureMetrics : assumptions.values()) {
-                        stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(figureMetrics.getnHits()).append(END_LINE);
+                        nHits += figureMetrics.getnHits();
                     }
+                    StringBuilder stringBuilder = new StringBuilder();
+                    stringBuilder.append(encodedTitle).append(separator).append(precursor.getMz()).append(separator).append(precursor.getRtInMinutes()).append(separator).append(nHits).append(END_LINE);
                     bw.write(stringBuilder.toString());
                     waitingHandler.increaseSecondaryProgressCounter();
                 }

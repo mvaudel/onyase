@@ -4,11 +4,9 @@ import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
-import com.compomics.util.experiment.biology.ions.PeptideFragmentIon;
 import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
-import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -16,7 +14,6 @@ import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -29,7 +26,7 @@ public class ReviewFigure {
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
     private String parametersFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.par";
     private String resourcesFolderPath = "C:\\Github\\onyase\\R\\resources";
-    private int nThreads = 4;
+    private int nThreads = 3;
 
     /**
      * The main method used to start PeptideShaker.
