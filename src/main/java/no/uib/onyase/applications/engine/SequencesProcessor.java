@@ -41,7 +41,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import no.uib.onyase.applications.engine.export.TextExporter;
-import no.uib.onyase.applications.engine.model.FigureMetrics;
 import no.uib.onyase.applications.engine.modules.ModificationProfileIterator.ModificationProfile;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;

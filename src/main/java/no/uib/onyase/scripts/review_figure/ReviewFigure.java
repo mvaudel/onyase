@@ -4,9 +4,11 @@ import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
+import com.compomics.util.experiment.biology.ions.PeptideFragmentIon;
 import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
+import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -14,6 +16,7 @@ import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -114,7 +117,7 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-//        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-human-reviewed-trypsin-november-2016_concatenated_target_decoy.fasta"));
+//        searchParameters.setFastaFile(new File("C:\\Databases\\hman_all_23.16_concatenated_target_decoy.fasta"));
         searchParameters.setPrecursorAccuracy(0.5);
         searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
 //        searchParameters.setFragmentIonAccuracy(0.5);
@@ -125,6 +128,7 @@ public class ReviewFigure {
         String ptmName = "Carbamidomethylation of C";
         PTM ptm = ptmFactory.getPTM(ptmName);
         ptmSettings.addFixedModification(ptm);
+//        ptmSettings.addVariableModification(ptm);
         ptmName = "Oxidation of M";
         maxModifications.put(ptmName, 4);
         ptm = ptmFactory.getPTM(ptmName);

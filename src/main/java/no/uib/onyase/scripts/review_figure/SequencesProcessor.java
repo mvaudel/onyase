@@ -449,10 +449,8 @@ public class SequencesProcessor {
                                                 // Get the score and save it to the score map
                                                 double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                                                 int scoreBin = (int) score;
-                                                if (scoreBin > 0) {
                                                 textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
                                                 threadNLines++;
-                                                }
                                                 figureMetrics.setScore(scoreBin);
                                             }
                                             scoreMapMutex.release(spectrumTitle);
@@ -599,14 +597,11 @@ public class SequencesProcessor {
                                                             double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
 
                                                             // Write the match to the file
-                                                int scoreBin = (int) score;
-                                                if (scoreBin > 0) {
                                                             textExporter.writePeptide(spectrumFileName, spectrumTitle, modifiedPeptide, score, charge);
                                                             threadNLines++;
-                                                }
 
                                                             // Update the figure metrics
-//                                                            int scoreBin = (int) score;
+                                                            int scoreBin = (int) score;
                                                             if (scoreBin > figureMetrics.getScore()) {
                                                                 figureMetrics.setScore(scoreBin);
                                                             }
