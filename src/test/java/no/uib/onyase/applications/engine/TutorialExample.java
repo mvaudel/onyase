@@ -124,7 +124,7 @@ public class TutorialExample {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch("test tutorial", spectrumFile, destinationFile, identificationParametersFile, identificationParameters, 2, 500.0, null, maxModifications, 5, 4, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParameters, 2, 500.0, null, maxModifications, 5, 4, waitingHandler, exceptionHandler);
     }
 
 }

@@ -3,15 +3,22 @@ package no.uib.onyase.cli.engine;
 import com.compomics.software.CompomicsWrapper;
 import com.compomics.software.settings.PathKey;
 import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.util.exceptions.ExceptionHandler;
+import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
 import com.compomics.util.experiment.biology.*;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.gui.filehandling.TempFilesManager;
+import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
+import com.compomics.util.preferences.IdentificationParameters;
+import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
+import no.uib.onyase.applications.engine.OnyaseEngine;
 import no.uib.onyase.cli.paths.PathSettingsCLI;
 import no.uib.onyase.cli.paths.PathSettingsCLIInputBean;
 import no.uib.onyase.settings.OnyasePathPreferences;
@@ -121,8 +128,34 @@ public class OnyaseEngineCLI implements Callable {
         // load modifications
         ptmFactory = PTMFactory.getInstance();
 
+        // Set exception handler
+        ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
+
+        // Set waiting handler
+        WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
+
+            // Get input files from user
+            File spectrumfile = onyaseCLIInputBean.getSpectrumFile();
+            File outputFile = onyaseCLIInputBean.getOutputFile();
+            File identificationParametersFile = onyaseCLIInputBean.getIdentificationParametersFile();
+            int nThreads = onyaseCLIInputBean.getNThreads();
+
+            // Advanced parameters, to be put in the identification parameters at a later stage
+            int maxX = 2;
+            Double minMz = 500.0;
+            Double maxMz = null;
+            HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
+            int maxSites = 5;
+
         try {
             
+            // Load identification parameters
+            IdentificationParameters identificationParameters = IdentificationParameters.getIdentificationParameters(identificationParametersFile);
+            
+            // Start the engine
+            OnyaseEngine onyaseEngine = new OnyaseEngine();
+            onyaseEngine.launch(spectrumfile, outputFile, identificationParameters, maxX, minMz, maxMz, maxModifications, maxSites, nThreads, waitingHandler, exceptionHandler);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

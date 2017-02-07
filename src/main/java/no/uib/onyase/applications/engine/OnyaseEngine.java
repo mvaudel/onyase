@@ -70,11 +70,8 @@ public class OnyaseEngine {
     /**
      * Launches the search.
      *
-     * @param jobName the job name
      * @param spectrumFile the spectrum file to search
-     * @param allPsmsFile the file where to export all psms
-     * @param identificationParametersFile the file where the identification
-     * parameters are stored
+     * @param psmsFile the file where to export all psms
      * @param identificationParameters the identification parameters
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param minMz the minimal m/z to consider
@@ -97,11 +94,11 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(String jobName, File spectrumFile, File allPsmsFile, File identificationParametersFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(File spectrumFile, File psmsFile, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
-        waitingHandler.setWaitingText("Review Figure " + jobName + " start.");
+        waitingHandler.setWaitingText("Onyase engine start.");
 
         // Load the spectra in the spectrum factory
         Duration localDuration = new Duration();
@@ -133,7 +130,7 @@ public class OnyaseEngine {
         waitingHandler.setWaitingText("Loading sequences completed (" + localDuration + ").");
         
         // Get temporary file to export the PSMs prior to e-value estimation
-        File tempFile = new File(allPsmsFile.getPath() + "_temp");
+        File tempFile = new File(psmsFile.getPath() + "_temp");
 
         // Get PSMs
         Duration psmDuration = new Duration();
@@ -162,7 +159,7 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Exporting e-values.");
         EValueExporter eValueExporter = new EValueExporter(waitingHandler);
-        eValueExporter.writeEvalues(eValueEstimator, tempFile, nLines, allPsmsFile);
+        eValueExporter.writeEvalues(eValueEstimator, tempFile, nLines, psmsFile);
         localDuration.end();
         waitingHandler.setWaitingText("Exporting e-values completed (" + localDuration + ").");
         
@@ -170,12 +167,6 @@ public class OnyaseEngine {
         totalDuration.end();
         waitingHandler.appendReportEndLine();
         waitingHandler.setWaitingText("Onyase engine completed (" + totalDuration + ").");
-
-        // Write report
-        File reportFile = new File("C:\\Github\\onyase\\R\\resources\\report_" + jobName + ".txt");
-        BufferedWriter reportBw = new BufferedWriter(new FileWriter(reportFile));
-        reportBw.write("Duration: " + psmDuration.getDuration());
-        reportBw.close();
 
     }
 }
