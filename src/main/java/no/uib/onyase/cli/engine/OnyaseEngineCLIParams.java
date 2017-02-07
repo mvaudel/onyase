@@ -14,7 +14,7 @@ import org.apache.commons.cli.Options;
 public enum OnyaseEngineCLIParams {
 
     SPECTRUM_FILE("spectra", "Spectrum file (mgf format).", true),
-    OUTPUT_FOLDER("output_folder", "The output folder.", true),
+    OUTPUT("output", "The folder where to write the output file.", true),
     
     THREADS("threads", "Number of threads to use for the processing, default: the number of cores.", false);
 
@@ -74,7 +74,7 @@ public enum OnyaseEngineCLIParams {
 
         output += "Mandatory Parameters:\n\n";
         output += "-" + String.format(CommandLineUtils.formatter, SPECTRUM_FILE.id) + " " + SPECTRUM_FILE.description + "\n";
-        output += "-" + String.format(CommandLineUtils.formatter, OUTPUT_FOLDER.id) + " " + OUTPUT_FOLDER.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, OUTPUT.id) + " " + OUTPUT.description + "\n";
 
         output += "\n\nOptional Input Parameters:\n\n";
         output += "-" + String.format(CommandLineUtils.formatter, IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.id) + " " + IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.description + "\n";

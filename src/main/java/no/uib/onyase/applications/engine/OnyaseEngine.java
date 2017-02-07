@@ -157,11 +157,11 @@ public class OnyaseEngine {
         // Export e-values
         localDuration = new Duration();
         localDuration.start();
-        waitingHandler.setWaitingText("Exporting e-values.");
+        waitingHandler.setWaitingText("Exporting results to " + psmsFile.getAbsolutePath() + ".");
         EValueExporter eValueExporter = new EValueExporter(waitingHandler);
         eValueExporter.writeEvalues(eValueEstimator, tempFile, nLines, psmsFile);
         localDuration.end();
-        waitingHandler.setWaitingText("Exporting e-values completed (" + localDuration + ").");
+        waitingHandler.setWaitingText("Exporting results completed (" + localDuration + ").");
         
         // Finished
         totalDuration.end();

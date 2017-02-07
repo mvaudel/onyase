@@ -3,6 +3,7 @@ package no.uib.onyase.cli.engine;
 import com.compomics.software.CompomicsWrapper;
 import com.compomics.software.settings.PathKey;
 import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
 import com.compomics.util.experiment.biology.*;
@@ -136,7 +137,9 @@ public class OnyaseEngineCLI implements Callable {
 
             // Get input files from user
             File spectrumfile = onyaseCLIInputBean.getSpectrumFile();
-            File outputFile = onyaseCLIInputBean.getOutputFile();
+            File outputFolder = onyaseCLIInputBean.getOutputFolder();
+            String outputFileName = Util.removeExtension(spectrumfile.getName()) + ".psm";
+            File outputFile = new File(outputFolder, outputFileName);
             File identificationParametersFile = onyaseCLIInputBean.getIdentificationParametersFile();
             int nThreads = onyaseCLIInputBean.getNThreads();
 
@@ -233,6 +236,6 @@ public class OnyaseEngineCLI implements Callable {
      * @return the path to the jar file
      */
     public String getJarFilePath() {
-        return CompomicsWrapper.getJarFilePath(this.getClass().getResource("OnyaseCLI.class").getPath(), "Onyase");
+        return CompomicsWrapper.getJarFilePath(this.getClass().getResource("OnyaseEngineCLI.class").getPath(), "Onyase");
     }
 }

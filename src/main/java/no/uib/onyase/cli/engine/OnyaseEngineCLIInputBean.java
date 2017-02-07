@@ -54,7 +54,7 @@ public class OnyaseEngineCLIInputBean {
         spectrumFile = new File(arg);
 
         // output folder
-        arg = aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT_FOLDER.id);
+        arg = aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT.id);
         outputFolder = new File(arg);
 
         // get the number of threads
@@ -84,7 +84,7 @@ public class OnyaseEngineCLIInputBean {
      *
      * @return the output folder
      */
-    public File getOutputFile() {
+    public File getOutputFolder() {
         return outputFolder;
     }
 
@@ -147,11 +147,11 @@ public class OnyaseEngineCLIInputBean {
         }
 
         // check the output folder
-        if (!aLine.hasOption(OnyaseEngineCLIParams.OUTPUT_FOLDER.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT_FOLDER.id)).equals("")) {
+        if (!aLine.hasOption(OnyaseEngineCLIParams.OUTPUT.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT.id)).equals("")) {
             System.out.println(System.getProperty("line.separator") + "Output folder not specified." + System.getProperty("line.separator"));
             return false;
         } else {
-            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT_FOLDER.id)));
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT.id)));
             if (!file.exists()) {
                 System.out.println(System.getProperty("line.separator") + "Output folder \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
                 return false;
