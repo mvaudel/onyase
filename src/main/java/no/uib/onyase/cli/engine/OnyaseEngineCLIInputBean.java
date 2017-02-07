@@ -1,10 +1,11 @@
-package no.uib.onyase.applications.engine.cli;
+package no.uib.onyase.cli.engine;
 
 import com.compomics.software.cli.CommandParameter;
 import com.compomics.cli.identification_parameters.IdentificationParametersInputBean;
 import com.compomics.util.preferences.IdentificationParameters;
 import java.io.File;
 import java.io.IOException;
+import no.uib.onyase.cli.paths.PathSettingsCLIInputBean;
 import org.apache.commons.cli.CommandLine;
 
 /**
@@ -13,7 +14,7 @@ import org.apache.commons.cli.CommandLine;
  *
  * @author Marc Vaudel
  */
-public class OnyaseCLIInputBean {
+public class OnyaseEngineCLIInputBean {
 
     /**
      * The spectrum files.
@@ -46,19 +47,19 @@ public class OnyaseCLIInputBean {
      * @throws ClassNotFoundException thrown if the search parameters cannot be
      * converted
      */
-    public OnyaseCLIInputBean(CommandLine aLine) throws IOException, ClassNotFoundException {
+    public OnyaseEngineCLIInputBean(CommandLine aLine) throws IOException, ClassNotFoundException {
 
         // get the files needed for the search
-        String arg = aLine.getOptionValue(OnyaseCLIParams.SPECTRUM_FILE.id);
+        String arg = aLine.getOptionValue(OnyaseEngineCLIParams.SPECTRUM_FILE.id);
         spectrumFile = new File(arg);
 
         // output folder
-        arg = aLine.getOptionValue(OnyaseCLIParams.OUTPUT_FOLDER.id);
+        arg = aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT_FOLDER.id);
         outputFolder = new File(arg);
 
         // get the number of threads
-        if (aLine.hasOption(OnyaseCLIParams.THREADS.id)) {
-            arg = aLine.getOptionValue(OnyaseCLIParams.THREADS.id);
+        if (aLine.hasOption(OnyaseEngineCLIParams.THREADS.id)) {
+            arg = aLine.getOptionValue(OnyaseEngineCLIParams.THREADS.id);
             nThreads = new Integer(arg);
         }
 
@@ -134,11 +135,11 @@ public class OnyaseCLIInputBean {
         }
 
         // check the spectrum file
-        if (!aLine.hasOption(OnyaseCLIParams.SPECTRUM_FILE.id) || ((String) aLine.getOptionValue(OnyaseCLIParams.SPECTRUM_FILE.id)).equals("")) {
+        if (!aLine.hasOption(OnyaseEngineCLIParams.SPECTRUM_FILE.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParams.SPECTRUM_FILE.id)).equals("")) {
             System.out.println(System.getProperty("line.separator") + "Spectrum file not specified." + System.getProperty("line.separator"));
             return false;
         } else {
-            File file = new File(((String) aLine.getOptionValue(OnyaseCLIParams.SPECTRUM_FILE.id)));
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParams.SPECTRUM_FILE.id)));
             if (!file.exists()) {
                 System.out.println(System.getProperty("line.separator") + "Spectrum file \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
                 return false;
@@ -146,11 +147,11 @@ public class OnyaseCLIInputBean {
         }
 
         // check the output folder
-        if (!aLine.hasOption(OnyaseCLIParams.OUTPUT_FOLDER.id) || ((String) aLine.getOptionValue(OnyaseCLIParams.OUTPUT_FOLDER.id)).equals("")) {
+        if (!aLine.hasOption(OnyaseEngineCLIParams.OUTPUT_FOLDER.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT_FOLDER.id)).equals("")) {
             System.out.println(System.getProperty("line.separator") + "Output folder not specified." + System.getProperty("line.separator"));
             return false;
         } else {
-            File file = new File(((String) aLine.getOptionValue(OnyaseCLIParams.OUTPUT_FOLDER.id)));
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT_FOLDER.id)));
             if (!file.exists()) {
                 System.out.println(System.getProperty("line.separator") + "Output folder \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
                 return false;
@@ -158,9 +159,9 @@ public class OnyaseCLIInputBean {
         }
 
         // check the number of threads
-        if (aLine.hasOption(OnyaseCLIParams.THREADS.id)) {
-            String arg = aLine.getOptionValue(OnyaseCLIParams.THREADS.id);
-            if (!CommandParameter.isPositiveInteger(OnyaseCLIParams.THREADS.id, arg, false)) {
+        if (aLine.hasOption(OnyaseEngineCLIParams.THREADS.id)) {
+            String arg = aLine.getOptionValue(OnyaseEngineCLIParams.THREADS.id);
+            if (!CommandParameter.isPositiveInteger(OnyaseEngineCLIParams.THREADS.id, arg, false)) {
                 return false;
             }
         }

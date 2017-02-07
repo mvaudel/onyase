@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine.cli;
+package no.uib.onyase.cli.engine;
 
 import com.compomics.software.CompomicsWrapper;
 import com.compomics.software.settings.PathKey;
@@ -12,6 +12,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Callable;
+import no.uib.onyase.cli.paths.PathSettingsCLI;
+import no.uib.onyase.cli.paths.PathSettingsCLIInputBean;
 import no.uib.onyase.settings.OnyasePathPreferences;
 import no.uib.onyase.utils.Properties;
 import org.apache.commons.cli.*;
@@ -21,12 +23,12 @@ import org.apache.commons.cli.*;
  *
  * @author Marc Vaudel
  */
-public class OnyaseCLI implements Callable {
+public class OnyaseEngineCLI implements Callable {
 
     /**
      * The command line parameters.
      */
-    private OnyaseCLIInputBean onyaseCLIInputBean;
+    private OnyaseEngineCLIInputBean onyaseCLIInputBean;
     /**
      * The enzyme factory.
      */
@@ -46,28 +48,28 @@ public class OnyaseCLI implements Callable {
      *
      * @param args the command line arguments
      */
-    public OnyaseCLI(String[] args) {
+    public OnyaseEngineCLI(String[] args) {
 
         try {
 
             Options lOptions = new Options();
-            OnyaseCLIParams.createOptionsCLI(lOptions);
+            OnyaseEngineCLIParams.createOptionsCLI(lOptions);
             BasicParser parser = new BasicParser();
             CommandLine line = parser.parse(lOptions, args);
 
-            if (!OnyaseCLIInputBean.isValidStartup(line)) {
+            if (!OnyaseEngineCLIInputBean.isValidStartup(line)) {
                 PrintWriter lPrintWriter = new PrintWriter(System.out);
                 lPrintWriter.print(System.getProperty("line.separator") + "======================" + System.getProperty("line.separator"));
                 lPrintWriter.print("OnyaseCLI" + System.getProperty("line.separator"));
                 lPrintWriter.print("======================" + System.getProperty("line.separator"));
                 lPrintWriter.print(getHeader());
-                lPrintWriter.print(OnyaseCLIParams.getOptionsAsString());
+                lPrintWriter.print(OnyaseEngineCLIParams.getOptionsAsString());
                 lPrintWriter.flush();
                 lPrintWriter.close();
 
                 System.exit(0);
             } else {
-                onyaseCLIInputBean = new OnyaseCLIInputBean(line);
+                onyaseCLIInputBean = new OnyaseEngineCLIInputBean(line);
                 call();
             }
         } catch (Exception e) {
@@ -163,7 +165,7 @@ public class OnyaseCLI implements Callable {
      */
     public static void main(String[] args) {
         try {
-            new OnyaseCLI(args);
+            new OnyaseEngineCLI(args);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine.cli;
+package no.uib.onyase.cli.paths;
 
 import com.compomics.software.settings.UtilitiesPathPreferences;
 import java.io.File;

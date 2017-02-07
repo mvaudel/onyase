@@ -104,7 +104,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "12";
+        String jobName = "3";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -117,6 +117,7 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
+        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-vertebrates_12.16_concatenated_target_decoy.fasta"));
 //        searchParameters.setFastaFile(new File("C:\\Databases\\hman_all_23.16_concatenated_target_decoy.fasta"));
         searchParameters.setPrecursorAccuracy(0.5);
         searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);

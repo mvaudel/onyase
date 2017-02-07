@@ -1,5 +1,6 @@
-package no.uib.onyase.applications.engine.cli;
+package no.uib.onyase.cli.paths;
 
+import no.uib.onyase.cli.engine.OnyaseEngineCLI;
 import com.compomics.software.CompomicsWrapper;
 import com.compomics.software.settings.UtilitiesPathPreferences;
 import java.io.File;
@@ -48,7 +49,7 @@ public class PathSettingsCLI {
     public void setPathSettings() {
 
         if (pathSettingsCLIInputBean.getLogFolder() != null) {
-            OnyaseCLI.redirectErrorStream(pathSettingsCLIInputBean.getLogFolder());
+            OnyaseEngineCLI.redirectErrorStream(pathSettingsCLIInputBean.getLogFolder());
         }
 
         String path = pathSettingsCLIInputBean.getTempFolder();

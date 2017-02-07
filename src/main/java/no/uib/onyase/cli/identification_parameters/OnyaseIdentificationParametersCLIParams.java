@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine.cli;
+package no.uib.onyase.cli.identification_parameters;
 
 import com.compomics.cli.identification_parameters.IdentificationParametersCLIParams;
 import com.compomics.software.cli.CommandLineUtils;

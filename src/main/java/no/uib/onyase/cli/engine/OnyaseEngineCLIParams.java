@@ -1,7 +1,9 @@
-package no.uib.onyase.applications.engine.cli;
+package no.uib.onyase.cli.engine;
 
 import com.compomics.cli.identification_parameters.IdentificationParametersCLIParams;
 import com.compomics.software.cli.CommandLineUtils;
+import no.uib.onyase.cli.identification_parameters.OnyaseIdentificationParametersCLIParams;
+import no.uib.onyase.cli.paths.PathSettingsCLIParams;
 import org.apache.commons.cli.Options;
 
 /**
@@ -9,7 +11,7 @@ import org.apache.commons.cli.Options;
  *
  * @author Marc Vaudel
  */
-public enum OnyaseCLIParams {
+public enum OnyaseEngineCLIParams {
 
     SPECTRUM_FILE("spectra", "Spectrum file (mgf format).", true),
     OUTPUT_FOLDER("output_folder", "The output folder.", true),
@@ -37,7 +39,7 @@ public enum OnyaseCLIParams {
      * @param description the description
      * @param mandatory is the parameter mandatory
      */
-    private OnyaseCLIParams(String id, String description, boolean mandatory) {
+    private OnyaseEngineCLIParams(String id, String description, boolean mandatory) {
         this.id = id;
         this.description = description;
         this.mandatory = mandatory;
@@ -51,7 +53,7 @@ public enum OnyaseCLIParams {
      */
     public static void createOptionsCLI(Options aOptions) {
         
-        for (OnyaseCLIParams identificationParametersCLIParams : values()) {
+        for (OnyaseEngineCLIParams identificationParametersCLIParams : values()) {
             aOptions.addOption(identificationParametersCLIParams.id, true, identificationParametersCLIParams.description);
         }
         
