@@ -1,6 +1,7 @@
 package no.uib.onyase.applications.engine.cli;
 
-import com.compomics.util.experiment.identification.parameters_cli.IdentificationParametersCLIParams;
+import com.compomics.cli.identification_parameters.IdentificationParametersCLIParams;
+import com.compomics.software.cli.CommandLineUtils;
 import org.apache.commons.cli.Options;
 
 /**
@@ -41,10 +42,6 @@ public enum OnyaseCLIParams {
         this.description = description;
         this.mandatory = mandatory;
     }
-    /**
-     * The format to use for string output.
-     */
-    public static final String formatter = "%-35s";
 
     /**
      * Creates the options for the command line interface based on the possible
@@ -74,17 +71,17 @@ public enum OnyaseCLIParams {
         String output = "";
 
         output += "Mandatory Parameters:\n\n";
-        output += "-" + String.format(formatter, SPECTRUM_FILE.id) + " " + SPECTRUM_FILE.description + "\n";
-        output += "-" + String.format(formatter, OUTPUT_FOLDER.id) + " " + OUTPUT_FOLDER.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, SPECTRUM_FILE.id) + " " + SPECTRUM_FILE.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, OUTPUT_FOLDER.id) + " " + OUTPUT_FOLDER.description + "\n";
 
         output += "\n\nOptional Input Parameters:\n\n";
-        output += "-" + String.format(formatter, IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.id) + " " + IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.id) + " " + IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.description + "\n";
         
         output += "\n\nProcessing Options:\n\n";
-        output += "-" + String.format(formatter, THREADS.id) + " " + THREADS.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, THREADS.id) + " " + THREADS.description + "\n";
         
         output += "\n\nOptional Temporary Folder:\n\n";
-        output += "-" + String.format(formatter, PathSettingsCLIParams.ALL.id) + " " + PathSettingsCLIParams.ALL.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, PathSettingsCLIParams.ALL.id) + " " + PathSettingsCLIParams.ALL.description + "\n";
         
         output += "\n\n\nFor identification parameters options:\nReplace eu.isas.searchgui.cmd.SearchCLI with eu.isas.searchgui.cmd.IdentificationParametersCLI\n\n";
 

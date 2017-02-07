@@ -1,7 +1,7 @@
 package no.uib.onyase.applications.engine.cli;
 
 import com.compomics.software.cli.CommandParameter;
-import com.compomics.util.experiment.identification.parameters_cli.IdentificationParametersInputBean;
+import com.compomics.cli.identification_parameters.IdentificationParametersInputBean;
 import com.compomics.util.preferences.IdentificationParameters;
 import java.io.File;
 import java.io.IOException;
