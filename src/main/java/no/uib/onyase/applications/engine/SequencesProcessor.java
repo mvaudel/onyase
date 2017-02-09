@@ -18,6 +18,7 @@ import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.protein_sequences.ProteinSequenceIterator;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
+import com.compomics.util.experiment.identification.psm_scoring.psm_scores.SnrScore;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
 import com.compomics.util.experiment.identification.spectrum_annotation.SpecificAnnotationSettings;
 import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.PeptideSpectrumAnnotator;
@@ -41,10 +42,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import no.uib.onyase.applications.engine.export.TextExporter;
+import no.uib.onyase.applications.engine.model.Psm;
 import no.uib.onyase.applications.engine.modules.ModificationProfileIterator.ModificationProfile;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
+import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
 
 /**
  * The sequences processor runs multiple sequences iterators on the database in
@@ -76,9 +79,9 @@ public class SequencesProcessor {
      */
     private WaitingHandler waitingHandler;
     /**
-     * Map of the PSM scores.
+     * Map of the PSMs found.
      */
-    private HashMap<String, HashMap<String, Integer>> scoresMap;
+    private HashMap<String, HashMap<String, Psm>> psmMap;
     /**
      * Mutex for the scores map.
      */
@@ -87,10 +90,6 @@ public class SequencesProcessor {
      * Map of the peptides inspected for each spectrum.
      */
     private HashMap<String, HashSet<String>> peptidesInspected;
-    /**
-     * The number of lines written to the file.
-     */
-    private int nLines;
 
     /**
      * Constructor.
@@ -110,22 +109,22 @@ public class SequencesProcessor {
      *
      * @param spectrumFileName the name of the file to process
      * @param precursorProcessor the precursor processor
-     * @param identificationParameters the identification parameters to sue
+     * @param identificationParameters the identification parameters to use
+     * @param implementedScore the score to use
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param nThreads the number of threads to use
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
      * @param maxSites the preferred number of sites to iterate for every PTM
-     * @param allPsmsFile the file where to export the results
      *
      * @throws IOException exception thrown whenever an error occurred while
      * reading a file
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, File allPsmsFile) throws IOException, InterruptedException {
-        iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, maxX, nThreads, minMz, maxMz, maxModifications, maxSites, allPsmsFile);
+    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws IOException, InterruptedException {
+        iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, implementedScore, maxX, nThreads, minMz, maxMz, maxModifications, maxSites);
     }
 
     /**
@@ -135,32 +134,28 @@ public class SequencesProcessor {
      * @param spectrumFileName the name of the file to process
      * @param precursorProcessor the precursor processor
      * @param exclusionListFilePath path of the exclusion list to use
-     * @param identificationParameters the identification parameters to sue
+     * @param identificationParameters the identification parameters to use
+     * @param implementedScore the score to use
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param nThreads the number of threads to use
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      * @param maxModifications the maximal number of modifications
      * @param maxSites the preferred number of sites to iterate for every PTM
-     * @param allPsmsFile the file where to export the results
      *
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      * @throws IOException exception thrown whenever an error occurred while
      * reading a file
      */
-    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, File allPsmsFile) throws InterruptedException, IOException {
-
-        // Set up the writer to write the psms
-        TextExporter textExporter = new TextExporter(allPsmsFile);
-        textExporter.writeHeaders();
+    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws InterruptedException, IOException {
 
         // Initialize the maps
         ArrayList<String> spectrumTitles = spectrumFactory.getSpectrumTitles(spectrumFileName);
-        scoresMap = new HashMap<String, HashMap<String, Integer>>(spectrumTitles.size());
+        psmMap = new HashMap<String, HashMap<String, Psm>>(spectrumTitles.size());
         peptidesInspected = new HashMap<String, HashSet<String>>(spectrumTitles.size());
         for (String spectrumTitle : spectrumTitles) {
-            scoresMap.put(spectrumTitle, new HashMap<String, Integer>(2));
+            psmMap.put(spectrumTitle, new HashMap<String, Psm>(2));
             peptidesInspected.put(spectrumTitle, new HashSet<String>(2));
         }
 
@@ -173,7 +168,7 @@ public class SequencesProcessor {
         ArrayList<SequenceProcessor> sequenceProcessors = new ArrayList<SequenceProcessor>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, minMz, maxMz, maxModifications, maxSites, textExporter);
+            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, implementedScore, maxX, minMz, maxMz, maxModifications, maxSites);
             sequenceProcessors.add(sequenceProcessor);
             pool.submit(sequenceProcessor);
         }
@@ -186,31 +181,15 @@ public class SequencesProcessor {
 
         // Gather the information saved by every sequence processor
         waitingHandler.setSecondaryProgressCounterIndeterminate(true);
-        nLines = 0;
-        for (SequenceProcessor sequenceProcessor : sequenceProcessors) {
-            nLines += sequenceProcessor.getnLines();
-        }
-
-        // Close writer
-        textExporter.close();
     }
 
     /**
-     * Returns a map of the scores for every peptide found for every spectrum.
+     * Returns a map of the PSMs for every peptide found for every spectrum.
      *
-     * @return a map of the scores for every peptide found for every spectrum
+     * @return a map of the PSMs for every peptide found for every spectrum
      */
-    public HashMap<String, HashMap<String, Integer>> getScoresMap() {
-        return scoresMap;
-    }
-
-    /**
-     * Returns the number of lines written to the file.
-     *
-     * @return the number of lines written to the file
-     */
-    public int getnLines() {
-        return nLines;
+    public HashMap<String, HashMap<String, Psm>> getPsms() {
+        return psmMap;
     }
 
     /**
@@ -238,18 +217,22 @@ public class SequencesProcessor {
          * The name of the spectrum file to compare the sequences to.
          */
         private String spectrumFileName;
+    /**
+     * The score to use.
+     */
+    private ImplementedScore implementedScore;
         /**
-         * The score to use.
+         * The object used to estimate the hyperscore.
          */
-        private HyperScore hyperScore = new HyperScore();
+        private HyperScore hyperScoreEstimator;
+        /**
+         * The object used to estimate the SNR score.
+         */
+        private SnrScore snrScoreEstimator;
         /**
          * A spectrum annotator.
          */
         private PeptideSpectrumAnnotator peptideSpectrumAnnotator = new PeptideSpectrumAnnotator();
-        /**
-         * The number of lines written to the result file.
-         */
-        private int threadNLines = 0;
         /**
          * An iterator for the possible modification profiles.
          */
@@ -271,10 +254,6 @@ public class SequencesProcessor {
          * modification.
          */
         private int maxSites;
-        /**
-         * The exporter where to write the results.
-         */
-        private TextExporter textExporter;
 
         /**
          * Constructor.
@@ -285,6 +264,7 @@ public class SequencesProcessor {
          * @param precursorProcessor the precursor processor for this file
          * @param exclusionListFilePath path of the exclusion list to use
          * @param identificationParameters the identification parameters to use
+         * @param implementedScore  the score to use
          * @param maxX the maximal number of Xs to allow in a peptide
          * @param removeZeros boolean indicating whether the peptide assumptions
          * of score zero should be removed
@@ -296,11 +276,12 @@ public class SequencesProcessor {
          * @throws IOException exception thrown whenever an error occurred while
          * reading the exclusion list file
          */
-        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, TextExporter textExporter) throws IOException {
+        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws IOException {
             this.proteinIterator = proteinIterator;
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
             this.identificationParameters = identificationParameters;
+            this.implementedScore = implementedScore;
             SearchParameters searchParameters = identificationParameters.getSearchParameters();
             if (exclusionListFilePath != null) {
                 exclusionList = new ExclusionList(exclusionListFilePath, searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
@@ -313,7 +294,16 @@ public class SequencesProcessor {
             } else {
                 this.maxModifications = new HashMap<String, Integer>(0);
             }
-            this.textExporter = textExporter;
+            switch (implementedScore) {
+                case hyperscore:
+                    hyperScoreEstimator = new HyperScore();
+                    break;
+                case snrScore:
+                    snrScoreEstimator = new SnrScore();
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
+            }
         }
 
         @Override
@@ -435,11 +425,11 @@ public class SequencesProcessor {
                                             HashSet<String> peptidesInspectedForSpectrum = peptidesInspected.get(spectrumTitle);
                                             if (!peptidesInspectedForSpectrum.contains(peptideKey)) {
 
-                                                // Get the scores map
-                                                HashMap<String, Integer> spectrumScores = scoresMap.get(spectrumTitle);
+                                                // Get the PSMs map for this spectrum
+                                                HashMap<String, Psm> spectrumPsms = psmMap.get(spectrumTitle);
 
                                                 // See if we already have a score
-                                                if (!spectrumScores.containsKey(peptideKey)) {
+                                                if (!spectrumPsms.containsKey(peptideKey)) {
 
                                                     // Get the spectrum annotation
                                                     PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
@@ -447,21 +437,28 @@ public class SequencesProcessor {
                                                     SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumTitle, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                                                     ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
 
-                                                    // Get the score
-                                                    double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-                                                    int scoreBin = (int) score;
+                                                    // Retain only matches yielding fragment ions
+                                                    if (!ionMatches.isEmpty()) {
 
-                                                    // Retain only positive scores
-                                                    if (scoreBin > 0) {
+                                                        // Get the score
+                                                        double score;
+                                                        switch (implementedScore) {
+                                                            case hyperscore:
+                                                                score = hyperScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                break;
+                                                            case snrScore:
+                                                                score = snrScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                            default:
+                                                                throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
+                                                        }
 
-                                                        // Save score to the e-value calculation map
+                                                        // Create a PSM
+                                                        Psm psm = new Psm(peptide, charge, score);
+
+                                                        // Save PSM
                                                         scoresMapMutex.acquire(spectrumTitle);
-                                                        spectrumScores.put(peptideKey, scoreBin);
+                                                        spectrumPsms.put(peptideKey, psm);
                                                         scoresMapMutex.release(spectrumTitle);
-
-                                                        // Write the assumption to the file
-                                                        textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
-                                                        threadNLines++;
 
                                                     } else {
 
@@ -540,15 +537,15 @@ public class SequencesProcessor {
                                                 } else {
 
                                                     // Get the scores map for this spectrum
-                                                    HashMap<String, Integer> spectrumScores = scoresMap.get(spectrumTitle);
+                                                    HashMap<String, Psm> spectrumPsm = psmMap.get(spectrumTitle);
 
-                                                    // See if we already have a score
-                                                    if (spectrumScores.containsKey(modifiedPeptideKey)) {
+                                                    // See if we already have a Psm
+                                                    if (spectrumPsm.containsKey(modifiedPeptideKey)) {
                                                         newPeptide = false;
                                                     }
                                                 }
 
-                                                // if new, write all possible peptides to the file
+                                                // if new, iterate possible modification sites
                                                 if (newPeptide) {
 
                                                     // Create an iterator for the possible sites
@@ -610,8 +607,8 @@ public class SequencesProcessor {
                                                             // Get the spectrum title
                                                             spectrumTitle = precursorWithTitle2.spectrumTitle;
 
-                                                            // Get the scores map
-                                                            HashMap<String, Integer> spectrumScores = scoresMap.get(spectrumTitle);
+                                                            // Get the PSM map
+                                                            HashMap<String, Psm> spectrumPsms = psmMap.get(spectrumTitle);
 
                                                             // Get the spectrum annotation
                                                             PeptideAssumption peptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, charge));
@@ -619,21 +616,28 @@ public class SequencesProcessor {
                                                             SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumTitle, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                                                             ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
 
-                                                            // Get the score
-                                                            double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
-                                                            int scoreBin = (int) score;
+                                                            // Retain only peptides that yield fragment ions
+                                                            if (!ionMatches.isEmpty()) {
 
-                                                            // Retain only positive scores
-                                                            if (scoreBin > 0) {
+                                                                // Get the score
+                                                                double score;
+                                                                switch (implementedScore) {
+                                                                    case hyperscore:
+                                                                        score = hyperScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                        break;
+                                                                    case snrScore:
+                                                                        score = snrScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                    default:
+                                                                        throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
+                                                                }
 
-                                                                // Save score to the e-value calculation map
+                                                                // Create a PSM
+                                                                Psm psm = new Psm(peptide, charge, score);
+
+                                                                // Save PSM
                                                                 scoresMapMutex.acquire(spectrumTitle);
-                                                                spectrumScores.put(peptideKey, scoreBin);
+                                                                spectrumPsms.put(peptideKey, psm);
                                                                 scoresMapMutex.release(spectrumTitle);
-
-                                                                // Write the assumption to the file
-                                                                textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
-                                                                threadNLines++;
 
                                                             } else if (first) {
 
@@ -670,15 +674,6 @@ public class SequencesProcessor {
                     waitingHandler.setRunCanceled();
                 }
             }
-        }
-
-        /**
-         * Returns the number of lines written to the file.
-         *
-         * @return the number of lines written to the file
-         */
-        public int getnLines() {
-            return threadNLines;
         }
     }
 }

@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 import no.uib.onyase.applications.engine.OnyaseEngine;
+import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
 import no.uib.onyase.cli.paths.PathSettingsCLI;
 import no.uib.onyase.cli.paths.PathSettingsCLIInputBean;
 import no.uib.onyase.settings.OnyasePathPreferences;
@@ -144,6 +145,7 @@ public class OnyaseEngineCLI implements Callable {
             int nThreads = onyaseCLIInputBean.getNThreads();
 
             // Advanced parameters, to be put in the identification parameters at a later stage
+            ImplementedScore implementedScore = ImplementedScore.hyperscore;
             int maxX = 2;
             Double minMz = 500.0;
             Double maxMz = null;
@@ -157,7 +159,7 @@ public class OnyaseEngineCLI implements Callable {
             
             // Start the engine
             OnyaseEngine onyaseEngine = new OnyaseEngine();
-            onyaseEngine.launch(spectrumfile, outputFile, identificationParameters, maxX, minMz, maxMz, maxModifications, maxSites, nThreads, waitingHandler, exceptionHandler);
+            onyaseEngine.launch(spectrumfile, outputFile, identificationParameters, implementedScore, maxX, minMz, maxMz, maxModifications, maxSites, nThreads, waitingHandler, exceptionHandler);
 
         } catch (Exception e) {
             e.printStackTrace();

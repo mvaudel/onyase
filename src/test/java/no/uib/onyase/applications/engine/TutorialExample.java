@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
+import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -122,9 +123,17 @@ public class TutorialExample {
         searchParameters.setPtmSettings(ptmSettings);
         File newParameters = new File("C:\\Users\\mvaudel\\.compomics\\identification_parameters\\Test Onyase.par");
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
+        
+        // Specific parameters
+        ImplementedScore score = ImplementedScore.hyperscore;
+        int maxX = 2;
+        Double minMz = 500.0;
+        Double maxMz = null;
+        int maxSites = 5;
+        int nThreads = 4;
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
-        onyaseEngine.launch(spectrumFile, destinationFile, identificationParameters, 2, 500.0, null, maxModifications, 5, 4, waitingHandler, exceptionHandler);
+        onyaseEngine.launch(spectrumFile, destinationFile, identificationParameters, score, maxX, minMz, maxMz, maxModifications, maxSites, nThreads, waitingHandler, exceptionHandler);
     }
 
 }

@@ -1,17 +1,22 @@
 package no.uib.onyase.applications.engine.export;
 
+import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.io.identifications.idfilereaders.OnyaseIdfileReader;
 import com.compomics.util.experiment.massspectrometry.Precursor;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
+import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashMap;
+import no.uib.onyase.applications.engine.model.Psm;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
+import no.uib.onyase.applications.engine.modules.scoring.EValueEstimator;
 
 /**
  * This text exporter exports PSMs on the fly.
@@ -29,34 +34,84 @@ public class TextExporter {
      */
     private SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
     /**
-     * The writer to use to write all hits.
+     * A handler for the exceptions.
      */
-    private final BufferedWriter bwAll;
+    private ExceptionHandler exceptionHandler;
+    /**
+     * A waiting handler providing feedback to the user and allowing canceling
+     * the process.
+     */
+    private WaitingHandler waitingHandler;
 
-    public TextExporter(File allHits) throws IOException {
-        if (allHits != null) {
-            bwAll = new BufferedWriter(new FileWriter(allHits));
-        } else {
-            bwAll = null;
+    /**
+     * Constructor.
+     *
+     * @param waitingHandler a waiting handler providing feedback to the user
+     * and allowing canceling the process
+     * @param exceptionHandler a handler for the exceptions
+     */
+    public TextExporter(WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) {
+        this.exceptionHandler = exceptionHandler;
+        this.waitingHandler = waitingHandler;
+    }
+
+    public void writePsms(String spectrumFileName, HashMap<String, HashMap<String, Psm>> psmsMap, EValueEstimator eValueEstimator, File destinationFile) throws IOException, MzMLUnmarshallerException {
+
+        // Set progress bars
+        waitingHandler.setSecondaryProgressCounterIndeterminate(false);
+        waitingHandler.setMaxSecondaryProgressCounter(psmsMap.size());
+
+        // Setup the writer
+        BufferedWriter bw = new BufferedWriter(new FileWriter(destinationFile));
+        try {
+
+            // Write headers
+            writeHeaders(bw);
+
+            // Iterate all spectra
+            for (String spectrumTitle : psmsMap.keySet()) {
+
+                // Get the PSMs
+                HashMap<String, Psm> spectrumPsms = psmsMap.get(spectrumTitle);
+
+                // Iterate all Psms
+                for (Psm psm : spectrumPsms.values()) {
+
+                    // Write to output
+                    writePsm(bw, spectrumFileName, spectrumTitle, psm, eValueEstimator);
+                    
+                    // Increase progress
+                    waitingHandler.increaseSecondaryProgressCounter();
+                }
+
+            }
+
+        } finally {
+            bw.close();
         }
     }
 
-    public void writeHeaders() throws IOException {
-        if (bwAll != null) {
-            bwAll.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "HyperScore" + OnyaseIdfileReader.separator + "E-Value" + OnyaseIdfileReader.separator + "Decoy" + OnyaseIdfileReader.separator + "Target");
-            bwAll.newLine();
-        }
+    private void writeHeaders(BufferedWriter bw) throws IOException {
+        bw.write("Spectrum_Title" + OnyaseIdfileReader.separator + "mz" + OnyaseIdfileReader.separator + "rt" + OnyaseIdfileReader.separator + "Sequence" + OnyaseIdfileReader.separator + "Modifications" + OnyaseIdfileReader.separator + "Charge" + OnyaseIdfileReader.separator + "Score" + OnyaseIdfileReader.separator + "E-Value");
+        bw.newLine();
     }
 
-    public void writePeptide(String mgfFileName, String spectrumTitle, Peptide peptide, double score, int charge) throws IOException, MzMLUnmarshallerException {
+    private void writePsm(BufferedWriter bw, String spectrumFileName, String spectrumTitle, Psm psm, EValueEstimator eValueEstimator) throws IOException, MzMLUnmarshallerException {
 
         // Encode the spectrum title
         String encodedSpectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
 
         // Get the precursor
-        Precursor precursor = spectrumFactory.getPrecursor(mgfFileName, spectrumTitle);
+        Precursor precursor = spectrumFactory.getPrecursor(spectrumFileName, spectrumTitle);
 
-        // Create the line for this peptide
+        // Get the peptide
+        Peptide peptide = psm.getPeptide();
+
+        // Get the e-value
+        double score = psm.getScore();
+        double eValue = eValueEstimator.getEValue(spectrumTitle, score);
+
+        // Create the line for this PSM
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(encodedSpectrumTitle);
         stringBuilder.append(OnyaseIdfileReader.separator);
@@ -69,13 +124,15 @@ public class TextExporter {
         String modificationsAsString = getModifications(peptide);
         stringBuilder.append(modificationsAsString);
         stringBuilder.append(OnyaseIdfileReader.separator);
-        stringBuilder.append(charge);
+        stringBuilder.append(psm.getCharge());
         stringBuilder.append(OnyaseIdfileReader.separator);
         stringBuilder.append(score);
+        stringBuilder.append(OnyaseIdfileReader.separator);
+        stringBuilder.append(eValue);
         stringBuilder.append(END_LINE);
 
         // Write to the file
-        bwAll.write(stringBuilder.toString());
+        bw.write(stringBuilder.toString());
     }
 
     /**
@@ -107,17 +164,5 @@ public class TextExporter {
         }
         String result = URLEncoder.encode(stringBuilder.toString(), "utf-8");
         return result;
-    }
-
-    /**
-     * Closes open connections to files.
-     *
-     * @throws IOException exception thrown whenever an error occurred while
-     * closing the connection to aF file.
-     */
-    public void close() throws IOException {
-        if (bwAll != null) {
-            bwAll.close();
-        }
     }
 }
