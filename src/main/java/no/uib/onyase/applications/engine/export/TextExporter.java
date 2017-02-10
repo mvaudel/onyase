@@ -55,6 +55,17 @@ public class TextExporter {
         this.waitingHandler = waitingHandler;
     }
 
+    /**
+     * Writes all the PSMs to a file.
+     * 
+     * @param spectrumFileName the name of the spectrum file
+     * @param psmsMap the map of the PSMs
+     * @param eValueEstimator an estimator for the e-value
+     * @param destinationFile the destination file
+     * 
+     * @throws IOException exception thrown if an error occurred while writing the file
+     * @throws MzMLUnmarshallerException exception thrown if an error occurred while reading an mzML file
+     */
     public void writePsms(String spectrumFileName, HashMap<String, HashMap<String, Psm>> psmsMap, EValueEstimator eValueEstimator, File destinationFile) throws IOException, MzMLUnmarshallerException {
 
         // Set progress bars
@@ -79,10 +90,10 @@ public class TextExporter {
 
                     // Write to output
                     writePsm(bw, spectrumFileName, spectrumTitle, psm, eValueEstimator);
-                    
-                    // Increase progress
-                    waitingHandler.increaseSecondaryProgressCounter();
                 }
+
+                // Increase progress
+                waitingHandler.increaseSecondaryProgressCounter();
 
             }
 

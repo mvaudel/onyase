@@ -217,10 +217,10 @@ public class SequencesProcessor {
          * The name of the spectrum file to compare the sequences to.
          */
         private String spectrumFileName;
-    /**
-     * The score to use.
-     */
-    private ImplementedScore implementedScore;
+        /**
+         * The score to use.
+         */
+        private ImplementedScore implementedScore;
         /**
          * The object used to estimate the hyperscore.
          */
@@ -264,7 +264,7 @@ public class SequencesProcessor {
          * @param precursorProcessor the precursor processor for this file
          * @param exclusionListFilePath path of the exclusion list to use
          * @param identificationParameters the identification parameters to use
-         * @param implementedScore  the score to use
+         * @param implementedScore the score to use
          * @param maxX the maximal number of Xs to allow in a peptide
          * @param removeZeros boolean indicating whether the peptide assumptions
          * of score zero should be removed
@@ -438,6 +438,7 @@ public class SequencesProcessor {
                                                     ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
 
                                                     // Retain only matches yielding fragment ions
+                                                    boolean retainedPSM = false;
                                                     if (!ionMatches.isEmpty()) {
 
                                                         // Get the score
@@ -448,19 +449,28 @@ public class SequencesProcessor {
                                                                 break;
                                                             case snrScore:
                                                                 score = snrScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                break;
                                                             default:
                                                                 throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
                                                         }
 
-                                                        // Create a PSM
-                                                        Psm psm = new Psm(peptide, charge, score);
+                                                        // Retain only PSMs with a score
+                                                        if (score > 0) {
 
-                                                        // Save PSM
-                                                        scoresMapMutex.acquire(spectrumTitle);
-                                                        spectrumPsms.put(peptideKey, psm);
-                                                        scoresMapMutex.release(spectrumTitle);
+                                                            // Create a PSM
+                                                            Psm psm = new Psm(peptide, charge, score);
 
-                                                    } else {
+                                                            // Save PSM
+                                                            scoresMapMutex.acquire(spectrumTitle);
+                                                            spectrumPsms.put(peptideKey, psm);
+                                                            scoresMapMutex.release(spectrumTitle);
+                                                            retainedPSM = true;
+
+                                                        }
+                                                    }
+
+                                                    // Keep track of the inspected PSMs
+                                                    if (!retainedPSM) {
 
                                                         // Make sure that the list of inspected peptides does not get too long
                                                         if (peptidesInspectedForSpectrum.size() == 8192) {
@@ -617,6 +627,7 @@ public class SequencesProcessor {
                                                             ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
 
                                                             // Retain only peptides that yield fragment ions
+                                                            boolean retainedPSM = false;
                                                             if (!ionMatches.isEmpty()) {
 
                                                                 // Get the score
@@ -627,19 +638,28 @@ public class SequencesProcessor {
                                                                         break;
                                                                     case snrScore:
                                                                         score = snrScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                        break;
                                                                     default:
                                                                         throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
                                                                 }
 
-                                                                // Create a PSM
-                                                                Psm psm = new Psm(peptide, charge, score);
+                                                                // Retain only PSMs with a score
+                                                                if (score > 0) {
 
-                                                                // Save PSM
-                                                                scoresMapMutex.acquire(spectrumTitle);
-                                                                spectrumPsms.put(peptideKey, psm);
-                                                                scoresMapMutex.release(spectrumTitle);
+                                                                    // Create a PSM
+                                                                    Psm psm = new Psm(peptide, charge, score);
 
-                                                            } else if (first) {
+                                                                    // Save PSM
+                                                                    scoresMapMutex.acquire(spectrumTitle);
+                                                                    spectrumPsms.put(peptideKey, psm);
+                                                                    scoresMapMutex.release(spectrumTitle);
+                                                                    retainedPSM = true;
+
+                                                                }
+                                                            }
+
+                                                            // Keep track of the inspected PSMs
+                                                            if (first && !retainedPSM) {
 
                                                                 // Make sure that the list of inspected peptides for this spectrum does not get too long
                                                                 if (peptidesInspectedForSpectrum.size() == 8192) {

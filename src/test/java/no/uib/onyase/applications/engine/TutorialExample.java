@@ -26,7 +26,7 @@ public class TutorialExample {
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
     private String parametersFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.par";
-    private String destinationFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\test.psm";
+    private String destinationFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\Snrscore.psm";
 
     /**
      * The main method used to start PeptideShaker.
@@ -96,7 +96,7 @@ public class TutorialExample {
         File identificationParametersFile = new File(parametersFilePath);
         IdentificationParameters identificationParameters = IdentificationParameters.getIdentificationParameters(identificationParametersFile);
         AnnotationSettings annotationSettings = new AnnotationSettings(identificationParameters.getSearchParameters());
-        annotationSettings.setIntensityLimit(0.5);
+        annotationSettings.setIntensityLimit(0.0);
         identificationParameters.setAnnotationSettings(annotationSettings);
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
@@ -125,7 +125,7 @@ public class TutorialExample {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
         
         // Specific parameters
-        ImplementedScore score = ImplementedScore.hyperscore;
+        ImplementedScore score = ImplementedScore.snrScore;
         int maxX = 2;
         Double minMz = 500.0;
         Double maxMz = null;

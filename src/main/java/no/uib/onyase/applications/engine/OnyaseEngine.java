@@ -20,6 +20,7 @@ import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorPro
 import no.uib.onyase.applications.engine.modules.scoring.EValueEstimator;
 import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
 import no.uib.onyase.applications.engine.modules.scoring.evalue_estimators.HyperscoreEValueEstimator;
+import no.uib.onyase.applications.engine.modules.scoring.evalue_estimators.SnrEvalueEstimator;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -154,7 +155,7 @@ public class OnyaseEngine {
                 eValueEstimator = hyperscoreEValueEstimator;
                 break;
             case snrScore:
-                eValueEstimator = null;
+                eValueEstimator = new SnrEvalueEstimator();
                 break;
             default:
                 throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
