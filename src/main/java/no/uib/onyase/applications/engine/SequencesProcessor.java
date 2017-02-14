@@ -32,7 +32,6 @@ import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,13 +40,12 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import no.uib.onyase.applications.engine.export.TextExporter;
 import no.uib.onyase.applications.engine.model.Psm;
 import no.uib.onyase.applications.engine.modules.ModificationProfileIterator.ModificationProfile;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
-import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
+import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
 
 /**
  * The sequences processor runs multiple sequences iterators on the database in
@@ -123,7 +121,7 @@ public class SequencesProcessor {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws IOException, InterruptedException {
+    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, IdentificationParameters identificationParameters, PsmScore implementedScore, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws IOException, InterruptedException {
         iterateSequences(spectrumFileName, precursorProcessor, null, identificationParameters, implementedScore, maxX, nThreads, minMz, maxMz, maxModifications, maxSites);
     }
 
@@ -148,7 +146,7 @@ public class SequencesProcessor {
      * @throws IOException exception thrown whenever an error occurred while
      * reading a file
      */
-    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws InterruptedException, IOException {
+    public void iterateSequences(String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, PsmScore implementedScore, int maxX, int nThreads, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws InterruptedException, IOException {
 
         // Initialize the maps
         ArrayList<String> spectrumTitles = spectrumFactory.getSpectrumTitles(spectrumFileName);
@@ -220,7 +218,7 @@ public class SequencesProcessor {
         /**
          * The score to use.
          */
-        private ImplementedScore implementedScore;
+        private PsmScore implementedScore;
         /**
          * The object used to estimate the hyperscore.
          */
@@ -250,6 +248,14 @@ public class SequencesProcessor {
          */
         private HashMap<String, Integer> maxModifications;
         /**
+         * Cache for the mass contribution of protons at different charges.
+         */
+        private double[] protonContributionCache;
+        /**
+         * Cache for the mass contribution of neutrons at different isotopes.
+         */
+        private double[] neutronContributionCache;
+        /**
          * The preferred number of modification sites to iterate per
          * modification.
          */
@@ -276,7 +282,7 @@ public class SequencesProcessor {
          * @throws IOException exception thrown whenever an error occurred while
          * reading the exclusion list file
          */
-        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws IOException {
+        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, PsmScore implementedScore, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites) throws IOException {
             this.proteinIterator = proteinIterator;
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
@@ -318,6 +324,16 @@ public class SequencesProcessor {
                 int maxCharge = searchParameters.getMaxChargeSearched().value;
                 int minIsotope = searchParameters.getMinIsotopicCorrection();
                 int maxIsotope = searchParameters.getMaxIsotopicCorrection();
+
+                // Cache for the proton and isotope contribution
+                protonContributionCache = new double[maxCharge-minCharge+1];
+                for (int charge = minCharge; charge <= maxCharge; charge++) {
+                    protonContributionCache[charge-minCharge] = charge * ElementaryIon.proton.getTheoreticMass();
+                }
+                neutronContributionCache = new double[maxIsotope - minIsotope + 1];
+                for (int isotope = minIsotope ; isotope <= maxIsotope ; isotope++) {
+                    neutronContributionCache[isotope] = isotope * ElementaryElement.neutron.getMass();
+                }
 
                 // Store information on the searched modifications
                 PtmSettings ptmSettings = searchParameters.getPtmSettings();
@@ -392,19 +408,19 @@ public class SequencesProcessor {
                         // Iterate posible charges
                         for (int charge = minCharge; charge <= maxCharge; charge++) {
 
-                            double protonContribution = charge * ElementaryIon.proton.getTheoreticMass();
+                            // Get the mass contribution of the proton
+                            double protonContribution = protonContributionCache[charge-minCharge];
+
+                            // Set the annotation preferences for this peptide
+                            PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
+                            SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(null, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
 
                             // Iterate possible isotopes
                             for (int isotope = minIsotope; isotope <= maxIsotope; isotope++) {
 
                                 // See if we have a precursor for this m/z
-                                double mass;
-                                if (isotope == 0) {
-                                    mass = protonContribution + peptideMass;
-                                } else {
-                                    double isotopeContribution = isotope * ElementaryElement.neutron.getMass();
-                                    mass = protonContribution + isotopeContribution + peptideMass;
-                                }
+                                double neutronContribution = neutronContributionCache[isotope - minIsotope];
+                                double mass = peptideMass + protonContribution + neutronContribution;
                                 double mz = mass / charge;
 
                                 // See if the precursor is in the exclusion list
@@ -432,9 +448,7 @@ public class SequencesProcessor {
                                                 if (!spectrumPsms.containsKey(peptideKey)) {
 
                                                     // Get the spectrum annotation
-                                                    PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
                                                     MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                    SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumTitle, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
                                                     ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
 
                                                     // Retain only matches yielding fragment ions
@@ -530,8 +544,8 @@ public class SequencesProcessor {
                                                 // Create PeptideDraft
                                                 PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, modificationOccurrence, possibleModificationSites, isDecoy);
 
-                                                // Compute a key for this peptide to see if it was already found
-                                                String modifiedPeptideKey = peptideDraft.getKey(orderedModifications, sequenceMatchingPreferences);
+                                                // Compute a key for this peptide to see if it was already inspected
+                                                String genericModifiedPeptideKey = peptideDraft.getKey(orderedModifications, sequenceMatchingPreferences);
 
                                                 // Get a precursor to see if the peptide was already inspected
                                                 PrecursorMap.PrecursorWithTitle precursorWithTitle = precursorMatches.get(0);
@@ -542,17 +556,8 @@ public class SequencesProcessor {
 
                                                 // See if the peptide has already been identified for this spectrum
                                                 HashSet<String> peptidesInspectedForSpectrum = peptidesInspected.get(spectrumTitle);
-                                                if (peptidesInspectedForSpectrum.contains(modifiedPeptideKey)) {
+                                                if (peptidesInspectedForSpectrum.contains(genericModifiedPeptideKey)) {
                                                     newPeptide = false;
-                                                } else {
-
-                                                    // Get the scores map for this spectrum
-                                                    HashMap<String, Psm> spectrumPsm = psmMap.get(spectrumTitle);
-
-                                                    // See if we already have a Psm
-                                                    if (spectrumPsm.containsKey(modifiedPeptideKey)) {
-                                                        newPeptide = false;
-                                                    }
                                                 }
 
                                                 // if new, iterate possible modification sites
@@ -610,7 +615,9 @@ public class SequencesProcessor {
                                                             }
                                                         }
                                                         Peptide modifiedPeptide = new Peptide(peptideDraft.getSequence(), modificationMatches);
-
+                                                        PeptideAssumption modifiedPeptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, charge));
+                                                        SpecificAnnotationSettings modifiedSpecificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences("", modifiedPeptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
+                                                        
                                                         // Iterate all precursor matches
                                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
 
@@ -621,23 +628,20 @@ public class SequencesProcessor {
                                                             HashMap<String, Psm> spectrumPsms = psmMap.get(spectrumTitle);
 
                                                             // Get the spectrum annotation
-                                                            PeptideAssumption peptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, charge));
                                                             MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                            SpecificAnnotationSettings specificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences(spectrumTitle, peptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
-                                                            ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
+                                                            ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, modifiedSpecificAnnotationSettings, spectrum, modifiedPeptide);
 
                                                             // Retain only peptides that yield fragment ions
-                                                            boolean retainedPSM = false;
                                                             if (!ionMatches.isEmpty()) {
 
                                                                 // Get the score
                                                                 double score;
                                                                 switch (implementedScore) {
                                                                     case hyperscore:
-                                                                        score = hyperScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                        score = hyperScoreEstimator.getScore(modifiedPeptide, spectrum, annotationSettings, modifiedSpecificAnnotationSettings, ionMatches);
                                                                         break;
                                                                     case snrScore:
-                                                                        score = snrScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                                        score = snrScoreEstimator.getScore(modifiedPeptide, spectrum, annotationSettings, modifiedSpecificAnnotationSettings, ionMatches);
                                                                         break;
                                                                     default:
                                                                         throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
@@ -647,19 +651,18 @@ public class SequencesProcessor {
                                                                 if (score > 0) {
 
                                                                     // Create a PSM
-                                                                    Psm psm = new Psm(peptide, charge, score);
+                                                                    Psm psm = new Psm(modifiedPeptide, charge, score);
 
                                                                     // Save PSM
+                                                                    String modifiedPeptideKey = modifiedPeptide.getKey();
                                                                     scoresMapMutex.acquire(spectrumTitle);
-                                                                    spectrumPsms.put(peptideKey, psm);
+                                                                    spectrumPsms.put(modifiedPeptideKey, psm);
                                                                     scoresMapMutex.release(spectrumTitle);
-                                                                    retainedPSM = true;
-
                                                                 }
                                                             }
 
                                                             // Keep track of the inspected PSMs
-                                                            if (first && !retainedPSM) {
+                                                            if (first) {
 
                                                                 // Make sure that the list of inspected peptides for this spectrum does not get too long
                                                                 if (peptidesInspectedForSpectrum.size() == 8192) {
@@ -667,7 +670,7 @@ public class SequencesProcessor {
                                                                 }
 
                                                                 // Add the peptide to the inspected peptides list
-                                                                peptidesInspectedForSpectrum.add(peptideKey);
+                                                                peptidesInspectedForSpectrum.add(genericModifiedPeptideKey);
 
                                                                 // Avoid repeating this for all isoforms
                                                                 first = false;

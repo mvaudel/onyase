@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import no.uib.onyase.applications.engine.modules.ModificationProfileIterator.ModificationProfile;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.MultipleModificationsIterators;
@@ -86,6 +87,9 @@ public class SequencesProcessor {
      * Number of lines written to the export.
      */
     private int nLines;
+    private int progress = 0;
+    private int totalProgress;
+    private Semaphore progressMutex = new Semaphore(1);
 
     /**
      * Constructor.
@@ -160,13 +164,14 @@ public class SequencesProcessor {
         // Set progress counters
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
         waitingHandler.setMaxSecondaryProgressCounter(sequenceFactory.getNSequences());
+        totalProgress = sequenceFactory.getNSequences();
 
         // Make a pool of sequence processors
         SequenceFactory.ProteinIterator proteinIterator = sequenceFactory.getProteinIterator(false);
         ArrayList<SequenceProcessor> sequenceProcessors = new ArrayList<SequenceProcessor>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, minMz, maxMz, maxModifications, maxSites, textExporter);
+            SequenceProcessor sequenceProcessor = new SequenceProcessor(i+1, proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, identificationParameters, maxX, minMz, maxMz, maxModifications, maxSites, textExporter);
             sequenceProcessors.add(sequenceProcessor);
             pool.submit(sequenceProcessor);
         }
@@ -268,6 +273,7 @@ public class SequencesProcessor {
          * The exporter where to write the results.
          */
         private TextExporter textExporter;
+        private int threadId;
 
         /**
          * Constructor.
@@ -289,7 +295,8 @@ public class SequencesProcessor {
          * @throws IOException exception thrown whenever an error occurred while
          * reading the exclusion list file
          */
-        public SequenceProcessor(SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, TextExporter textExporter) throws IOException {
+        public SequenceProcessor(int index, SequenceFactory.ProteinIterator proteinIterator, String spectrumFileName, PrecursorProcessor precursorProcessor, String exclusionListFilePath, IdentificationParameters identificationParameters, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, TextExporter textExporter) throws IOException {
+            this.threadId = index;
             this.proteinIterator = proteinIterator;
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
@@ -636,6 +643,10 @@ public class SequencesProcessor {
                     } else {
                         waitingHandler.increaseSecondaryProgressCounter();
                     }
+                    progressMutex.acquire();
+                    progress++;
+                    System.out.println(threadId + ": " + progress + " / " + totalProgress);
+                    progressMutex.release();
                 }
             } catch (Exception e) {
                 if (!waitingHandler.isRunCanceled()) {

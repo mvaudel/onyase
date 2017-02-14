@@ -18,7 +18,7 @@ import no.uib.onyase.applications.engine.export.TextExporter;
 import no.uib.onyase.applications.engine.model.Psm;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import no.uib.onyase.applications.engine.modules.scoring.EValueEstimator;
-import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
+import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
 import no.uib.onyase.applications.engine.modules.scoring.evalue_estimators.HyperscoreEValueEstimator;
 import no.uib.onyase.applications.engine.modules.scoring.evalue_estimators.SnrEvalueEstimator;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
@@ -73,7 +73,7 @@ public class OnyaseEngine {
      * @param spectrumFile the spectrum file to search
      * @param psmsFile the file where to export all psms
      * @param identificationParameters the identification parameters
-     * @param implementedScore the score to use
+     * @param psmScore the score to use
      * @param maxX the maximal number of Xs to allow in a peptide sequence
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
@@ -95,7 +95,7 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File psmsFile, IdentificationParameters identificationParameters, ImplementedScore implementedScore, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(File spectrumFile, File psmsFile, IdentificationParameters identificationParameters, PsmScore psmScore, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -136,7 +136,7 @@ public class OnyaseEngine {
         psmDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, implementedScore, maxX, nThreads, minMz, maxMz, maxModifications, maxSites);
+        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, psmScore, maxX, nThreads, minMz, maxMz, maxModifications, maxSites);
         psmDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + psmDuration + ").");
 
@@ -148,7 +148,7 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Estimating e-values.");
         EValueEstimator eValueEstimator;
-        switch (implementedScore) {
+        switch (psmScore) {
             case hyperscore:
                 HyperscoreEValueEstimator hyperscoreEValueEstimator = new HyperscoreEValueEstimator(waitingHandler, exceptionHandler);
                 hyperscoreEValueEstimator.estimateInterpolationCoefficients(spectrumFileName, psmsMap, nThreads);
@@ -158,7 +158,7 @@ public class OnyaseEngine {
                 eValueEstimator = new SnrEvalueEstimator();
                 break;
             default:
-                throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
+                throw new UnsupportedOperationException("Score " + psmScore + " not implemented.");
         }
 
         localDuration.end();

@@ -14,7 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import no.uib.onyase.applications.engine.modules.scoring.ImplementedScore;
+import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -124,7 +124,7 @@ public class TutorialExample {
         IdentificationParameters.saveIdentificationParameters(identificationParameters, newParameters);
         
         // Specific parameters
-        ImplementedScore score = ImplementedScore.snrScore;
+        PsmScore score = PsmScore.snrScore;
         annotationSettings.setIntensityLimit(0.0);
         int maxX = 2;
         Double minMz = 500.0;

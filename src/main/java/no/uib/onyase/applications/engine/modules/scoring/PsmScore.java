@@ -5,7 +5,7 @@ package no.uib.onyase.applications.engine.modules.scoring;
  *
  * @author Marc Vaudel
  */
-public enum ImplementedScore {
+public enum PsmScore {
 
     hyperscore(0,"Hyperscore", "Implementation of the hyperscore similar to X!Tandem."), 
     snrScore(1,"SnrScore", "Score based on the signal to noise ratio of the intensities of annotated peaks.");
@@ -30,7 +30,7 @@ public enum ImplementedScore {
      * @param name the name of the option
      * @param description the description of the option
      */
-    private ImplementedScore(int index, String name, String description) {
+    private PsmScore(int index, String name, String description) {
         this.index = index;
         this.name = name;
         this.description = description;
