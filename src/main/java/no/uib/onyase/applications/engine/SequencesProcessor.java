@@ -15,8 +15,10 @@ import com.compomics.util.experiment.identification.identification_parameters.Pt
 import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.matches.IonMatch;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
-import com.compomics.util.experiment.identification.protein_sequences.ProteinSequenceIterator;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
+import com.compomics.util.experiment.identification.protein_sequences.digestion.IteratorFactory;
+import com.compomics.util.experiment.identification.protein_sequences.digestion.PeptideWithPosition;
+import com.compomics.util.experiment.identification.protein_sequences.digestion.SequenceIterator;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.SnrScore;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
@@ -204,9 +206,9 @@ public class SequencesProcessor {
          */
         private IdentificationParameters identificationParameters;
         /**
-         * The sequence iterator.
+         * The sequence iterator factory.
          */
-        private ProteinSequenceIterator proteinSequenceIterator;
+        private IteratorFactory iteratorFactory;
         /**
          * The precursor map to use.
          */
@@ -294,7 +296,7 @@ public class SequencesProcessor {
             } else {
                 exclusionList = new ExclusionList(searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
             }
-            proteinSequenceIterator = new ProteinSequenceIterator(identificationParameters.getSearchParameters().getPtmSettings().getFixedModifications(), maxX);
+            iteratorFactory = new IteratorFactory(identificationParameters.getSearchParameters().getPtmSettings().getFixedModifications(), maxX);
             if (maxModifications != null) {
                 this.maxModifications = new HashMap<String, Integer>(maxModifications);
             } else {
@@ -393,12 +395,13 @@ public class SequencesProcessor {
                     // Get a protein and find all possible peptides
                     Protein protein = proteinIterator.getNextProtein();
                     String sequence = protein.getSequence();
-                    ArrayList<ProteinSequenceIterator.PeptideWithPosition> peptides = proteinSequenceIterator.getPeptides(sequence, digestionPreferences, massMin, massMax);
+                    SequenceIterator sequenceIterator = iteratorFactory.getSequenceIterator(sequence, digestionPreferences, massMin, massMax);
 
                     boolean isDecoy = sequenceFactory.isDecoyAccession(protein.getAccession());
 
                     // Iterate all peptides
-                    for (ProteinSequenceIterator.PeptideWithPosition peptideWithPosition : peptides) {
+                    PeptideWithPosition peptideWithPosition;
+                    while ((peptideWithPosition = sequenceIterator.getNextPeptide()) != null) {
 
                         Peptide peptide = peptideWithPosition.getPeptide();
                         String peptideKey = peptide.getMatchingKey(sequenceMatchingPreferences);
