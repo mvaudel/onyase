@@ -47,10 +47,6 @@ public class TextExporter {
      * the process.
      */
     private WaitingHandler waitingHandler;
-    /**
-     * Encoding for the file, cf the second rule.
-     */
-    public static final String encoding = "UTF-8";
 
     /**
      * Constructor.
@@ -84,7 +80,7 @@ public class TextExporter {
         // Setup the writer
         FileOutputStream fileStream = new FileOutputStream(destinationFile);
         GZIPOutputStream gzipStream = new GZIPOutputStream(fileStream);
-        OutputStreamWriter encoder = new OutputStreamWriter(gzipStream, encoding);
+        OutputStreamWriter encoder = new OutputStreamWriter(gzipStream, OnyaseIdfileReader.encoding);
         BufferedWriter bw = new BufferedWriter(encoder);
         try {
 
@@ -122,7 +118,7 @@ public class TextExporter {
     private void writePsm(BufferedWriter bw, String spectrumFileName, String spectrumTitle, Psm psm, EValueEstimator eValueEstimator) throws IOException, MzMLUnmarshallerException {
 
         // Encode the spectrum title
-        String encodedSpectrumTitle = URLEncoder.encode(spectrumTitle, "utf-8");
+        String encodedSpectrumTitle = URLEncoder.encode(spectrumTitle, OnyaseIdfileReader.encoding);
 
         // Get the precursor
         Precursor precursor = spectrumFactory.getPrecursor(spectrumFileName, spectrumTitle);
