@@ -9,11 +9,16 @@ import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import no.uib.onyase.applications.engine.model.Psm;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 import no.uib.onyase.applications.engine.modules.scoring.EValueEstimator;
@@ -42,6 +47,10 @@ public class TextExporter {
      * the process.
      */
     private WaitingHandler waitingHandler;
+    /**
+     * Encoding for the file, cf the second rule.
+     */
+    public static final String encoding = "UTF-8";
 
     /**
      * Constructor.
@@ -56,7 +65,7 @@ public class TextExporter {
     }
 
     /**
-     * Writes all the PSMs to a file.
+     * Writes all the PSMs to a file. The export represents a table with spaces as separator and every PSM is a line. Spectrum titles are encoded and the table is gziped.
      * 
      * @param spectrumFileName the name of the spectrum file
      * @param psmsMap the map of the PSMs
@@ -73,7 +82,10 @@ public class TextExporter {
         waitingHandler.setMaxSecondaryProgressCounter(psmsMap.size());
 
         // Setup the writer
-        BufferedWriter bw = new BufferedWriter(new FileWriter(destinationFile));
+        FileOutputStream fileStream = new FileOutputStream(destinationFile);
+        GZIPOutputStream gzipStream = new GZIPOutputStream(fileStream);
+        OutputStreamWriter encoder = new OutputStreamWriter(gzipStream, encoding);
+        BufferedWriter bw = new BufferedWriter(encoder);
         try {
 
             // Write headers
