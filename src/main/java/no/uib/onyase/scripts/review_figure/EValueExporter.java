@@ -120,7 +120,7 @@ public class EValueExporter {
             // Save if best hit
             if (score > 0) {
                 BestHit bestEvalue = bestHitMaps.get(spectrumTitle);
-                if (bestEvalue == null || bestEvalue.getScore() < eValue) {
+                if (bestEvalue == null || bestEvalue.getScore() > eValue) {
                     BestHit newEvalue = new BestHit(eValue, cpt);
                     bestHitMaps.put(spectrumTitle, newEvalue);
                 }

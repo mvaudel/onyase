@@ -12,34 +12,23 @@ library(ggplot2)
 # setwd("R")
 
 
-# Set the categories according to the parameters table
-
-categoriesNames <- c("Default","Isoforms","Trembl","Vertebrates", "Proteogenomics","4 mc","Semispecific","Variable Cmm","Phosphorylation","AB-Y","ABC-XYZ","MS1 0.5 Da","MS2 0.5 Da","MS1 MS2 0.5 Da","Isotope -4 +4 Da","Charge 1 to 4","Charge 1 to 6")
-mainCategoriesNames <- c("Default","Database","Database","Database", "Database","Digestion","Digestion","Modifications","Modifications","Fragmentation","Fragmentation","Tolerances","Tolerances","Tolerances","Isotopes","Charges","Charges")
-categoriesIndexes <- c(0,1,2,3,4,5,6,8,9,10,11,12,13,14,15,16,17)
-
-categories <- data.frame(id = categoriesIndexes, mainCategroy = mainCategoriesNames, name = categoriesNames)
-
-
 # Load the precursor histograms from the Onyase export
 
-scores0 <- read.table("resources\\all_psms_0_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores1 <- read.table("resources\\all_psms_1_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores2 <- read.table("resources\\all_psms_2_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores3 <- read.table("resources\\all_psms_3_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores4 <- read.table("resources\\all_psms_4_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores5 <- read.table("resources\\all_psms_5_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores6 <- read.table("resources\\all_psms_6_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores8 <- read.table("resources\\all_psms_8_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores9 <- read.table("resources\\all_psms_9_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores10 <- read.table("resources\\all_psms_10_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores11 <- read.table("resources\\all_psms_11_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores12 <- read.table("resources\\all_psms_12_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores13 <- read.table("resources\\all_psms_13_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores14 <- read.table("resources\\all_psms_14_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores15 <- read.table("resources\\all_psms_15_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores16 <- read.table("resources\\all_psms_16_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
-scores17 <- read.table("resources\\all_psms_17_filtered.psm", header = T, sep = " ", stringsAsFactors = F)
+scores0 <- read.table("resources\\best_psms_0.txt", header = T, sep = " ", stringsAsFactors = F)
+scores1 <- read.table("resources\\best_psms_1.txt", header = T, sep = " ", stringsAsFactors = F)
+scores2 <- read.table("resources\\best_psms_2.txt", header = T, sep = " ", stringsAsFactors = F)
+scores3 <- read.table("resources\\best_psms_3.txt", header = T, sep = " ", stringsAsFactors = F)
+scores5 <- read.table("resources\\best_psms_5.txt", header = T, sep = " ", stringsAsFactors = F)
+scores6 <- read.table("resources\\best_psms_6.txt", header = T, sep = " ", stringsAsFactors = F)
+scores8 <- read.table("resources\\best_psms_8.txt", header = T, sep = " ", stringsAsFactors = F)
+scores9 <- read.table("resources\\best_psms_9.txt", header = T, sep = " ", stringsAsFactors = F)
+scores10 <- read.table("resources\\best_psms_10.txt", header = T, sep = " ", stringsAsFactors = F)
+scores11 <- read.table("resources\\best_psms_11.txt", header = T, sep = " ", stringsAsFactors = F)
+scores13 <- read.table("resources\\best_psms_13.txt", header = T, sep = " ", stringsAsFactors = F)
+scores14 <- read.table("resources\\best_psms_14.txt", header = T, sep = " ", stringsAsFactors = F)
+scores15 <- read.table("resources\\best_psms_15.txt", header = T, sep = " ", stringsAsFactors = F)
+scores16 <- read.table("resources\\best_psms_16.txt", header = T, sep = " ", stringsAsFactors = F)
+scores17 <- read.table("resources\\best_psms_17.txt", header = T, sep = " ", stringsAsFactors = F)
 
 
 # Format the data for ggplot
@@ -47,10 +36,18 @@ scores17 <- read.table("resources\\all_psms_17_filtered.psm", header = T, sep = 
 scoreCategories <- c()
 scoreMainCategories <- c()
 scoreValues <- c()
-scoreRefValues <- c()
+decoySeries <- c()
+decoyMedianValue <- c()
+decoyHighValue <- c()
+decoyLowValue <- c()
 
-tempValues <- scores0$HyperScore[]
+scoreLimit <- 0
+
+tempValues <- scores0$HyperScore
+tempDecoys <- scores0$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 0)
 categorytemp[] <- categoriesNames[categoryI]
@@ -59,10 +56,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores1$HyperScore[]
+tempValues <- scores1$HyperScore
+tempDecoys <- scores1$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 1)
 categorytemp[] <- categoriesNames[categoryI]
@@ -71,10 +73,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores2$HyperScore[]
+tempValues <- scores2$HyperScore
+tempDecoys <- scores2$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 2)
 categorytemp[] <- categoriesNames[categoryI]
@@ -83,10 +90,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores3$HyperScore[]
+tempValues <- scores3$HyperScore
+tempDecoys <- scores3$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 3)
 categorytemp[] <- categoriesNames[categoryI]
@@ -95,22 +107,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores4$HyperScore[]
+tempValues <- scores5$HyperScore
+tempDecoys <- scores5$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
-categorytemp <- character(length(tempValues))
-categoryI <- which(categories$id == 4)
-categorytemp[] <- categoriesNames[categoryI]
-scoreCategories <- c(scoreCategories, categorytemp)
-mainCategorytemp <- character(length(tempValues))
-mainCategorytemp[] <- mainCategoriesNames[categoryI]
-scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
-scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
-
-tempValues <- scores5$HyperScore[]
-tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 5)
 categorytemp[] <- categoriesNames[categoryI]
@@ -119,10 +124,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores6$HyperScore[]
+tempValues <- scores6$HyperScore
+tempDecoys <- scores6$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 6)
 categorytemp[] <- categoriesNames[categoryI]
@@ -131,10 +141,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores8$HyperScore[]
+tempValues <- scores8$HyperScore
+tempDecoys <- scores8$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 8)
 categorytemp[] <- categoriesNames[categoryI]
@@ -143,10 +158,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores9$HyperScore[]
+tempValues <- scores9$HyperScore
+tempDecoys <- scores9$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 9)
 categorytemp[] <- categoriesNames[categoryI]
@@ -155,10 +175,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores10$HyperScore[]
+tempValues <- scores10$HyperScore
+tempDecoys <- scores10$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 10)
 categorytemp[] <- categoriesNames[categoryI]
@@ -167,10 +192,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores11$HyperScore[]
+tempValues <- scores11$HyperScore
+tempDecoys <- scores11$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 11)
 categorytemp[] <- categoriesNames[categoryI]
@@ -179,22 +209,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores12$HyperScore[]
+tempValues <- scores13$HyperScore
+tempDecoys <- scores13$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
-categorytemp <- character(length(tempValues))
-categoryI <- which(categories$id == 12)
-categorytemp[] <- categoriesNames[categoryI]
-scoreCategories <- c(scoreCategories, categorytemp)
-mainCategorytemp <- character(length(tempValues))
-mainCategorytemp[] <- mainCategoriesNames[categoryI]
-scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
-scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
-
-tempValues <- scores13$HyperScore[]
-tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 13)
 categorytemp[] <- categoriesNames[categoryI]
@@ -203,10 +226,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores14$HyperScore[]
+tempValues <- scores14$HyperScore
+tempDecoys <- scores14$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 14)
 categorytemp[] <- categoriesNames[categoryI]
@@ -215,10 +243,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores15$HyperScore[]
+tempValues <- scores15$HyperScore
+tempDecoys <- scores15$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 15)
 categorytemp[] <- categoriesNames[categoryI]
@@ -227,10 +260,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores16$HyperScore[]
+tempValues <- scores16$HyperScore
+tempDecoys <- scores16$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 16)
 categorytemp[] <- categoriesNames[categoryI]
@@ -239,10 +277,15 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-tempValues <- scores17$HyperScore[]
+tempValues <- scores17$HyperScore
+tempDecoys <- scores17$Decoy[tempValues >scoreLimit]
+tempValues <- tempValues[tempValues >scoreLimit]
 tempValues <- log10(tempValues)
+decoySeries <- c(decoySeries, tempDecoys)
 categorytemp <- character(length(tempValues))
 categoryI <- which(categories$id == 17)
 categorytemp[] <- categoriesNames[categoryI]
@@ -251,30 +294,27 @@ mainCategorytemp <- character(length(tempValues))
 mainCategorytemp[] <- mainCategoriesNames[categoryI]
 scoreMainCategories <- c(scoreMainCategories, mainCategorytemp)
 scoreValues <- c(scoreValues, tempValues)
-scoreRefValues <- c(scoreRefValues, median(tempValues, na.rm = T))
+decoyMedianValue <- c(decoyMedianValue, median(tempValues[tempDecoys == 1], na.rm = T))
+decoyHighValue <- c(decoyHighValue, quantile(tempValues[tempDecoys == 1], 0.75, na.rm = T, names = F))
+decoyLowValue <- c(decoyLowValue, quantile(tempValues[tempDecoys == 1], 0.25, na.rm = T, names = F))
 
-categories$median <- scoreRefValues
-sortedCategoriesNames <- categories[order(categories$median, categories$name), "name"]
-scoreCategoriesFactors <- factor(precursorCategories, levels = sortedCategoriesNames)
+decoySeries <- ifelse(decoySeries == 0, "Target", "Decoy")
+decoySeriesFactor <- factor(decoySeries, levels = c("Decoy", "Target"))
 
-medianValues <- categories$median
-medianNames <- factor(categories$name)
+scoreCategoriesFactors <- factor(scoreCategories, levels = allCategoriesSorted)
+scoreMainCategoriesFactors <- factor(scoreMainCategories, levels = sortedMainCategoriesNames)
 
-# Plot the distribution of peptides per precursor
-
-scoreHistogramPlot <- ggplot()
-scoreHistogramPlot <- scoreHistogramPlot + geom_violin(aes(x=scoreCategoriesFactors, y=scoreValues, fill = scoreMainCategories), width = 1.4, na.rm = T)
-scoreHistogramPlot <- scoreHistogramPlot + geom_boxplot(aes(x=scoreCategoriesFactors, y=scoreValues, fill = scoreMainCategories), width = 0.2, outlier.size = 0.8, na.rm = T)
-scoreHistogramPlot <- scoreHistogramPlot + labs(x = "Category", y = "# Peptides per Precursor [log10]", fill="", col="")
-scoreHistogramPlot <- scoreHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-plot(scoreHistogramPlot)
 
 
 # Plot the distribution of peptides per precursor
 
 scoreHistogramPlot <- ggplot()
-scoreHistogramPlot <- scoreHistogramPlot + geom_violin(aes(x=scoreCategoriesFactors, y=scoreValues, fill = scoreMainCategories), width = 1.4, na.rm = T)
-scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=medianValues), shape = 45, size = 6, na.rm = T)
-scoreHistogramPlot <- scoreHistogramPlot + labs(x = "Category", y = "# Peptides per Precursor [log10]", fill="", col="")
+scoreHistogramPlot <- scoreHistogramPlot + geom_violin(aes(x=scoreCategoriesFactors[decoySeries == "Decoy"], y=scoreValues[decoySeries == "Decoy"], fill = scoreMainCategoriesFactors[decoySeries == "Decoy"]), scale = "area", na.rm = T)
+scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyMedianValue), shape = 45, size = 6, na.rm = T)
+scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyLowValue), shape = 45, size = 2, na.rm = T)
+scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyHighValue), shape = 45, size = 2, na.rm = T)
+scoreHistogramPlot <- scoreHistogramPlot + labs(x = "", y = "Hyperscore [log10]", fill="", col="")
 scoreHistogramPlot <- scoreHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+scoreHistogramPlot <- scoreHistogramPlot + guides(fill = F)
+scoreHistogramPlot <- scoreHistogramPlot + scale_fill_brewer(palette="Pastel1")
 plot(scoreHistogramPlot)

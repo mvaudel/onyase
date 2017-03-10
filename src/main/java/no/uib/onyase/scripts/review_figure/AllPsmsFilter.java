@@ -29,8 +29,8 @@ public class AllPsmsFilter {
 
         try {
 
-            int[] conditions = {0,1,2,3,4,5,6,8,9,10,11,12,13,14,15,16,17};
-            //int[] conditions = {0};
+            //int[] conditions = {0,1,2,3,4,5,6,8,9,10,11,12,13,14,15,16,17};
+            int[] conditions = {13};
 
             for (int condition : conditions) {
                 System.out.println("Filtering condition " + condition);

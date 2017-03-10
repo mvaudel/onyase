@@ -32,7 +32,7 @@ public class ReviewFigure {
     private int nThreads = 3;
 
     /**
-     * The main method used to start PeptideShaker.
+     * The main method used to start the script.
      *
      * @param args the arguments
      */
@@ -104,7 +104,7 @@ public class ReviewFigure {
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
-        String jobName = "3";
+        String jobName = "14";
 
         File spectrumFile = new File(mgfFilePath);
         File allPsmsFile = new File(resourcesFolderPath, "all_psms_" + jobName + ".psm");
@@ -117,12 +117,15 @@ public class ReviewFigure {
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-vertebrates_12.16_concatenated_target_decoy.fasta"));
+//        searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/hman_all_23.16_concatenated_target_decoy.fasta"));
+       searchParameters.setFastaFile(new File("/media/local-disk/marcvaue/figure/resources/uniprot-human-reviewed-trypsin-november-2016_concatenated_target_decoy.fasta"));
 //        searchParameters.setFastaFile(new File("C:\\Databases\\hman_all_23.16_concatenated_target_decoy.fasta"));
         searchParameters.setPrecursorAccuracy(0.5);
         searchParameters.setPrecursorAccuracyType(SearchParameters.MassAccuracyType.DA);
-//        searchParameters.setFragmentIonAccuracy(0.5);
-//        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
+        searchParameters.setFragmentIonAccuracy(0.5);
+        searchParameters.setFragmentAccuracyType(SearchParameters.MassAccuracyType.DA);
+        annotationSettings.setFragmentIonAccuracy(0.5);
+        annotationSettings.setFragmentIonPpm(false);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
         PtmSettings ptmSettings = new PtmSettings();
         PTMFactory ptmFactory = PTMFactory.getInstance();
