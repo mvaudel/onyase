@@ -7,11 +7,6 @@ library(ggplot2)
 ##
 
 
-# Set working directory to the R folder
-
-# setwd("R")
-
-
 # Format the data for ggplot
 
 eValueCategories <- c()

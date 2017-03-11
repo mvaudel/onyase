@@ -7,16 +7,14 @@ library(ggplot2)
 ##
 
 
-# Set working directory to the R folder
-
-# setwd("R")
-
-
 # Number of null values from the Onyase export
 
 nZeros <- c(8293947, 8886003, 14299638, 182096459, 12102140, 130297465, 13694912, 105926826, 8293950, 8293978, 8704551, 155163611, 37014133, 9394845, 12728318)
 nTotal <- c(8429815, 9030225, 14494238, 184339585, 12255889, 132487080, 13870655, 106275895, 8429818, 8429845, 10813674, 192392071, 37512992, 9543463, 12878454)
 nPositive <- nTotal - nZeros
+
+
+# Format the data for ggplot
 
 valuesList <- c()
 seriesList <- c()

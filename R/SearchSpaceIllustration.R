@@ -7,11 +7,6 @@ library(ggplot2)
 ##
 
 
-# Set working directory to the R folder
-
-# setwd("R")
-
-
 # Set the categories according to the parameters table
 
 categoriesNames <- c("Default","Isoforms","Trembl","Vertebrates","4 mc","Semispecific","Variable Cmm","Phosphorylation","AB-Y","ABC-XYZ","MS2 0.5 Da","MS1&2 0.5 Da","Isotope -4 +4 Da","Charge 1 to 4","Charge 1 to 6")
@@ -23,21 +18,21 @@ categories <- data.frame(id = categoriesIndexes, mainCategroy = mainCategoriesNa
 
 # Load the precursor histograms from the Onyase export
 
-precursorHistogram0 <- read.table(gzfile("resources\\precursor_0.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram1 <- read.table(gzfile("resources\\precursor_1.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram2 <- read.table(gzfile("resources\\precursor_2.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram3 <- read.table(gzfile("resources\\precursor_3.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram5 <- read.table(gzfile("resources\\precursor_5.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram6 <- read.table(gzfile("resources\\precursor_6.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram8 <- read.table(gzfile("resources\\precursor_8.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram9 <- read.table(gzfile("resources\\precursor_9.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram10 <- read.table(gzfile("resources\\precursor_10.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram11 <- read.table(gzfile("resources\\precursor_11.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram13 <- read.table(gzfile("resources\\precursor_13.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram14 <- read.table(gzfile("resources\\precursor_14.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram15 <- read.table(gzfile("resources\\precursor_15.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram16 <- read.table(gzfile("resources\\precursor_16.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
-precursorHistogram17 <- read.table(gzfile("resources\\precursor_17.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram0 <- read.table(gzfile("R/resources/precursor_0.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram1 <- read.table(gzfile("R/resources/precursor_1.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram2 <- read.table(gzfile("R/resources/precursor_2.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram3 <- read.table(gzfile("R/resources/precursor_3.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram5 <- read.table(gzfile("R/resources/precursor_5.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram6 <- read.table(gzfile("R/resources/precursor_6.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram8 <- read.table(gzfile("R/resources/precursor_8.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram9 <- read.table(gzfile("R/resources/precursor_9.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram10 <- read.table(gzfile("R/resources/precursor_10.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram11 <- read.table(gzfile("R/resources/precursor_11.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram13 <- read.table(gzfile("R/resources/precursor_13.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram14 <- read.table(gzfile("R/resources/precursor_14.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram15 <- read.table(gzfile("R/resources/precursor_15.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram16 <- read.table(gzfile("R/resources/precursor_16.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+precursorHistogram17 <- read.table(gzfile("R/resources/precursor_17.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 
 
 # Format the data for ggplot

@@ -7,28 +7,23 @@ library(ggplot2)
 ##
 
 
-# Set working directory to the R folder
-
-# setwd("R")
-
-
 # Load the precursor histograms from the Onyase export
 
-scores0 <- read.table("resources\\best_psms_0.txt", header = T, sep = " ", stringsAsFactors = F)
-scores1 <- read.table("resources\\best_psms_1.txt", header = T, sep = " ", stringsAsFactors = F)
-scores2 <- read.table("resources\\best_psms_2.txt", header = T, sep = " ", stringsAsFactors = F)
-scores3 <- read.table("resources\\best_psms_3.txt", header = T, sep = " ", stringsAsFactors = F)
-scores5 <- read.table("resources\\best_psms_5.txt", header = T, sep = " ", stringsAsFactors = F)
-scores6 <- read.table("resources\\best_psms_6.txt", header = T, sep = " ", stringsAsFactors = F)
-scores8 <- read.table("resources\\best_psms_8.txt", header = T, sep = " ", stringsAsFactors = F)
-scores9 <- read.table("resources\\best_psms_9.txt", header = T, sep = " ", stringsAsFactors = F)
-scores10 <- read.table("resources\\best_psms_10.txt", header = T, sep = " ", stringsAsFactors = F)
-scores11 <- read.table("resources\\best_psms_11.txt", header = T, sep = " ", stringsAsFactors = F)
-scores13 <- read.table("resources\\best_psms_13.txt", header = T, sep = " ", stringsAsFactors = F)
-scores14 <- read.table("resources\\best_psms_14.txt", header = T, sep = " ", stringsAsFactors = F)
-scores15 <- read.table("resources\\best_psms_15.txt", header = T, sep = " ", stringsAsFactors = F)
-scores16 <- read.table("resources\\best_psms_16.txt", header = T, sep = " ", stringsAsFactors = F)
-scores17 <- read.table("resources\\best_psms_17.txt", header = T, sep = " ", stringsAsFactors = F)
+scores0 <- read.table(gzfile("R/resources/best_psms_0.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores1 <- read.table(gzfile("R/resources/best_psms_1.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores2 <- read.table(gzfile("R/resources/best_psms_2.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores3 <- read.table(gzfile("R/resources/best_psms_3.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores5 <- read.table(gzfile("R/resources/best_psms_5.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores6 <- read.table(gzfile("R/resources/best_psms_6.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores8 <- read.table(gzfile("R/resources/best_psms_8.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores9 <- read.table(gzfile("R/resources/best_psms_9.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores10 <- read.table(gzfile("R/resources/best_psms_10.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores11 <- read.table(gzfile("R/resources/best_psms_11.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores13 <- read.table(gzfile("R/resources/best_psms_13.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores14 <- read.table(gzfile("R/resources/best_psms_14.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores15 <- read.table(gzfile("R/resources/best_psms_15.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores16 <- read.table(gzfile("R/resources/best_psms_16.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
+scores17 <- read.table(gzfile("R/resources/best_psms_17.txt.gz"), header = T, sep = " ", stringsAsFactors = F)
 
 
 # Format the data for ggplot
@@ -309,7 +304,7 @@ scoreMainCategoriesFactors <- factor(scoreMainCategories, levels = sortedMainCat
 # Plot the distribution of peptides per precursor
 
 scoreHistogramPlot <- ggplot()
-scoreHistogramPlot <- scoreHistogramPlot + geom_violin(aes(x=scoreCategoriesFactors[decoySeries == "Decoy"], y=scoreValues[decoySeries == "Decoy"], fill = scoreMainCategoriesFactors[decoySeries == "Decoy"]), scale = "area", na.rm = T)
+scoreHistogramPlot <- scoreHistogramPlot + geom_violin(aes(x=scoreCategoriesFactors[!is.na(decoySeries) & decoySeries == "Decoy"], y=scoreValues[!is.na(decoySeries) & decoySeries == "Decoy"], fill = scoreMainCategoriesFactors[!is.na(decoySeries) & decoySeries == "Decoy"]), scale = "area", na.rm = T)
 scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyMedianValue), shape = 45, size = 6, na.rm = T)
 scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyLowValue), shape = 45, size = 2, na.rm = T)
 scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyHighValue), shape = 45, size = 2, na.rm = T)

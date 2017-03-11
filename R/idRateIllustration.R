@@ -6,16 +6,14 @@ library(ggplot2)
 #
 ##
 
-
-# Set working directory to the R folder
-
-# setwd("R")
-
 # Number of ids values from the Onyase export
 
 n1 <- c(3860, 3872, 3907, 3728, 3876, 3554, 3901, 3773, 3860, 3860, 3358, 3114, 3792, 3856, 3856)
 n5 <- c(4212, 4221, 4258, 4136, 4234, 4039, 4197, 4152, 4212, 4212, 4020, 3813, 4169, 4208, 4206)
 n10 <- c(4455, 4461, 4497, 4431, 4487, 4333, 4453, 4405, 4455, 4455, 4346, 4265, 4471, 4459, 4445)
+
+
+# Format the data for ggplot
 
 valuesList <- c()
 seriesList <- c()
