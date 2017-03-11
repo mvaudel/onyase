@@ -43,7 +43,7 @@ mainCategoriesFactors <- factor(mainCategoriesList, levels = sortedMainCategorie
 seriesList <- factor(seriesList, levels = c(">0", "=0"))
 
 
-# Plot the number of null values in every condition
+# Create a plot of the number of null values in every condition
 
 zerosPlot <- ggplot()
 zerosPlot <- zerosPlot + geom_bar(aes(x=categoriesListFactors, y=valuesList, col = seriesList, fill = mainCategoriesFactors), stat="identity")
@@ -52,4 +52,10 @@ zerosPlot <- zerosPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1)
 zerosPlot <- zerosPlot + scale_color_manual(values = c("black", "gray"))
 zerosPlot <- zerosPlot + scale_fill_brewer(palette="Pastel1")
 zerosPlot <- zerosPlot + guides(colour = guide_legend(override.aes = list(fill = "white", size = 1)), fill = F)
+
+
+# Plot to file
+
+png(filename = "R/results/scores.png", width = 800, height = 600)
 plot(zerosPlot)
+dev.off()

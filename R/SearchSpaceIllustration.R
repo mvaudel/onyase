@@ -290,7 +290,7 @@ medianValues <- categories$median
 medianNames <- factor(categories$name)
 
 
-# Plot the distribution of peptides per precursor
+# Create a plot of the distribution of peptides per precursor
 
 precursorHistogramPlot <- ggplot()
 precursorHistogramPlot <- precursorHistogramPlot + geom_violin(aes(x=precursorCategoriesFactors, y=precursorValues, fill = precursorMainCategoriesFactors), scale = "width", width = 0.6, na.rm = T)
@@ -300,4 +300,10 @@ precursorHistogramPlot <- precursorHistogramPlot + geom_point(aes(x=medianNames,
 precursorHistogramPlot <- precursorHistogramPlot + labs(x = "", y = "# Peptides per Precursor [log10]", fill="", col="")
 precursorHistogramPlot <- precursorHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "top")
 precursorHistogramPlot <- precursorHistogramPlot + scale_fill_brewer(palette="Pastel1")
+
+
+# Plot to file
+
+png(filename = "R/results/searchSpace.png", width = 800, height = 600)
 plot(precursorHistogramPlot)
+dev.off()

@@ -45,11 +45,17 @@ seriesListFactors <- factor(seriesList, levels <- c("1%", "5%", "10%"))
 mainCategoriesFactors <- factor(mainCategoriesList, levels = sortedMainCategoriesNames)
 
 
-# Plot the number of null values in every condition
+# Create a plot of the id rates
 
 idRatePlot <- ggplot()
 idRatePlot <- idRatePlot + geom_path(aes(x=categoriesListFactors, y=valuesList, group = seriesListFactors, col=seriesListFactors))
 idRatePlot <- idRatePlot + labs(x = "", y = "# Peptides", shape="FDR", col="")
 idRatePlot <- idRatePlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 idRatePlot <- idRatePlot + scale_color_manual(values=c("darkred", "darkorange", "darkgreen"))
+
+
+# Plot to file
+
+png(filename = "R/results/scores.png", width = 800, height = 600)
 plot(idRatePlot)
+dev.off()

@@ -301,7 +301,7 @@ scoreMainCategoriesFactors <- factor(scoreMainCategories, levels = sortedMainCat
 
 
 
-# Plot the distribution of peptides per precursor
+# Create a plot of the distribution of scores of decoy hits
 
 scoreHistogramPlot <- ggplot()
 scoreHistogramPlot <- scoreHistogramPlot + geom_violin(aes(x=scoreCategoriesFactors[!is.na(decoySeries) & decoySeries == "Decoy"], y=scoreValues[!is.na(decoySeries) & decoySeries == "Decoy"], fill = scoreMainCategoriesFactors[!is.na(decoySeries) & decoySeries == "Decoy"]), scale = "area", na.rm = T)
@@ -312,4 +312,10 @@ scoreHistogramPlot <- scoreHistogramPlot + labs(x = "", y = "Hyperscore [log10]"
 scoreHistogramPlot <- scoreHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 scoreHistogramPlot <- scoreHistogramPlot + guides(fill = F)
 scoreHistogramPlot <- scoreHistogramPlot + scale_fill_brewer(palette="Pastel1")
+
+
+# Plot to file
+
+png(filename = "R/results/scores.png", width = 800, height = 600)
 plot(scoreHistogramPlot)
+dev.off()
