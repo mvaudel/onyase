@@ -44,7 +44,7 @@ Figure 4B: The number of peptides considered during the search is plotted for ev
 
 ## False positive score distribution
 
-![](illustrations/score.png)
+![](illustrations/scores.png)
 
 Figure 4C: The density of the scores of decoy hits are plotted as in Figure 4A using the same order.
 
