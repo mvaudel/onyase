@@ -49,7 +49,7 @@ mainCategoriesFactors <- factor(mainCategoriesList, levels = sortedMainCategorie
 
 idRatePlot <- ggplot()
 idRatePlot <- idRatePlot + geom_path(aes(x=categoriesListFactors, y=valuesList, group = seriesListFactors, col=seriesListFactors))
-idRatePlot <- idRatePlot + labs(x = "", y = "# Peptides", shape="FDR", col="")
+idRatePlot <- idRatePlot + labs(x = "", y = "# PSMs", col="FDR")
 idRatePlot <- idRatePlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 idRatePlot <- idRatePlot + scale_color_manual(values=c("darkred", "darkorange", "darkgreen"))
 
