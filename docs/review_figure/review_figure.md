@@ -24,7 +24,7 @@ The original version of the figure was an attempt at schematically representing 
 | 7   | Modifications   | Phosphorylation | Search with phosphorylation of S, T, Y as variable modificaiton (up to 5 modification sites tested)     |
 | 8   | Fragmentation   | A,B,Y           | Search including a ions                                                                                 |
 | 9   | Fragmentation   | A,B,C,X,Y,Z     | Search including all fragment ions                                                                      |
-| 10  | Tolerances      | MS1 0.5 Da      | Search with 0.5 Da as MS1 tolerance                                                                     |
+| 10  | Tolerances      | MS2 0.5 Da      | Search with 0.5 Da as MS2 tolerance                                                                     |
 | 11  | Tolerances      | MS1&2 0.5 Da    | Search with 0.5 Da as MS1 and MS2 tolerance                                                             |
 | 12  | Isotopes        | -4 to +4 Da     | Search including isotope correction from -4 to +4 Da                                                    |
 | 13  | Charges         | 1 to 4          | Search including charge 1 to 4                                                                          |
