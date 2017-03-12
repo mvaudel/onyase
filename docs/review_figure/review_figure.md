@@ -20,9 +20,9 @@ The original version of the figure was an attempt at schematically representing 
 | 3   | Database        | Vertebrates     | Search of all Vertebrate sequences                                                                      |
 | 4   | Digestion       | 4 mc            | Search with 4 missed cleavages allowd                                                                   |
 | 5   | Digestion       | Semispecific    | Search using semispecific digestion                                                                     |
-| 6   | Modifications   | Variable Cmm    | Search with cystein carbamidomethylation as variable                                                    |
-| 8   | Modifications   | Phosphorylation | Search with phosphorylation of S, T, Y as variable modificaiton (up to 5 modification sites tested)     |
-| 7   | Fragmentation   | A,B,Y           | Search including a ions                                                                                 |
+| 6   | Modifications   | Variable Cmm    | Search with cysteine carbamidomethylation as variable                                                    |
+| 7   | Modifications   | Phosphorylation | Search with phosphorylation of S, T, Y as variable modificaiton (up to 5 modification sites tested)     |
+| 8   | Fragmentation   | A,B,Y           | Search including a ions                                                                                 |
 | 9   | Fragmentation   | A,B,C,X,Y,Z     | Search including all fragment ions                                                                      |
 | 10  | Tolerances      | MS1 0.5 Da      | Search with 0.5 Da as MS1 tolerance                                                                     |
 | 11  | Tolerances      | MS1&2 0.5 Da    | Search with 0.5 Da as MS1 and MS2 tolerance                                                             |
