@@ -56,6 +56,6 @@ idRatePlot <- idRatePlot + scale_color_manual(values=c("darkred", "darkorange", 
 
 # Plot to file
 
-png(filename = "R/results/scores.png", width = 800, height = 600)
+png(filename = "R/results/idRate.png", width = 800, height = 600)
 plot(idRatePlot)
 dev.off()
