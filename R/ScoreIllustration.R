@@ -316,6 +316,6 @@ scoreHistogramPlot <- scoreHistogramPlot + scale_fill_brewer(palette="Pastel1")
 
 # Plot to file
 
-svg(filename = "R/results/scores.svg", width = 800, height = 600)
+png(filename = "R/results/scores.png", width = 800, height = 600)
 plot(scoreHistogramPlot)
 dev.off()
