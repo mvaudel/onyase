@@ -309,13 +309,13 @@ scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoy
 scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyLowValue), shape = 45, size = 2, na.rm = T)
 scoreHistogramPlot <- scoreHistogramPlot + geom_point(aes(x=medianNames, y=decoyHighValue), shape = 45, size = 2, na.rm = T)
 scoreHistogramPlot <- scoreHistogramPlot + labs(x = "", y = "Hyperscore [log10]", fill="", col="")
-scoreHistogramPlot <- scoreHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+scoreHistogramPlot <- scoreHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1), text = element_text(size=16))
 scoreHistogramPlot <- scoreHistogramPlot + guides(fill = F)
 scoreHistogramPlot <- scoreHistogramPlot + scale_fill_brewer(palette="Pastel1")
 
 
 # Plot to file
 
-png(filename = "R/results/scores.png", width = 800, height = 600)
+svg(filename = "R/results/scores.svg", width = 800, height = 600)
 plot(scoreHistogramPlot)
 dev.off()

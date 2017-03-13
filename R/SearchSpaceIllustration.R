@@ -298,7 +298,7 @@ precursorHistogramPlot <- precursorHistogramPlot + geom_point(aes(x=medianNames,
 precursorHistogramPlot <- precursorHistogramPlot + geom_point(aes(x=medianNames, y=precursorLowValue), shape = 45, size = 2, na.rm = T)
 precursorHistogramPlot <- precursorHistogramPlot + geom_point(aes(x=medianNames, y=precursorHighValue), shape = 45, size = 2, na.rm = T)
 precursorHistogramPlot <- precursorHistogramPlot + labs(x = "", y = "# Peptides per Precursor [log10]", fill="", col="")
-precursorHistogramPlot <- precursorHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "top")
+precursorHistogramPlot <- precursorHistogramPlot + theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "top", text = element_text(size=16))
 precursorHistogramPlot <- precursorHistogramPlot + scale_fill_brewer(palette="Pastel1")
 
 
