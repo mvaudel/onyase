@@ -16,8 +16,8 @@ Standard parameters:
 
 ```
 -spectra                Spectrum file (mgf format), mandatory.
--id_params				The identification parameters in a file (.par). Alternatively, IdentificationParametersCLI parameters can be passed directly. See below for more details.
--output					The folder where to write the output file, mandatory.
+-id_params		The identification parameters in a file (.par). Alternatively, IdentificationParametersCLI parameters can be passed directly. See below for more details.
+-output			The folder where to write the output file, mandatory.
 ```
 
 Advanced parameters:
