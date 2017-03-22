@@ -8,4 +8,4 @@ Initially, this repository was created to make the revision of a figure for a pa
 
 ## Onyase Engine
 
-This script allows running simple standard database searches. More details [here](engine/engine.md).
+This script can be used to run simple standard proteomics database searches. More details [here](engine/engine.md).
