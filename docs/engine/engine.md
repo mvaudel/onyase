@@ -28,15 +28,15 @@ Advanced parameters:
 -threads				Number of threads to use for the processing, default: the number of cores.
 ```
 
-** Identification Parameters **
+**Identification Parameters**
 
 The identification parameters are the ones of [compomics-utilities](https://github.com/compomics/compomics-utilities) and therefore by design compatible with [SearchGUI](https://github.com/compomics/searchgui) and [PeptideShaker](https://github.com/compomics/peptide-shaker). Identification parameter files are in the [json](https://en.wikipedia.org/wiki/JSON) format and can be created in the graphical user interface of [SearchGUI](https://github.com/compomics/searchgui) and [PeptideShaker](https://github.com/compomics/peptide-shaker), using the [IdentificationParametersCLI](https://github.com/compomics/compomics-utilities/wiki/IdentificationParametersCLI), or using third party tools. Alternatively, the parameters can be passed directly to OnyaseEngineCLI by using the command line arguments of the [IdentificationParametersCLI](https://github.com/compomics/compomics-utilities/wiki/IdentificationParametersCLI).
 
-** Temporary files **
+**Temporary files**
 
 The [compomics-utilities](https://github.com/compomics/compomics-utilities) uses temporary files to store parameters and indexes. These files are stored next to original files or in your user folder. You can set a temporary folder path using the *temp_folder* option. When running multiple instances of Onyase, it is recommended to use this option, as well as the redirection of the error stream via the *log* option.
 
-** Output format **
+**Output format**
 
 The output lists all peptide matches for every spectrum. It is a gzip compressed space separated text file where every line represents a peptide candidate. Every spectrum is referenced by its title in the mgf file. The title is encoded like a URL with UTF-8 encoding.
 
@@ -44,15 +44,15 @@ A parser for the output file is available in the [compomics-utilities](https://g
 
 Note that the output does not contain the peptide to protein mapping. Peptides can be mapped back to proteins using [PeptideMapper](https://github.com/compomics/compomics-utilities/wiki/PeptideMapper).
 
-** Performance **
+**Performance**
 
 Onysase is mainly based on functions written for [PeptideShaker](https://github.com/compomics/peptide-shaker), wich is a different use case. They are therefore not optimized for database searches. I will try to improve the performance as time goes.
 
-** Disclaimer **
+**Disclaimer**
 
 Onyase is at a very early development stage. Please be critical, patient, and don't hesitate to [report issues](https://github.com/mvaudel/onyase/issues).
 
-** Licensing **
+**Licensing**
 
 The [compomics-utilities](https://github.com/compomics/compomics-utilities) library is licensed under the Apache-2.0 license.
 
