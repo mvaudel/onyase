@@ -1,6 +1,6 @@
 # Onyase engine
 
-The Onyase engine is a script using the [compomics-utilities](https://github.com/compomics/compomics-utilities) to conduct standard proteomic database searches. An *early beta release* is available [here](https://github.com/mvaudel/onyase/tree/master/release/Onyase-0.0.1.zip).
+The Onyase engine is a script using the [compomics-utilities](https://github.com/compomics/compomics-utilities) to conduct standard proteomic database searches. An *early beta release* is available [here](https://github.com/mvaudel/onyase/tree/master/release/Onyase-0.0.1.zip). Unzip the file prior to execution. An example can be found [here](example.md).
 
 ## Usage ##
 
@@ -47,6 +47,20 @@ Note that the output does not contain the peptide to protein mapping. Peptides c
 **Performance**
 
 Onysase is mainly based on functions written for [PeptideShaker](https://github.com/compomics/peptide-shaker), wich is a different use case. They are therefore not optimized for database searches. I will try to improve the performance as time goes.
+
+**Troubleshooting**
+
+   * Make sure that you have Java installed. The latest version of Java can be found [here](http://java.sun.com/javase/downloads/index.jsp). You only need the JRE version and not the JDK version to run the tool. [64 bit is always recommended on 64 bits machines.](#32-bit-vs-64-bit)
+   
+   * Try to run our [example](example.md) to see if the problem comes from the files or the tool.
+   
+   * If you are using a custom sequence database, please refer to our [database help](https://github.com/compomics/searchgui/wiki/DatabaseHelp) for supported formats.
+   
+   * If you are encountering memory issues, you can provide more memory to the tool using the `-Xmx<memory>` option in the Java command line.
+   
+   * For more java troubleshooting, see the [compomics-utilities help page](https://github.com/compomics/compomics-utilities/wiki/JavaTroubleShooting).
+   
+   * Don't hesitate to open an [issue](https://github.com/mvaudel/onyase/issues).
 
 **Disclaimer**
 
