@@ -24,8 +24,8 @@ Advanced parameters:
 
 ```
 -temp_folder			A folder for temporary file storage. Use only if you encounter problems with the default configuration.
--log					Folder where to write log files.
--threads				Number of threads to use for the processing, default: the number of cores.
+-log				Folder where to write log files.
+-threads			Number of threads to use for the processing, default: the number of cores.
 ```
 
 **Identification Parameters**
