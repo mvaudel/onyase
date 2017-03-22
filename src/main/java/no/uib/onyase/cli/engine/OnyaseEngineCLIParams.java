@@ -85,7 +85,7 @@ public enum OnyaseEngineCLIParams {
         output += "\n\nOptional Temporary Folder:\n\n";
         output += "-" + String.format(CommandLineUtils.formatter, PathSettingsCLIParams.ALL.id) + " " + PathSettingsCLIParams.ALL.description + "\n";
         
-        output += "\n\n\nFor identification parameters options:\nReplace eu.isas.searchgui.cmd.SearchCLI with eu.isas.searchgui.cmd.IdentificationParametersCLI\n\n";
+        output += "\n\n\nFor identification parameters options:\nUse no.uib.onyase.cli.identification_parameters.OnyaseIdentificationParametersCLIParams\n\n";
 
         return output;
     }
