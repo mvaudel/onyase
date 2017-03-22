@@ -1,6 +1,6 @@
 # Onyase engine
 
-The Onyase engine is a script using the [compomics-utilities](https://github.com/compomics/compomics-utilities) to conduct standard proteomic database searches. 
+The Onyase engine is a script using the [compomics-utilities](https://github.com/compomics/compomics-utilities) to conduct standard proteomic database searches. An *early beta* release is available [here](https://github.com/mvaudel/onyase/tree/master/release/Onyase-0.0.1.zip).
 
 ## Usage ##
 
