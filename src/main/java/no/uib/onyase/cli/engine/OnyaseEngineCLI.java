@@ -141,7 +141,7 @@ public class OnyaseEngineCLI implements Callable {
             File outputFolder = onyaseCLIInputBean.getOutputFolder();
             String outputFileName = Util.removeExtension(spectrumfile.getName()) + ".psm";
             File outputFile = new File(outputFolder, outputFileName);
-            File identificationParametersFile = onyaseCLIInputBean.getIdentificationParametersFile();
+            IdentificationParameters identificationParameters = onyaseCLIInputBean.getIdentificationParameters();
             int nThreads = onyaseCLIInputBean.getNThreads();
 
             // Advanced parameters, to be put in the identification parameters at a later stage
@@ -153,9 +153,6 @@ public class OnyaseEngineCLI implements Callable {
             int maxSites = 5;
 
         try {
-            
-            // Load identification parameters
-            IdentificationParameters identificationParameters = IdentificationParameters.getIdentificationParameters(identificationParametersFile);
             
             // Start the engine
             OnyaseEngine onyaseEngine = new OnyaseEngine();

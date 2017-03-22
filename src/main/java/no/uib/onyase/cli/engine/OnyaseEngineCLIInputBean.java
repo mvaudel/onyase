@@ -98,19 +98,6 @@ public class OnyaseEngineCLIInputBean {
     }
 
     /**
-     * Returns the identification parameters file.
-     *
-     * @return the identification parameters file
-     */
-    public File getIdentificationParametersFile() {
-        if (identificationParametersInputBean.getDestinationFile() != null) {
-            return identificationParametersInputBean.getDestinationFile();
-        } else {
-            return identificationParametersInputBean.getInputFile();
-        }
-    }
-
-    /**
      * Returns the number of threads to use.
      *
      * @return the number of threads to use
