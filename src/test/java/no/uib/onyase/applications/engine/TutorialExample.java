@@ -125,7 +125,6 @@ public class TutorialExample {
         
         // Specific parameters
         PsmScore score = PsmScore.snrScore;
-        annotationSettings.setIntensityLimit(0.0);
         int maxX = 2;
         Double minMz = 500.0;
         Double maxMz = null;

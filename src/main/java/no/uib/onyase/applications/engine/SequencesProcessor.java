@@ -220,7 +220,7 @@ public class SequencesProcessor {
         /**
          * The score to use.
          */
-        private PsmScore implementedScore;
+        private PsmScore psmScore;
         /**
          * The object used to estimate the hyperscore.
          */
@@ -289,7 +289,7 @@ public class SequencesProcessor {
             this.spectrumFileName = spectrumFileName;
             this.precursorProcessor = precursorProcessor;
             this.identificationParameters = identificationParameters;
-            this.implementedScore = implementedScore;
+            this.psmScore = implementedScore;
             SearchParameters searchParameters = identificationParameters.getSearchParameters();
             if (exclusionListFilePath != null) {
                 exclusionList = new ExclusionList(exclusionListFilePath, searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm(), minMz, maxMz);
@@ -452,7 +452,7 @@ public class SequencesProcessor {
 
                                                     // Get the spectrum annotation
                                                     MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                    ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
+                                                    ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide, psmScore != PsmScore.snrScore);
 
                                                     // Retain only matches yielding fragment ions
                                                     boolean retainedPSM = false;
@@ -460,7 +460,7 @@ public class SequencesProcessor {
 
                                                         // Get the score
                                                         double score;
-                                                        switch (implementedScore) {
+                                                        switch (psmScore) {
                                                             case hyperscore:
                                                                 score = hyperScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                                                                 break;
@@ -468,7 +468,7 @@ public class SequencesProcessor {
                                                                 score = snrScoreEstimator.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
                                                                 break;
                                                             default:
-                                                                throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
+                                                                throw new UnsupportedOperationException("Score " + psmScore + " not implemented.");
                                                         }
 
                                                         // Retain only PSMs with a score
@@ -632,14 +632,14 @@ public class SequencesProcessor {
 
                                                             // Get the spectrum annotation
                                                             MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                            ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, modifiedSpecificAnnotationSettings, spectrum, modifiedPeptide);
+                                                            ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, modifiedSpecificAnnotationSettings, spectrum, modifiedPeptide, psmScore != PsmScore.snrScore);
 
                                                             // Retain only peptides that yield fragment ions
                                                             if (!ionMatches.isEmpty()) {
 
                                                                 // Get the score
                                                                 double score;
-                                                                switch (implementedScore) {
+                                                                switch (psmScore) {
                                                                     case hyperscore:
                                                                         score = hyperScoreEstimator.getScore(modifiedPeptide, spectrum, annotationSettings, modifiedSpecificAnnotationSettings, ionMatches);
                                                                         break;
@@ -647,7 +647,7 @@ public class SequencesProcessor {
                                                                         score = snrScoreEstimator.getScore(modifiedPeptide, spectrum, annotationSettings, modifiedSpecificAnnotationSettings, ionMatches);
                                                                         break;
                                                                     default:
-                                                                        throw new UnsupportedOperationException("Score " + implementedScore + " not implemented.");
+                                                                        throw new UnsupportedOperationException("Score " + psmScore + " not implemented.");
                                                                 }
 
                                                                 // Retain only PSMs with a score
