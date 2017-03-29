@@ -23,12 +23,15 @@ import com.compomics.util.experiment.identification.psm_scoring.psm_scores.Hyper
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.SnrScore;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
 import com.compomics.util.experiment.identification.spectrum_annotation.SpecificAnnotationSettings;
+import com.compomics.util.experiment.identification.spectrum_annotation.simple_annotators.FragmentAnnotator;
 import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.PeptideSpectrumAnnotator;
 import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
 import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
+import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
+import com.compomics.util.experiment.massspectrometry.indexes.SpectrumIndex;
 import com.compomics.util.maps.MapMutex;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.preferences.IdentificationParameters;
@@ -48,6 +51,7 @@ import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.OverlappingModificationsIterator;
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
 import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
+import org.apache.commons.math.MathException;
 
 /**
  * The sequences processor runs multiple sequences iterators on the database in
@@ -193,6 +197,36 @@ public class SequencesProcessor {
     }
 
     /**
+     * Returns the index of a spectrum.
+     *
+     * @param spectrum the spectrum of interest
+     * @param intensityThreshold the snp intensity threshold to use
+     * @param mzTolerance the m/z tolerance to use
+     * @param isPpm boolean indicating whether the m/z tolerance is in ppm
+     *
+     * @return the spectrum index
+     *
+     * @throws MathException exception thrown if an error occurred while
+     * estimating the intensity threshold
+     * @throws InterruptedException exception thrown if a thread was interrupted
+     */
+    private SpectrumIndex getSpectrumIndex(Spectrum spectrum, double intensityThreshold, double mzTolerance, boolean isPpm) throws MathException, InterruptedException {
+
+        // See whether the index was previously stored
+        SpectrumIndex spectrumIndex = new SpectrumIndex();
+        spectrumIndex = (SpectrumIndex) spectrum.getUrParam(spectrumIndex);
+
+        // Create new index
+        if (spectrumIndex == null) {
+            double intensityLimit = spectrum.getIntensityLimit(AnnotationSettings.IntensityThresholdType.snp, intensityThreshold);
+            spectrumIndex = new SpectrumIndex(spectrum.getPeakMap(), intensityLimit, mzTolerance, isPpm);
+            spectrum.addUrParam(spectrumIndex);
+        }
+
+        return spectrumIndex;
+    }
+
+    /**
      * Private runnable to process a sequence.
      */
     private class SequenceProcessor implements Runnable {
@@ -229,10 +263,6 @@ public class SequencesProcessor {
          * The object used to estimate the SNR score.
          */
         private SnrScore snrScoreEstimator;
-        /**
-         * A spectrum annotator.
-         */
-        private PeptideSpectrumAnnotator peptideSpectrumAnnotator = new PeptideSpectrumAnnotator();
         /**
          * An iterator for the possible modification profiles.
          */
@@ -328,14 +358,17 @@ public class SequencesProcessor {
                 int maxIsotope = searchParameters.getMaxIsotopicCorrection();
 
                 // Cache for the proton and isotope contribution
-                protonContributionCache = new double[maxCharge-minCharge+1];
+                protonContributionCache = new double[maxCharge - minCharge + 1];
                 for (int charge = minCharge; charge <= maxCharge; charge++) {
-                    protonContributionCache[charge-minCharge] = charge * ElementaryIon.proton.getTheoreticMass();
+                    protonContributionCache[charge - minCharge] = charge * ElementaryIon.proton.getTheoreticMass();
                 }
                 neutronContributionCache = new double[maxIsotope - minIsotope + 1];
-                for (int isotope = minIsotope ; isotope <= maxIsotope ; isotope++) {
+                for (int isotope = minIsotope; isotope <= maxIsotope; isotope++) {
                     neutronContributionCache[isotope] = isotope * ElementaryElement.neutron.getMass();
                 }
+
+                // The spectrum intensity threshold
+                double intensityThreshold = psmScore == PsmScore.hyperscore ? 0.75 : 0.01;
 
                 // Store information on the searched modifications
                 PtmSettings ptmSettings = searchParameters.getPtmSettings();
@@ -407,12 +440,13 @@ public class SequencesProcessor {
                         String peptideKey = peptide.getMatchingKey(sequenceMatchingPreferences);
                         Double peptideMass = peptide.getMass();
                         int indexOnProtein = peptideWithPosition.getPosition();
+                        FragmentAnnotator fragmentAnnotator = new FragmentAnnotator(peptide, FragmentAnnotator.IonSeries.by);
 
                         // Iterate posible charges
                         for (int charge = minCharge; charge <= maxCharge; charge++) {
 
                             // Get the mass contribution of the proton
-                            double protonContribution = protonContributionCache[charge-minCharge];
+                            double protonContribution = protonContributionCache[charge - minCharge];
 
                             // Set the annotation preferences for this peptide
                             PeptideAssumption peptideAssumption = new PeptideAssumption(peptide, new Charge(Charge.PLUS, charge));
@@ -452,7 +486,8 @@ public class SequencesProcessor {
 
                                                     // Get the spectrum annotation
                                                     MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                    ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide, psmScore != PsmScore.snrScore);
+                                                    SpectrumIndex spectrumIndex = getSpectrumIndex(spectrum, intensityThreshold, annotationSettings.getFragmentIonAccuracy(), annotationSettings.isFragmentIonPpm());
+                                                    ArrayList<IonMatch> ionMatches = fragmentAnnotator.getIonMatches(spectrumIndex, charge);
 
                                                     // Retain only matches yielding fragment ions
                                                     boolean retainedPSM = false;
@@ -619,8 +654,9 @@ public class SequencesProcessor {
                                                         }
                                                         Peptide modifiedPeptide = new Peptide(peptideDraft.getSequence(), modificationMatches);
                                                         PeptideAssumption modifiedPeptideAssumption = new PeptideAssumption(modifiedPeptide, new Charge(Charge.PLUS, charge));
+                                                        FragmentAnnotator modifiedFragmentAnnotator = new FragmentAnnotator(peptide, FragmentAnnotator.IonSeries.by);
                                                         SpecificAnnotationSettings modifiedSpecificAnnotationSettings = annotationSettings.getSpecificAnnotationPreferences("", modifiedPeptideAssumption, identificationParameters.getSequenceMatchingPreferences(), identificationParameters.getPtmScoringPreferences().getSequenceMatchingPreferences());
-                                                        
+
                                                         // Iterate all precursor matches
                                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
 
@@ -632,7 +668,8 @@ public class SequencesProcessor {
 
                                                             // Get the spectrum annotation
                                                             MSnSpectrum spectrum = (MSnSpectrum) spectrumFactory.getSpectrum(spectrumFileName, spectrumTitle);
-                                                            ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, modifiedSpecificAnnotationSettings, spectrum, modifiedPeptide, psmScore != PsmScore.snrScore);
+                                                            SpectrumIndex spectrumIndex = getSpectrumIndex(spectrum, intensityThreshold, annotationSettings.getFragmentIonAccuracy(), annotationSettings.isFragmentIonPpm());
+                                                            ArrayList<IonMatch> ionMatches = modifiedFragmentAnnotator.getIonMatches(spectrumIndex, charge);
 
                                                             // Retain only peptides that yield fragment ions
                                                             if (!ionMatches.isEmpty()) {

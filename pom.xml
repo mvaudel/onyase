@@ -5,7 +5,7 @@
     <groupId>no.uib.onyase</groupId>
     <artifactId>Onyase</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
     <name>Onyase</name>
     <url>https://github.com/mvaudel/onyase</url>
     <description></description>
