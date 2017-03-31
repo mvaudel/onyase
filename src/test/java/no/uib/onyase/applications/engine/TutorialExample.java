@@ -103,7 +103,8 @@ public class TutorialExample {
         ArrayList<String> fixedModifications = new ArrayList<String>(1);
         fixedModifications.add("Carbamidomethylation of C");
         engineParameters.setFixedModifications(fixedModifications);
-        String[] variableModifications = new String[]{"Oxidation of M"};
+//        String[] variableModifications = new String[]{"Oxidation of M"};
+        String[] variableModifications = new String[]{"Oxidation of M", "Pyrolidone from E", "Pyrolidone from Q", "Pyrolidone from carbamidomethylated C"};
         engineParameters.setVariableModifications(variableModifications);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>(1);
         maxModifications.put("Oxidation of M", 2);

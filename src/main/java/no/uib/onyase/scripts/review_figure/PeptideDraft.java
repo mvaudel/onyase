@@ -1,4 +1,4 @@
-package no.uib.onyase.applications.engine.model;
+package no.uib.onyase.scripts.review_figure;
 
 import com.compomics.util.experiment.biology.AminoAcid;
 import com.compomics.util.preferences.SequenceMatchingPreferences;
@@ -36,6 +36,14 @@ public class PeptideDraft {
      */
     private HashMap<String, Integer[]> variableModificationsSites;
     /**
+     * Boolean indicating whether the peptide was found on a decoy protein.
+     */
+    private boolean decoy = false;
+    /**
+     * Boolean indicating whether the peptide was found on a target protein.
+     */
+    private boolean target = false;
+    /**
      * The raw score.
      */
     private Double rawScore;
@@ -53,12 +61,28 @@ public class PeptideDraft {
      * modifications
      * @param variableModificationsSites a map of the possible modification
      * sites
+     * @param decoy a boolean indicating whether the peptide was found on a
+     * decoy protein
      */
-    public PeptideDraft(String sequence, int charge, HashMap<String, Integer> variableModifications, HashMap<String, Integer[]> variableModificationsSites) {
+    public PeptideDraft(String sequence, int charge, HashMap<String, Integer> variableModifications, HashMap<String, Integer[]> variableModificationsSites, boolean decoy) {
         this.sequence = sequence;
         this.charge = charge;
         this.variableModifications = variableModifications;
         this.variableModificationsSites = variableModificationsSites;
+        setTargetDecoy(decoy);
+    }
+
+    /**
+     * Sets whether the peptide can be mapped to a decoy protein.
+     * 
+     * @param decoy a boolean indicating whether the peptide can be mapped to a decoy protein
+     */
+    public void setTargetDecoy(boolean decoy) {
+        if (decoy) {
+            this.decoy = true;
+        } else {
+            target = true;
+        }
     }
 
     /**
@@ -86,74 +110,42 @@ public class PeptideDraft {
         return sequence;
     }
 
-    /**
-     * Returns the sequence of the peptide draft.
-     * 
-     * @return the sequence of the peptide draft
-     */
     public String getSequence() {
         return sequence;
     }
 
-    /**
-     * Returns the charge.
-     * 
-     * @return the charge
-     */
     public int getCharge() {
         return charge;
     }
 
-    /**
-     * Returns the variable modifications.
-     * 
-     * @return the variable modifications
-     */
     public HashMap<String, Integer> getVariableModifications() {
         return variableModifications;
     }
 
-    /**
-     * Returns the variable modification sites.
-     * 
-     * @return the variable modification sites
-     */
     public HashMap<String, Integer[]> getVariableModificationsSites() {
         return variableModificationsSites;
     }
 
-    /**
-     * Returns the raw score.
-     * 
-     * @return the raw score
-     */
+    public boolean isDecoy() {
+        return decoy;
+    }
+
+    public boolean isTarget() {
+        return target;
+    }
+
     public Double getRawScore() {
         return rawScore;
     }
 
-    /**
-     * Sets the raw score.
-     * 
-     * @param rawScore the raw score
-     */
     public void setRawScore(Double rawScore) {
         this.rawScore = rawScore;
     }
 
-    /**
-     * Returns the e-value.
-     * 
-     * @return the e-value
-     */
     public Double geteValue() {
         return eValue;
     }
 
-    /**
-     * Sets the e-value.
-     * 
-     * @param eValue the e-value
-     */
     public void seteValue(Double eValue) {
         this.eValue = eValue;
     }

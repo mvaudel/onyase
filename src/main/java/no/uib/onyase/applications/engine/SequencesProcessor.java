@@ -375,8 +375,6 @@ public class SequencesProcessor {
                     String sequence = protein.getSequence();
                     SequenceIterator sequenceIterator = iteratorFactory.getSequenceIterator(sequence, digestionPreferences, massMin, massMax);
 
-                    boolean isDecoy = sequenceFactory.isDecoyAccession(protein.getAccession());
-
                     // Iterate all peptides
                     PeptideWithPosition peptideWithPosition;
                     while ((peptideWithPosition = sequenceIterator.getNextPeptide()) != null) {
@@ -522,7 +520,7 @@ public class SequencesProcessor {
                                                 HashMap<String, Integer> modificationOccurrence = new HashMap<String, Integer>(modificationProfile.getModificationOccurence());
 
                                                 // Create PeptideDraft
-                                                PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, modificationOccurrence, possibleModificationSites, isDecoy);
+                                                PeptideDraft peptideDraft = new PeptideDraft(peptide.getSequence(), charge, modificationOccurrence, possibleModificationSites);
 
                                                 // Compute a key for this peptide to see if it was already inspected
                                                 String genericModifiedPeptideKey = peptideDraft.getKey(variableModificationsNames, sequenceMatchingPreferences);
