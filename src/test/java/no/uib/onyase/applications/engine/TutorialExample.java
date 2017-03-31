@@ -85,7 +85,7 @@ public class TutorialExample {
      * interacting with a database
      * @throws MzMLUnmarshallerException exception thrown if an error occurs
      * while interacting with an mzML file
-     * @throws InterruptedException exception thrown if a threading error occurs
+     * @throws InterruptedException exception thrown if a thread is interrupted
      */
     private void launch() throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
