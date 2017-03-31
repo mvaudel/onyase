@@ -4,10 +4,8 @@ import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.experiment.biology.EnzymeFactory;
 import com.compomics.util.experiment.biology.PTMFactory;
-import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
-import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
@@ -18,12 +16,13 @@ import no.uib.onyase.applications.engine.export.TextExporter;
 import no.uib.onyase.applications.engine.model.Psm;
 import no.uib.onyase.applications.engine.modules.precursor_handling.PrecursorProcessor;
 import no.uib.onyase.applications.engine.modules.scoring.EValueEstimator;
-import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
 import no.uib.onyase.applications.engine.modules.scoring.evalue_estimators.HyperscoreEValueEstimator;
 import no.uib.onyase.applications.engine.modules.scoring.evalue_estimators.SnrEvalueEstimator;
+import no.uib.onyase.applications.engine.parameters.EngineParameters;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
+ * This class launches searches using the Onyase engine.
  *
  * @author Marc Vaudel
  */
@@ -72,13 +71,9 @@ public class OnyaseEngine {
      *
      * @param spectrumFile the spectrum file to search
      * @param psmsFile the file where to export all psms
-     * @param identificationParameters the identification parameters
-     * @param psmScore the score to use
-     * @param maxX the maximal number of Xs to allow in a peptide sequence
-     * @param minMz the minimal m/z to consider
-     * @param maxMz the maximal m/z to consider
-     * @param maxModifications the maximal number of modifications
-     * @param maxSites the preferred number of sites to iterate for every PTM
+     * @param fastaFile the file containing the protein sequences in fasta
+     * format
+     * @param engineParameters the engine parameters
      * @param nThreads the number of threads to use
      * @param waitingHandler a waiting handler providing feedback to the user
      * and allowing canceling the process
@@ -95,7 +90,36 @@ public class OnyaseEngine {
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File psmsFile, IdentificationParameters identificationParameters, PsmScore psmScore, int maxX, Double minMz, Double maxMz, HashMap<String, Integer> maxModifications, int maxSites, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(File spectrumFile, File psmsFile, File fastaFile, EngineParameters engineParameters, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+        launch(spectrumFile, psmsFile, fastaFile, null, engineParameters, nThreads, waitingHandler, exceptionHandler);
+    }
+
+    /**
+     * Launches the search.
+     *
+     * @param spectrumFile the spectrum file to search
+     * @param psmsFile the file where to export all psms
+     * @param fastaFile the file containing the protein sequences in fasta
+     * format
+     * @param exclusionListFilePath path of the exclusion list to use
+     * @param engineParameters the engine parameters
+     * @param nThreads the number of threads to use
+     * @param waitingHandler a waiting handler providing feedback to the user
+     * and allowing canceling the process
+     * @param exceptionHandler a handler for the exceptions
+     *
+     * @throws IOException exception thrown if an error occurred while reading
+     * or writing a file
+     * @throws ClassNotFoundException exception thrown if an error occurred
+     * while casting an object
+     * @throws SQLException exception thrown if an error occurred while
+     * interacting with a database
+     * @throws MzMLUnmarshallerException exception thrown if an error occurred
+     * while reading an mzML file
+     * @throws InterruptedException exception thrown if a threading error
+     * occurred
+     */
+    public void launch(File spectrumFile, File psmsFile, File fastaFile, String exclusionListFilePath, EngineParameters engineParameters, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -116,15 +140,13 @@ public class OnyaseEngine {
         localDuration = new Duration();
         localDuration.start();
         waitingHandler.setWaitingText("Loading precursors from " + spectrumFileName + ".");
-        SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        precursorProcessor = new PrecursorProcessor(spectrumFileName, searchParameters, minMz, maxMz);
+        precursorProcessor = new PrecursorProcessor(spectrumFileName, engineParameters.getMs1Tolerance(), engineParameters.isMs1TolerancePpm(), engineParameters.getMs2Tolerance(), engineParameters.isMs2TolerancePpm(), engineParameters.getMinCharge(), engineParameters.getMaxSites(), engineParameters.getMs1MinMz(), engineParameters.getMs1MaxMz());
         localDuration.end();
         waitingHandler.setWaitingText("Loading precursors completed (" + localDuration + ").");
 
         // Load the sequences in the sequence factory
         localDuration = new Duration();
         localDuration.start();
-        File fastaFile = searchParameters.getFastaFile();
         String fastaFileName = Util.getFileName(fastaFile);
         waitingHandler.setWaitingText("Loading sequences from " + fastaFileName + ".");
         sequenceFactory.loadFastaFile(fastaFile);
@@ -134,9 +156,9 @@ public class OnyaseEngine {
         // Get PSMs
         Duration psmDuration = new Duration();
         psmDuration.start();
-        waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + identificationParameters.getName() + ".");
+        waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + engineParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, identificationParameters, psmScore, maxX, nThreads, minMz, maxMz, maxModifications, maxSites);
+        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, exclusionListFilePath, engineParameters, nThreads);
         psmDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + psmDuration + ").");
 
@@ -148,7 +170,7 @@ public class OnyaseEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Estimating e-values.");
         EValueEstimator eValueEstimator;
-        switch (psmScore) {
+        switch (engineParameters.getPsmScore()) {
             case hyperscore:
                 HyperscoreEValueEstimator hyperscoreEValueEstimator = new HyperscoreEValueEstimator(waitingHandler, exceptionHandler);
                 hyperscoreEValueEstimator.estimateInterpolationCoefficients(spectrumFileName, psmsMap, nThreads);
@@ -158,7 +180,7 @@ public class OnyaseEngine {
                 eValueEstimator = new SnrEvalueEstimator();
                 break;
             default:
-                throw new UnsupportedOperationException("Score " + psmScore + " not implemented.");
+                throw new UnsupportedOperationException("Score " + engineParameters.getPsmScore() + " not implemented.");
         }
 
         localDuration.end();

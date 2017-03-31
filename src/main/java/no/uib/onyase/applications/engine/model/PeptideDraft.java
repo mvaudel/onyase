@@ -72,6 +72,11 @@ public class PeptideDraft {
         setTargetDecoy(decoy);
     }
 
+    /**
+     * Sets whether the peptide can be mapped to a decoy protein.
+     * 
+     * @param decoy a boolean indicating whether the peptide can be mapped to a decoy protein
+     */
     public void setTargetDecoy(boolean decoy) {
         if (decoy) {
             this.decoy = true;
@@ -80,6 +85,14 @@ public class PeptideDraft {
         }
     }
 
+    /**
+     * Returns the key of this peptide draft.
+     * 
+     * @param orderedModifications a list of all possible ordered modifications
+     * @param sequenceMatchingPreferences the sequence matching preferences
+     * 
+     * @return the key of this peptide draft
+     */
     public String getKey(String[] orderedModifications, SequenceMatchingPreferences sequenceMatchingPreferences) {
         if (variableModifications != null) {
             StringBuilder stringBuilder = new StringBuilder(sequence.length() + 4 * variableModifications.size());

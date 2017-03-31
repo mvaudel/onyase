@@ -116,7 +116,7 @@ public class ReviewFigureEngine {
         localDuration.start();
         waitingHandler.setWaitingText("Loading precursors from " + spectrumFileName + ".");
         SearchParameters searchParameters = identificationParameters.getSearchParameters();
-        precursorProcessor = new PrecursorProcessor(spectrumFileName, searchParameters, minMz, maxMz);
+        precursorProcessor = new PrecursorProcessor(spectrumFileName, searchParameters.getPrecursorAccuracy(), searchParameters.getPrecursorAccuracyType() == SearchParameters.MassAccuracyType.PPM, searchParameters.getFragmentIonAccuracy(), searchParameters.getFragmentAccuracyType() == SearchParameters.MassAccuracyType.PPM, searchParameters.getMinChargeSearched().value, searchParameters.getMaxChargeSearched().value, minMz, maxMz);
         localDuration.end();
         waitingHandler.setWaitingText("Loading precursors completed (" + localDuration + ").");
 

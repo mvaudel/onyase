@@ -1,7 +1,6 @@
 package no.uib.onyase.applications.engine.modules.precursor_handling;
 
 import com.compomics.util.experiment.biology.ions.ElementaryIon;
-import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
 import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import java.io.IOException;
@@ -41,7 +40,12 @@ public class PrecursorProcessor {
      * be loaded in the spectrum factory.
      *
      * @param mgfFileName the name of the file to process
-     * @param searchParameters the search parameters
+     * @param ms1Tolerance the ms1 m/z tolerance
+     * @param ms1TolerancePpm a boolean indicating whether the ms1 m/z tolerance is in ppm
+     * @param ms2Tolerance the ms2 m/z tolerance
+     * @param ms2TolerancePpm a boolean indicating whether the ms2 m/z tolerance is in ppm
+     * @param minCharge the minimal charge to consider
+     * @param maxCharge the maximal charge to consider
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      *
@@ -50,8 +54,8 @@ public class PrecursorProcessor {
      * @throws MzMLUnmarshallerException exception thrown whenever an error
      * occurred while reading an mzML file
      */
-    public PrecursorProcessor(String mgfFileName, SearchParameters searchParameters, Double minMz, Double maxMz) throws IOException, MzMLUnmarshallerException {
-        importSpectra(mgfFileName, searchParameters, minMz, maxMz);
+    public PrecursorProcessor(String mgfFileName, double ms1Tolerance, boolean ms1TolerancePpm, double ms2Tolerance, boolean ms2TolerancePpm, int minCharge, int maxCharge, double minMz, double maxMz) throws IOException, MzMLUnmarshallerException {
+        importSpectra(mgfFileName, ms1Tolerance, ms1TolerancePpm, ms2Tolerance, ms2TolerancePpm, minCharge, maxCharge, minMz, maxMz);
     }
 
     /**
@@ -59,7 +63,12 @@ public class PrecursorProcessor {
      * parameters.
      *
      * @param fileName the name of the file to process
-     * @param searchParameters the search parameters
+     * @param ms1Tolerance the ms1 m/z tolerance
+     * @param ms1TolerancePpm a boolean indicating whether the ms1 m/z tolerance is in ppm
+     * @param ms2Tolerance the ms2 m/z tolerance
+     * @param ms2TolerancePpm a boolean indicating whether the ms2 m/z tolerance is in ppm
+     * @param minCharge the minimal charge to consider
+     * @param maxCharge the maximal charge to consider
      * @param minMz the minimal m/z to consider
      * @param maxMz the maximal m/z to consider
      *
@@ -68,31 +77,23 @@ public class PrecursorProcessor {
      * @throws MzMLUnmarshallerException exception thrown whenever an error
      * occurred while reading an mzML file
      */
-    private void importSpectra(String fileName, SearchParameters searchParameters, Double minMz, Double maxMz) throws IOException, MzMLUnmarshallerException {
+    private void importSpectra(String fileName, double ms1Tolerance, boolean ms1TolerancePpm, double ms2Tolerance, boolean ms2TolerancePpm, int minCharge, int maxCharge, double minMz, double maxMz) throws IOException, MzMLUnmarshallerException {
 
-        precursorMap = new PrecursorMap(spectrumFactory.getPrecursorMap(fileName), searchParameters.getPrecursorAccuracy(), searchParameters.isPrecursorAccuracyTypePpm());
+        precursorMap = new PrecursorMap(spectrumFactory.getPrecursorMap(fileName), ms2Tolerance, ms2TolerancePpm);
 
-        int minCharge = searchParameters.getMinChargeSearched().value;
-        int maxCharge = searchParameters.getMaxChargeSearched().value;
-
-        Double mzMin;
-        if (minMz != null) {
-            mzMin = Math.max(minMz, precursorMap.getMinMz());
-        } else {
-            mzMin = precursorMap.getMinMz();
-        }
+        Double mzMin = Math.max(minMz, precursorMap.getMinMz());
         Double mzMax;
-        if (maxMz != null) {
-            mzMax = Math.min(maxMz, precursorMap.getMaxMz());
-        } else {
+        if (maxMz == 0.0) {
             mzMax = precursorMap.getMaxMz();
-        }
-        if (searchParameters.isPrecursorAccuracyTypePpm()) {
-            mzMin *= (1 - searchParameters.getPrecursorAccuracy() / 1000000);
-            mzMax *= (1 + searchParameters.getPrecursorAccuracy() / 1000000);
         } else {
-            mzMin -= searchParameters.getPrecursorAccuracy();
-            mzMax += searchParameters.getPrecursorAccuracy();
+            mzMax = Math.min(maxMz, precursorMap.getMaxMz());
+        }
+        if (ms1TolerancePpm) {
+            mzMin *= (1 - ms1Tolerance / 1000000);
+            mzMax *= (1 + ms1Tolerance / 1000000);
+        } else {
+            mzMin -= ms1Tolerance;
+            mzMax += ms1Tolerance;
         }
 
         massMin = (mzMin * minCharge) - (minCharge * ElementaryIon.proton.getTheoreticMass());

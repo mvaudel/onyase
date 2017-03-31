@@ -1,8 +1,6 @@
 package no.uib.onyase.cli.engine;
 
-import com.compomics.cli.identification_parameters.IdentificationParametersCLIParams;
 import com.compomics.software.cli.CommandLineUtils;
-import no.uib.onyase.cli.identification_parameters.OnyaseIdentificationParametersCLIParams;
 import no.uib.onyase.cli.paths.PathSettingsCLIParams;
 import org.apache.commons.cli.Options;
 
@@ -11,10 +9,14 @@ import org.apache.commons.cli.Options;
  *
  * @author Marc Vaudel
  */
-public enum OnyaseEngineCLIParams {
+public enum OnyaseEngineCLIParameter {
 
     SPECTRUM_FILE("spectra", "Spectrum file (mgf format).", true),
+    FASTA("fasta", "The file containing the protein sequences in the fasta format.", true),
+    PARAMS("params", "The file containing the parameters in the json format.", true),
     OUTPUT("output", "The folder where to write the output file.", true),
+    
+    EXCLUSION_LIST("exclusion_list", "List of precursors to exclude.", true),
     
     THREADS("threads", "Number of threads to use for the processing, default: the number of cores.", false);
 
@@ -39,7 +41,7 @@ public enum OnyaseEngineCLIParams {
      * @param description the description
      * @param mandatory is the parameter mandatory
      */
-    private OnyaseEngineCLIParams(String id, String description, boolean mandatory) {
+    private OnyaseEngineCLIParameter(String id, String description, boolean mandatory) {
         this.id = id;
         this.description = description;
         this.mandatory = mandatory;
@@ -53,11 +55,9 @@ public enum OnyaseEngineCLIParams {
      */
     public static void createOptionsCLI(Options aOptions) {
         
-        for (OnyaseEngineCLIParams identificationParametersCLIParams : values()) {
-            aOptions.addOption(identificationParametersCLIParams.id, true, identificationParametersCLIParams.description);
+        for (OnyaseEngineCLIParameter parameter : values()) {
+            aOptions.addOption(parameter.id, true, parameter.description);
         }
-        
-        OnyaseIdentificationParametersCLIParams.createOptionsCLI(aOptions);
         
         // Path setup
         PathSettingsCLIParams.createOptionsCLI(aOptions);
@@ -74,18 +74,17 @@ public enum OnyaseEngineCLIParams {
 
         output += "Mandatory Parameters:\n\n";
         output += "-" + String.format(CommandLineUtils.formatter, SPECTRUM_FILE.id) + " " + SPECTRUM_FILE.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, FASTA.id) + " " + FASTA.description + "\n";
         output += "-" + String.format(CommandLineUtils.formatter, OUTPUT.id) + " " + OUTPUT.description + "\n";
 
         output += "\n\nOptional Input Parameters:\n\n";
-        output += "-" + String.format(CommandLineUtils.formatter, IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.id) + " " + IdentificationParametersCLIParams.IDENTIFICATION_PARAMETERS.description + "\n";
+        output += "-" + String.format(CommandLineUtils.formatter, EXCLUSION_LIST.id) + " " + EXCLUSION_LIST.description + "\n";
         
         output += "\n\nProcessing Options:\n\n";
         output += "-" + String.format(CommandLineUtils.formatter, THREADS.id) + " " + THREADS.description + "\n";
         
         output += "\n\nOptional Temporary Folder:\n\n";
         output += "-" + String.format(CommandLineUtils.formatter, PathSettingsCLIParams.ALL.id) + " " + PathSettingsCLIParams.ALL.description + "\n";
-        
-        output += "\n\n\nFor identification parameters options:\nUse no.uib.onyase.cli.identification_parameters.OnyaseIdentificationParametersCLIParams\n\n";
 
         return output;
     }

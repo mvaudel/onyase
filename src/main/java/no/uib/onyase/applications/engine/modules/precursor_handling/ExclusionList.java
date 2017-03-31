@@ -32,11 +32,11 @@ public class ExclusionList {
     /**
      * The maximal m/z to accept.
      */
-    private Double maxMz;
+    private double maxMz;
     /**
      * The minimal m/z to accept
      */
-    private Double minMz;
+    private double minMz;
 
     /**
      * Constructor.
@@ -48,7 +48,7 @@ public class ExclusionList {
      * reading the exclusion list
      */
     public ExclusionList(double precursorTolerance, boolean ppm) throws IOException {
-        this(defaultListFilePath, precursorTolerance, ppm, null, null);
+        this(defaultListFilePath, precursorTolerance, ppm, 0.0, Double.MAX_VALUE);
     }
 
     /**
@@ -61,8 +61,8 @@ public class ExclusionList {
      * @throws IOException exception thrown whenever an error occurred while
      * reading the exclusion list
      */
-    public ExclusionList(double precursorTolerance, boolean ppm, Double minMz) throws IOException {
-        this(defaultListFilePath, precursorTolerance, ppm, minMz, null);
+    public ExclusionList(double precursorTolerance, boolean ppm, double minMz) throws IOException {
+        this(defaultListFilePath, precursorTolerance, ppm, minMz, Double.MAX_VALUE);
     }
 
     /**
@@ -76,7 +76,7 @@ public class ExclusionList {
      * @throws IOException exception thrown whenever an error occurred while
      * reading the exclusion list
      */
-    public ExclusionList(double precursorTolerance, boolean ppm, Double minMz, Double maxMz) throws IOException {
+    public ExclusionList(double precursorTolerance, boolean ppm, double minMz, double maxMz) throws IOException {
         this(defaultListFilePath, precursorTolerance, ppm, minMz, maxMz);
     }
 
@@ -93,17 +93,9 @@ public class ExclusionList {
      * @throws IOException exception thrown whenever an error occurred while
      * reading the exclusion list
      */
-    public ExclusionList(String exclusionListfilePath, double precursorTolerance, boolean ppm, Double minMz, Double maxMz) throws IOException {
-        if (minMz != null) {
-            this.minMz = minMz;
-        } else {
-            this.minMz = 0.0;
-        }
-        if (maxMz != null) {
-            this.maxMz = maxMz;
-        } else {
-            this.maxMz = Double.MAX_VALUE;
-        }
+    public ExclusionList(String exclusionListfilePath, double precursorTolerance, boolean ppm, double minMz, double maxMz) throws IOException {
+        this.minMz = minMz;
+        this.maxMz = maxMz;
         importListFromFile(exclusionListfilePath, precursorTolerance, ppm);
     }
 

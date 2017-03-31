@@ -1,10 +1,9 @@
 package no.uib.onyase.cli.engine;
 
 import com.compomics.software.cli.CommandParameter;
-import com.compomics.cli.identification_parameters.IdentificationParametersInputBean;
-import com.compomics.util.preferences.IdentificationParameters;
 import java.io.File;
 import java.io.IOException;
+import no.uib.onyase.applications.engine.parameters.EngineParameters;
 import no.uib.onyase.cli.paths.PathSettingsCLIInputBean;
 import org.apache.commons.cli.CommandLine;
 
@@ -21,13 +20,21 @@ public class OnyaseEngineCLIInputBean {
      */
     private File spectrumFile;
     /**
+     * The fasta file.
+     */
+    private File fastaFile;
+    /**
      * The output folder.
      */
     private File outputFolder;
     /**
-     * The identification parameters input.
+     * the path to the exclusion list
      */
-    private IdentificationParametersInputBean identificationParametersInputBean;
+    private String exclusionListPath = null;
+    /**
+     * The engine parameters.
+     */
+    private EngineParameters engineParameters;
     /**
      * The path settings.
      */
@@ -50,21 +57,28 @@ public class OnyaseEngineCLIInputBean {
     public OnyaseEngineCLIInputBean(CommandLine aLine) throws IOException, ClassNotFoundException {
 
         // get the files needed for the search
-        String arg = aLine.getOptionValue(OnyaseEngineCLIParams.SPECTRUM_FILE.id);
+        String arg = aLine.getOptionValue(OnyaseEngineCLIParameter.SPECTRUM_FILE.id);
         spectrumFile = new File(arg);
 
+        // fasta file
+        arg = aLine.getOptionValue(OnyaseEngineCLIParameter.FASTA.id);
+        fastaFile = new File(arg);
+
         // output folder
-        arg = aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT.id);
+        arg = aLine.getOptionValue(OnyaseEngineCLIParameter.OUTPUT.id);
         outputFolder = new File(arg);
 
-        // get the number of threads
-        if (aLine.hasOption(OnyaseEngineCLIParams.THREADS.id)) {
-            arg = aLine.getOptionValue(OnyaseEngineCLIParams.THREADS.id);
-            nThreads = new Integer(arg);
+        // get the path to the exclusion list
+        if (aLine.hasOption(OnyaseEngineCLIParameter.EXCLUSION_LIST.id)) {
+            arg = aLine.getOptionValue(OnyaseEngineCLIParameter.EXCLUSION_LIST.id);
+            exclusionListPath = arg;
         }
 
-        // identification parameters
-        identificationParametersInputBean = new IdentificationParametersInputBean(aLine);
+        // get the number of threads
+        if (aLine.hasOption(OnyaseEngineCLIParameter.THREADS.id)) {
+            arg = aLine.getOptionValue(OnyaseEngineCLIParameter.THREADS.id);
+            nThreads = new Integer(arg);
+        }
 
         // path settings
         pathSettingsCLIInputBean = new PathSettingsCLIInputBean(aLine);
@@ -89,12 +103,30 @@ public class OnyaseEngineCLIInputBean {
     }
 
     /**
-     * Returns the identification parameters.
-     *
-     * @return the identification parameters
+     * Returns the fasta file.
+     * 
+     * @return the fasta file
      */
-    public IdentificationParameters getIdentificationParameters() {
-        return identificationParametersInputBean.getIdentificationParameters();
+    public File getFastaFile() {
+        return fastaFile;
+    }
+
+    /**
+     * Returns the path to the exclusion list.
+     * 
+     * @return the path to the exclusion list
+     */
+    public String getExclusionListPath() {
+        return exclusionListPath;
+    }
+
+    /**
+     * Returns the engine parameters.
+     * 
+     * @return the engine parameters
+     */
+    public EngineParameters getEngineParameters() {
+        return engineParameters;
     }
 
     /**
@@ -122,40 +154,75 @@ public class OnyaseEngineCLIInputBean {
         }
 
         // check the spectrum file
-        if (!aLine.hasOption(OnyaseEngineCLIParams.SPECTRUM_FILE.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParams.SPECTRUM_FILE.id)).equals("")) {
+        if (!aLine.hasOption(OnyaseEngineCLIParameter.SPECTRUM_FILE.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParameter.SPECTRUM_FILE.id)).equals("")) {
             System.out.println(System.getProperty("line.separator") + "Spectrum file not specified." + System.getProperty("line.separator"));
             return false;
         } else {
-            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParams.SPECTRUM_FILE.id)));
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParameter.SPECTRUM_FILE.id)));
             if (!file.exists()) {
                 System.out.println(System.getProperty("line.separator") + "Spectrum file \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
                 return false;
             }
         }
 
+        // check the fasta file
+        if (!aLine.hasOption(OnyaseEngineCLIParameter.FASTA.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParameter.FASTA.id)).equals("")) {
+            System.out.println(System.getProperty("line.separator") + "Fasta file not specified." + System.getProperty("line.separator"));
+            return false;
+        } else {
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParameter.FASTA.id)));
+            if (!file.exists()) {
+                System.out.println(System.getProperty("line.separator") + "Fasta file \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
+                return false;
+            }
+        }
+
+        // check the parameters file
+        if (!aLine.hasOption(OnyaseEngineCLIParameter.PARAMS.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParameter.PARAMS.id)).equals("")) {
+            System.out.println(System.getProperty("line.separator") + "Parameters file not specified." + System.getProperty("line.separator"));
+            return false;
+        } else {
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParameter.PARAMS.id)));
+            if (!file.exists()) {
+                System.out.println(System.getProperty("line.separator") + "Parameters file \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
+                return false;
+            }
+            try {
+                EngineParameters.getIdentificationParameters(file);
+            } catch (Exception e) {
+                System.out.println(System.getProperty("line.separator") + "An error occurres while reading the parameters file \'" + file.getName() + "\', see below." + System.getProperty("line.separator"));
+                e.printStackTrace();
+                return false;
+            }
+        }
+
         // check the output folder
-        if (!aLine.hasOption(OnyaseEngineCLIParams.OUTPUT.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT.id)).equals("")) {
+        if (!aLine.hasOption(OnyaseEngineCLIParameter.OUTPUT.id) || ((String) aLine.getOptionValue(OnyaseEngineCLIParameter.OUTPUT.id)).equals("")) {
             System.out.println(System.getProperty("line.separator") + "Output folder not specified." + System.getProperty("line.separator"));
             return false;
         } else {
-            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParams.OUTPUT.id)));
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParameter.OUTPUT.id)));
             if (!file.exists()) {
                 System.out.println(System.getProperty("line.separator") + "Output folder \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
                 return false;
             }
         }
 
-        // check the number of threads
-        if (aLine.hasOption(OnyaseEngineCLIParams.THREADS.id)) {
-            String arg = aLine.getOptionValue(OnyaseEngineCLIParams.THREADS.id);
-            if (!CommandParameter.isPositiveInteger(OnyaseEngineCLIParams.THREADS.id, arg, false)) {
+        // check the exclusion list
+        if (aLine.hasOption(OnyaseEngineCLIParameter.EXCLUSION_LIST.id)) {
+            File file = new File(((String) aLine.getOptionValue(OnyaseEngineCLIParameter.EXCLUSION_LIST.id)));
+            if (!file.exists()) {
+                System.out.println(System.getProperty("line.separator") + "Exclusion list \'" + file.getName() + "\' not found." + System.getProperty("line.separator"));
                 return false;
             }
         }
 
-        // check the identification parameters
-        if (!IdentificationParametersInputBean.isValidStartup(aLine, false)) {
-            return false;
+        // check the number of threads
+        if (aLine.hasOption(OnyaseEngineCLIParameter.THREADS.id)) {
+            String arg = aLine.getOptionValue(OnyaseEngineCLIParameter.THREADS.id);
+            if (!CommandParameter.isPositiveInteger(OnyaseEngineCLIParameter.THREADS.id, arg, false)) {
+                return false;
+            }
         }
 
         return true;

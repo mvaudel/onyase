@@ -457,7 +457,7 @@ public class SequencesProcessor {
                                                 ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, peptide);
 
                                                 // Get the score and save it to the score map
-                                                double score = hyperScore.getScore(peptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                double score = hyperScore.getScore(peptide, charge, spectrum, ionMatches);
                                                 int scoreBin = (int) score;
                                                 textExporter.writePeptide(spectrumFileName, spectrumTitle, peptide, score, charge);
                                                 threadNLines++;
@@ -604,7 +604,7 @@ public class SequencesProcessor {
                                                             ArrayList<IonMatch> ionMatches = peptideSpectrumAnnotator.getSpectrumAnnotation(annotationSettings, specificAnnotationSettings, spectrum, modifiedPeptide);
 
                                                             // Get the score
-                                                            double score = hyperScore.getScore(modifiedPeptide, spectrum, annotationSettings, specificAnnotationSettings, ionMatches);
+                                                            double score = hyperScore.getScore(modifiedPeptide, charge, spectrum, ionMatches);
 
                                                             // Write the match to the file
                                                             textExporter.writePeptide(spectrumFileName, spectrumTitle, modifiedPeptide, score, charge);

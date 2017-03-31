@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.concurrent.Callable;
 import no.uib.onyase.applications.engine.OnyaseEngine;
 import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
+import no.uib.onyase.applications.engine.parameters.EngineParameters;
 import no.uib.onyase.cli.paths.PathSettingsCLI;
 import no.uib.onyase.cli.paths.PathSettingsCLIInputBean;
 import no.uib.onyase.settings.OnyasePathPreferences;
@@ -62,7 +63,7 @@ public class OnyaseEngineCLI implements Callable {
         try {
 
             Options lOptions = new Options();
-            OnyaseEngineCLIParams.createOptionsCLI(lOptions);
+            OnyaseEngineCLIParameter.createOptionsCLI(lOptions);
             BasicParser parser = new BasicParser();
             CommandLine line = parser.parse(lOptions, args);
 
@@ -72,7 +73,7 @@ public class OnyaseEngineCLI implements Callable {
                 lPrintWriter.print("OnyaseCLI" + System.getProperty("line.separator"));
                 lPrintWriter.print("======================" + System.getProperty("line.separator"));
                 lPrintWriter.print(getHeader());
-                lPrintWriter.print(OnyaseEngineCLIParams.getOptionsAsString());
+                lPrintWriter.print(OnyaseEngineCLIParameter.getOptionsAsString());
                 lPrintWriter.flush();
                 lPrintWriter.close();
 
@@ -136,27 +137,21 @@ public class OnyaseEngineCLI implements Callable {
         // Set waiting handler
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
 
-            // Get input files from user
+            // Get input from user
             File spectrumfile = onyaseCLIInputBean.getSpectrumFile();
             File outputFolder = onyaseCLIInputBean.getOutputFolder();
             String outputFileName = Util.removeExtension(spectrumfile.getName()) + ".psm";
             File outputFile = new File(outputFolder, outputFileName);
-            IdentificationParameters identificationParameters = onyaseCLIInputBean.getIdentificationParameters();
+            File fastaFile = onyaseCLIInputBean.getFastaFile();
+            String exclusionListPath = onyaseCLIInputBean.getExclusionListPath();
+            EngineParameters engineParameters = onyaseCLIInputBean.getEngineParameters();
             int nThreads = onyaseCLIInputBean.getNThreads();
-
-            // Advanced parameters, to be put in the identification parameters at a later stage
-            PsmScore implementedScore = PsmScore.hyperscore;
-            int maxX = 2;
-            Double minMz = 500.0;
-            Double maxMz = null;
-            HashMap<String, Integer> maxModifications = new HashMap<String, Integer>();
-            int maxSites = 5;
 
         try {
             
             // Start the engine
             OnyaseEngine onyaseEngine = new OnyaseEngine();
-            onyaseEngine.launch(spectrumfile, outputFile, identificationParameters, implementedScore, maxX, minMz, maxMz, maxModifications, maxSites, nThreads, waitingHandler, exceptionHandler);
+            onyaseEngine.launch(spectrumfile, outputFile, fastaFile, exclusionListPath, engineParameters, nThreads, waitingHandler, exceptionHandler);
 
         } catch (Exception e) {
             e.printStackTrace();
