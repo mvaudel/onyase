@@ -32,7 +32,7 @@ public class ExclusionList {
     /**
      * The maximal m/z to accept.
      */
-    private double maxMz;
+    private double maxMz = Double.MAX_VALUE;
     /**
      * The minimal m/z to accept
      */

@@ -23,7 +23,7 @@ import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 public class TutorialExample {
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
-    private String destinationFilePath = "C:\\Users\\mvaudel\\Desktop\\test\\test onyase\\SnrScore.psm";
+    private String destinationFilePath = "C:\\Projects\\Onyase\\test\\output\\qExactive01819.psm";
     private String fastaFilePath = "C:\\Databases\\uniprot-human-reviewed-trypsin-november-2016_concatenated_target_decoy.fasta";
 
     /**
@@ -123,7 +123,7 @@ public class TutorialExample {
         engineParameters.setMaxCharge(4);
         // Isotopes
         engineParameters.setMinIsotopicCorrection(0);
-        engineParameters.setMinIsotopicCorrection(1);
+        engineParameters.setMaxIsotopicCorrection(1);
         // Digestion
         engineParameters.setDigestionPreferences(DigestionPreferences.getDefaultPreferences());
         // Fragmentation
@@ -134,7 +134,7 @@ public class TutorialExample {
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         
         // Number of threads
-        int nThreads = 4;
+        int nThreads = 3;
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
         onyaseEngine.launch(spectrumFile, destinationFile, fastaFile, engineParameters, nThreads, waitingHandler, exceptionHandler);

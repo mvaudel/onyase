@@ -409,7 +409,7 @@ public class SequencesProcessor {
 
                                         // Iterate all precursor matches
                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle : precursorMatches) {
-                                            
+
                                             // Get the spectrum title
                                             String spectrumTitle = precursorWithTitle.spectrumTitle;
 
@@ -474,8 +474,8 @@ public class SequencesProcessor {
                                                 }
                                             }
                                         }
-                                        }
                                     }
+                                }
 
                                 // See if the peptide can be modified
                                 HashMap<String, Integer[]> possibleModificationSites = new HashMap<String, Integer[]>(1);

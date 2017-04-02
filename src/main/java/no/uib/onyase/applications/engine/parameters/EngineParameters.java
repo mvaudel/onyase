@@ -75,7 +75,7 @@ public class EngineParameters {
     /**
      * The MS1 maximal m/z to consider.
      */
-    private double ms1MaxMz;
+    private double ms1MaxMz = Double.MAX_VALUE;
     /**
      * The MS2 intensity threshold.
      */

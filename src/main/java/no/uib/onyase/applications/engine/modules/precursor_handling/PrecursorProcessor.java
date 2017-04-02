@@ -82,12 +82,7 @@ public class PrecursorProcessor {
         precursorMap = new PrecursorMap(spectrumFactory.getPrecursorMap(fileName), ms2Tolerance, ms2TolerancePpm);
 
         Double mzMin = Math.max(minMz, precursorMap.getMinMz());
-        Double mzMax;
-        if (maxMz == 0.0) {
-            mzMax = precursorMap.getMaxMz();
-        } else {
-            mzMax = Math.min(maxMz, precursorMap.getMaxMz());
-        }
+        Double mzMax = Math.min(maxMz, precursorMap.getMaxMz());
         if (ms1TolerancePpm) {
             mzMin *= (1 - ms1Tolerance / 1000000);
             mzMax *= (1 + ms1Tolerance / 1000000);
