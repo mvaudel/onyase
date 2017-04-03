@@ -2,6 +2,9 @@ package no.uib.onyase.applications.engine;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
+import com.compomics.util.experiment.biology.PTM;
+import com.compomics.util.experiment.biology.PTMFactory;
+import com.compomics.util.experiment.biology.ions.ReporterIon;
 import com.compomics.util.experiment.identification.spectrum_annotation.SimplePeptideAnnotator;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
@@ -10,9 +13,11 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
 import no.uib.onyase.applications.engine.parameters.EngineParameters;
+import no.uib.onyase.applications.engine.parameters.SpectrumAnnotationSettings;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
 /**
@@ -21,6 +26,10 @@ import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
  * @author Marc Vaudel
  */
 public class TutorialExample {
+    /**
+     * The modifications factory.
+     */
+    private PTMFactory ptmFactory = PTMFactory.getInstance();
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
     private String destinationFilePath = "C:\\Projects\\Onyase\\test\\output\\qExactive01819.psm";
@@ -94,7 +103,7 @@ public class TutorialExample {
         File destinationFile = new File(destinationFilePath);
         File fastaFile = new File(fastaFilePath);
         
-        // Parameters
+        // Search parameters
         EngineParameters engineParameters = new EngineParameters();
         engineParameters.setName("Test tutorials Onyase");
         // Score
@@ -103,8 +112,8 @@ public class TutorialExample {
         ArrayList<String> fixedModifications = new ArrayList<String>(1);
         fixedModifications.add("Carbamidomethylation of C");
         engineParameters.setFixedModifications(fixedModifications);
-//        String[] variableModifications = new String[]{"Oxidation of M"};
-        String[] variableModifications = new String[]{"Oxidation of M", "Pyrolidone from E", "Pyrolidone from Q", "Pyrolidone from carbamidomethylated C"};
+        String[] variableModifications = new String[]{"Oxidation of M"};
+//        String[] variableModifications = new String[]{"Oxidation of M", "Pyrolidone from E", "Pyrolidone from Q", "Pyrolidone from carbamidomethylated C"};
         engineParameters.setVariableModifications(variableModifications);
         HashMap<String, Integer> maxModifications = new HashMap<String, Integer>(1);
         maxModifications.put("Oxidation of M", 2);
@@ -128,6 +137,32 @@ public class TutorialExample {
         engineParameters.setDigestionPreferences(DigestionPreferences.getDefaultPreferences());
         // Fragmentation
         engineParameters.setDominantSeries(SimplePeptideAnnotator.IonSeries.by);
+        // Reporter ions
+        HashMap<Double, ReporterIon> reporterIonsMap = new HashMap<Double, ReporterIon>(1);
+        for (String modificationName : variableModifications) {
+            PTM modification = ptmFactory.getPTM(modificationName);
+            for (ReporterIon reporterIon : modification.getReporterIons()) {
+                reporterIonsMap.put(reporterIon.getTheoreticMass(), reporterIon);
+            }
+        }
+        ReporterIon[] reporterIons = new ReporterIon[reporterIonsMap.size()];
+        ArrayList<Double> reporterIonsMzs = new ArrayList<Double>(reporterIonsMap.keySet());
+        Collections.sort(reporterIonsMzs);
+        for (int i = 0 ; i < reporterIonsMzs.size() ; i++) {
+            ReporterIon reporterIon = reporterIonsMap.get(reporterIonsMzs.get(i));
+            reporterIons[i] = reporterIon;
+        }
+        // Spectrum annotation
+        SpectrumAnnotationSettings spectrumAnnotationSettings = new SpectrumAnnotationSettings();
+        spectrumAnnotationSettings.setB(true);
+        spectrumAnnotationSettings.setY(true);
+        spectrumAnnotationSettings.setPrecursor(true);
+        spectrumAnnotationSettings.setImmonium(true);
+        spectrumAnnotationSettings.setRelated(true);
+        spectrumAnnotationSettings.setNeutralLosses(true);
+        spectrumAnnotationSettings.setNeutralLossesSequenceDependent(true);
+        spectrumAnnotationSettings.setReporterIons(reporterIons);
+        engineParameters.setSpectrumAnnotationSettings(spectrumAnnotationSettings);
         
         // Waiting and exception handling
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();

@@ -108,6 +108,10 @@ public class EngineParameters {
      * The dominant ion series.
      */
     private SimplePeptideAnnotator.IonSeries dominantSeries;
+    /**
+     * The spectrum annotation settings.
+     */
+    private SpectrumAnnotationSettings spectrumAnnotationSettings;
 
     /**
      * Constructor.
@@ -492,6 +496,24 @@ public class EngineParameters {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * Returns the spectrum annotation settings.
+     * 
+     * @return the spectrum annotation settings
+     */
+    public SpectrumAnnotationSettings getSpectrumAnnotationSettings() {
+        return spectrumAnnotationSettings;
+    }
+
+    /**
+     * Sets the spectrum annotation settings.
+     * 
+     * @param spectrumAnnotationSettings the spectrum annotation settings
+     */
+    public void setSpectrumAnnotationSettings(SpectrumAnnotationSettings spectrumAnnotationSettings) {
+        this.spectrumAnnotationSettings = spectrumAnnotationSettings;
     }
 
     /**

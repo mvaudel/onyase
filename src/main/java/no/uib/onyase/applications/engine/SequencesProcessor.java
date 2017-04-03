@@ -11,8 +11,6 @@ import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.biology.Peptide;
 import com.compomics.util.experiment.biology.Protein;
 import com.compomics.util.experiment.biology.ions.ElementaryIon;
-import com.compomics.util.experiment.identification.identification_parameters.PtmSettings;
-import com.compomics.util.experiment.identification.identification_parameters.SearchParameters;
 import com.compomics.util.experiment.identification.matches.IonMatch;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
@@ -23,10 +21,7 @@ import com.compomics.util.experiment.identification.psm_scoring.psm_scores.Hyper
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.SnrScore;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
 import com.compomics.util.experiment.identification.spectrum_annotation.SimplePeptideAnnotator;
-import com.compomics.util.experiment.identification.spectrum_annotation.SpecificAnnotationSettings;
 import com.compomics.util.experiment.identification.spectrum_annotation.simple_annotators.FragmentAnnotator;
-import com.compomics.util.experiment.identification.spectrum_assumptions.PeptideAssumption;
-import com.compomics.util.experiment.massspectrometry.Charge;
 import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
 import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
@@ -34,13 +29,11 @@ import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
 import com.compomics.util.experiment.massspectrometry.indexes.SpectrumIndex;
 import com.compomics.util.maps.MapMutex;
 import com.compomics.util.preferences.DigestionPreferences;
-import com.compomics.util.preferences.IdentificationParameters;
 import com.compomics.util.preferences.SequenceMatchingPreferences;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
@@ -53,6 +46,7 @@ import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.
 import no.uib.onyase.applications.engine.modules.peptide_modification_iterators.SingleModificationIterator;
 import no.uib.onyase.applications.engine.modules.scoring.PsmScore;
 import no.uib.onyase.applications.engine.parameters.EngineParameters;
+import no.uib.onyase.applications.engine.parameters.SpectrumAnnotationSettings;
 import org.apache.commons.math.MathException;
 
 /**
@@ -367,6 +361,9 @@ public class SequencesProcessor {
                 // Sequence settings for the keys of the peptides
                 SequenceMatchingPreferences sequenceMatchingPreferences = SequenceMatchingPreferences.getDefaultSequenceMatching();
 
+                // Scoring annotation settings
+                SpectrumAnnotationSettings spectrumAnnotationSettings = engineParameters.getSpectrumAnnotationSettings();
+
                 // Iterate the proteins and store the possible PSMs
                 while (proteinIterator.hasNext()) {
 
@@ -383,7 +380,10 @@ public class SequencesProcessor {
                         String peptideKey = peptide.getMatchingKey(sequenceMatchingPreferences);
                         Double peptideMass = peptide.getMass();
                         int indexOnProtein = peptideWithPosition.getPosition();
+
+                        // Spectrum annotators
                         FragmentAnnotator fragmentAnnotator = new FragmentAnnotator(peptide, engineParameters.getDominantSeries());
+                        SimplePeptideAnnotator simplePeptideAnnotator = null;
 
                         // Iterate posible charges
                         for (int charge = minCharge; charge <= maxCharge; charge++) {
@@ -431,6 +431,16 @@ public class SequencesProcessor {
                                                     // Retain only matches yielding fragment ions
                                                     boolean retainedPSM = false;
                                                     if (!ionMatches.isEmpty()) {
+
+                                                        if (simplePeptideAnnotator == null) {
+
+                                                            simplePeptideAnnotator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
+                                                                    spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
+                                                                    spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
+                                                                    spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
+                                                                    spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
+                                                        }
+                                                        ionMatches = simplePeptideAnnotator.getIonMatches(spectrumIndex, charge, maxIsotope);
 
                                                         // Get the score
                                                         double score;
@@ -612,6 +622,13 @@ public class SequencesProcessor {
 
                                                             // Retain only peptides that yield fragment ions
                                                             if (!ionMatches.isEmpty()) {
+
+                                                                SimplePeptideAnnotator modifiedPeptideAnnorator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
+                                                                        spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
+                                                                        spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
+                                                                        spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
+                                                                        spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
+                                                                ionMatches = modifiedPeptideAnnorator.getIonMatches(spectrumIndex, charge, maxIsotope);
 
                                                                 // Get the score
                                                                 double score;
