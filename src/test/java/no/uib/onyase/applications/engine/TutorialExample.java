@@ -169,7 +169,7 @@ public class TutorialExample {
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
         
         // Number of threads
-        int nThreads = 3;
+        int nThreads = 4;
 
         OnyaseEngine onyaseEngine = new OnyaseEngine();
         onyaseEngine.launch(spectrumFile, destinationFile, fastaFile, engineParameters, nThreads, waitingHandler, exceptionHandler);

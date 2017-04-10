@@ -13,6 +13,7 @@ import com.compomics.util.experiment.biology.Protein;
 import com.compomics.util.experiment.biology.ions.ElementaryIon;
 import com.compomics.util.experiment.identification.matches.IonMatch;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
+import com.compomics.util.experiment.identification.protein_sequences.AaOccurrence;
 import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.IteratorFactory;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.PeptideWithPosition;
@@ -279,7 +280,8 @@ public class SequencesProcessor {
             iteratorFactory = new IteratorFactory(engineParameters.getFixedModifications(), engineParameters.getMaxX());
             switch (psmScore) {
                 case snrScore:
-                    snrScoreEstimator = new SnrScore();
+                    AaOccurrence aaOccurrence = new AaOccurrence(sequenceFactory.getCurrentFastaIndex().getAaOccurrence());
+                    snrScoreEstimator = new SnrScore(aaOccurrence);
                     break;
                 case hyperscore:
                     hyperScoreEstimator = new HyperScore();
@@ -432,15 +434,15 @@ public class SequencesProcessor {
                                                     boolean retainedPSM = false;
                                                     if (!ionMatches.isEmpty()) {
 
-                                                        if (simplePeptideAnnotator == null) {
-
-                                                            simplePeptideAnnotator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
-                                                                    spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
-                                                                    spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
-                                                                    spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
-                                                                    spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
-                                                        }
-                                                        ionMatches = simplePeptideAnnotator.getIonMatches(spectrumIndex, charge, maxIsotope);
+//                                                        if (simplePeptideAnnotator == null) {
+//
+//                                                            simplePeptideAnnotator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
+//                                                                    spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
+//                                                                    spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
+//                                                                    spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
+//                                                                    spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
+//                                                        }
+//                                                        ionMatches = simplePeptideAnnotator.getIonMatches(spectrumIndex, charge, maxIsotope);
 
                                                         // Get the score
                                                         double score;
@@ -623,12 +625,12 @@ public class SequencesProcessor {
                                                             // Retain only peptides that yield fragment ions
                                                             if (!ionMatches.isEmpty()) {
 
-                                                                SimplePeptideAnnotator modifiedPeptideAnnorator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
-                                                                        spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
-                                                                        spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
-                                                                        spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
-                                                                        spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
-                                                                ionMatches = modifiedPeptideAnnorator.getIonMatches(spectrumIndex, charge, maxIsotope);
+//                                                                SimplePeptideAnnotator modifiedPeptideAnnorator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
+//                                                                        spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
+//                                                                        spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
+//                                                                        spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
+//                                                                        spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
+//                                                                ionMatches = modifiedPeptideAnnorator.getIonMatches(spectrumIndex, charge, maxIsotope);
 
                                                                 // Get the score
                                                                 double score;
