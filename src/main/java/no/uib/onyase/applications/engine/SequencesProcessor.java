@@ -21,8 +21,8 @@ import com.compomics.util.experiment.identification.protein_sequences.digestion.
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.SnrScore;
 import com.compomics.util.experiment.identification.spectrum_annotation.AnnotationSettings;
-import com.compomics.util.experiment.identification.spectrum_annotation.SimplePeptideAnnotator;
 import com.compomics.util.experiment.identification.spectrum_annotation.simple_annotators.FragmentAnnotator;
+import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.SimplePeptideAnnotator;
 import com.compomics.util.experiment.massspectrometry.MSnSpectrum;
 import com.compomics.util.experiment.massspectrometry.Spectrum;
 import com.compomics.util.experiment.massspectrometry.SpectrumFactory;

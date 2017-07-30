@@ -5,7 +5,7 @@ import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHand
 import com.compomics.util.experiment.biology.PTM;
 import com.compomics.util.experiment.biology.PTMFactory;
 import com.compomics.util.experiment.biology.ions.ReporterIon;
-import com.compomics.util.experiment.identification.spectrum_annotation.SimplePeptideAnnotator;
+import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.SimplePeptideAnnotator;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
 import com.compomics.util.preferences.DigestionPreferences;
 import com.compomics.util.waiting.WaitingHandler;

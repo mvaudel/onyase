@@ -1,6 +1,6 @@
 package no.uib.onyase.applications.engine.parameters;
 
-import com.compomics.util.experiment.identification.spectrum_annotation.SimplePeptideAnnotator;
+import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.SimplePeptideAnnotator;
 import com.compomics.util.io.json.JsonMarshaller;
 import com.compomics.util.preferences.DigestionPreferences;
 import java.io.File;

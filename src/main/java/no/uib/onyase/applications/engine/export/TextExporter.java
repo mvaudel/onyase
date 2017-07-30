@@ -171,7 +171,7 @@ public class TextExporter {
         }
         StringBuilder stringBuilder = new StringBuilder();
         for (ModificationMatch modificationMatch : peptide.getModificationMatches()) {
-            if (modificationMatch.isVariable()) {
+            if (modificationMatch.getVariable()) {
                 if (stringBuilder.length() > 0) {
                     stringBuilder.append(Peptide.MODIFICATION_SEPARATOR);
                 }
