@@ -24,16 +24,16 @@ public class HyperscoreEValueEstimator implements EValueEstimator {
     /**
      * Map of the PSMs to score
      */
-    private HashMap<String, HashMap<String, Psm>> PsmsMap;
+    private HashMap<String, HashMap<Long, Psm>> PsmsMap;
     /**
      * A handler for the exceptions.
      */
-    private ExceptionHandler exceptionHandler;
+    private final ExceptionHandler exceptionHandler;
     /**
      * A waiting handler providing feedback to the user and allowing canceling
      * the process.
      */
-    private WaitingHandler waitingHandler;
+    private final WaitingHandler waitingHandler;
     /**
      * Map of coefficients for every spectrum.
      */
@@ -65,7 +65,7 @@ public class HyperscoreEValueEstimator implements EValueEstimator {
      * @throws InterruptedException exception thrown if a threading issue
      * occurs.
      */
-    public void estimateInterpolationCoefficients(String spectrumFileName, HashMap<String, HashMap<String, Psm>> psmsMap, int nThreads) throws InterruptedException {
+    public void estimateInterpolationCoefficients(String spectrumFileName, HashMap<String, HashMap<Long, Psm>> psmsMap, int nThreads) throws InterruptedException {
 
         this.PsmsMap = psmsMap;
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -73,7 +73,7 @@ public class HyperscoreEValueEstimator implements EValueEstimator {
 
         // Iterate all spectra and do the score interpolation
         TitlesIterator titlesIterator = new TitlesIterator(psmsMap.keySet());
-        ArrayList<SpectrumProcessor> spectrumProcessors = new ArrayList<SpectrumProcessor>(nThreads);
+        ArrayList<SpectrumProcessor> spectrumProcessors = new ArrayList<>(nThreads);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
             SpectrumProcessor spectrumProcessor = new SpectrumProcessor(titlesIterator);
@@ -147,11 +147,11 @@ public class HyperscoreEValueEstimator implements EValueEstimator {
         /**
          * Map of coefficients for every spectrum.
          */
-        private final HashMap<String, double[]> threadInterpolationValuesMap = new HashMap<String, double[]>();
+        private final HashMap<String, double[]> threadInterpolationValuesMap = new HashMap<>();
         /**
          * Map of the number of hits for every spectrum.
          */
-        private final HashMap<String, Integer> threadHitsMap = new HashMap<String, Integer>();
+        private final HashMap<String, Integer> threadHitsMap = new HashMap<>();
 
         /**
          * Constructor.
@@ -169,7 +169,7 @@ public class HyperscoreEValueEstimator implements EValueEstimator {
 
                 String spectrumTitle;
                 while ((spectrumTitle = titlesIterator.next()) != null) {
-                    HashMap<String, Psm> spectrumPsms = PsmsMap.get(spectrumTitle);
+                    HashMap<Long, Psm> spectrumPsms = PsmsMap.get(spectrumTitle);
                     if (spectrumPsms.size() > 1) {
                         int[] scores = new int[spectrumPsms.size()];
                         int i = 0;

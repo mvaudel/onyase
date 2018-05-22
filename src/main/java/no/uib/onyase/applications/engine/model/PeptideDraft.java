@@ -1,7 +1,8 @@
 package no.uib.onyase.applications.engine.model;
 
-import com.compomics.util.experiment.biology.AminoAcid;
-import com.compomics.util.preferences.SequenceMatchingPreferences;
+import com.compomics.util.experiment.biology.aminoacids.AminoAcid;
+import com.compomics.util.experiment.personalization.ExperimentObject;
+import com.compomics.util.parameters.identification.advanced.SequenceMatchingParameters;
 import java.util.HashMap;
 
 /**
@@ -22,19 +23,19 @@ public class PeptideDraft {
     /**
      * The sequence.
      */
-    private String sequence;
+    private final String sequence;
     /**
      * The charge.
      */
-    private int charge;
+    private final int charge;
     /**
      * The occurrence of variable modifications indexed by modification name.
      */
-    private HashMap<String, Integer> variableModifications;
+    private final HashMap<String, Integer> variableModifications;
     /**
      * The possible modification sites for every modification.
      */
-    private HashMap<String, Integer[]> variableModificationsSites;
+    private final HashMap<String, Integer[]> variableModificationsSites;
     /**
      * The raw score.
      */
@@ -69,21 +70,32 @@ public class PeptideDraft {
      * 
      * @return the key of this peptide draft
      */
-    public String getKey(String[] orderedModifications, SequenceMatchingPreferences sequenceMatchingPreferences) {
+    public long getKey(String[] orderedModifications, SequenceMatchingParameters sequenceMatchingPreferences) {
+    
         if (variableModifications != null) {
+        
             StringBuilder stringBuilder = new StringBuilder(sequence.length() + 4 * variableModifications.size());
             String matchingSequence = AminoAcid.getMatchingSequence(sequence, sequenceMatchingPreferences);
             stringBuilder.append(matchingSequence);
+            
             for (int i = 0; i < orderedModifications.length; i++) {
+            
                 String modification = orderedModifications[i];
                 Integer occurrence = variableModifications.get(modification);
+                
                 if (occurrence != null) {
+                
                     stringBuilder.append(separatorModification).append(i).append(separatorOccurrence).append(occurrence);
+                
                 }
             }
-            return stringBuilder.toString();
+            
+            return ExperimentObject.asLong(stringBuilder.toString());
+        
         }
-        return sequence;
+        
+        return ExperimentObject.asLong(sequence);
+    
     }
 
     /**

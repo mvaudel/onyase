@@ -2,7 +2,8 @@ package no.uib.onyase.applications.engine.parameters;
 
 import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.SimplePeptideAnnotator;
 import com.compomics.util.io.json.JsonMarshaller;
-import com.compomics.util.preferences.DigestionPreferences;
+import com.compomics.util.parameters.identification.search.DigestionParameters;
+import com.compomics.util.parameters.identification.search.ModificationParameters;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,13 +38,9 @@ public class EngineParameters {
      */
     private int maxX;
     /**
-     * The names of the fixed modifications.
+     * The modification parameters.
      */
-    private ArrayList<String> fixedModifications;
-    /**
-     * The names of the variable modifications.
-     */
-    private String[] variableModifications;
+    private ModificationParameters modificationParameters;
     /**
      * Map of the maximal number of modifications per peptide.
      */
@@ -103,7 +100,7 @@ public class EngineParameters {
     /**
      * The digestion preferences.
      */
-    private DigestionPreferences digestionPreferences;
+    private DigestionParameters digestionPreferences;
     /**
      * The dominant ion series.
      */
@@ -157,40 +154,24 @@ public class EngineParameters {
     }
 
     /**
-     * Returns the name of the fixed modifications.
+     * Returns the modification parameters.
      * 
-     * @return the name of the fixed modifications
+     * @return the modification parameters
      */
-    public ArrayList<String> getFixedModifications() {
-        return fixedModifications;
+    public ModificationParameters getModificationParameters() {
+        return modificationParameters;
     }
 
     /**
-     * Sets the name of the fixed modifications.
+     * Sets the modification parameters.
      * 
-     * @param fixedModifications the name of the fixed modifications
+     * @param modificationParameters the modification parameters
      */
-    public void setFixedModifications(ArrayList<String> fixedModifications) {
-        this.fixedModifications = fixedModifications;
+    public void setModificationParameters(ModificationParameters modificationParameters) {
+        this.modificationParameters = modificationParameters;
     }
-
-    /**
-     * Returns the name of the variable modifications.
-     * 
-     * @return the name of the variable modifications
-     */
-    public String[] getVariableModifications() {
-        return variableModifications;
-    }
-
-    /**
-     * Sets the name of the variable modifications.
-     * 
-     * @param variableModifications the name of the variable modifications
-     */
-    public void setVariableModifications(String[] variableModifications) {
-        this.variableModifications = variableModifications;
-    }
+    
+    
 
     /**
      * Returns the maximal number of modifications allowed per peptide in a indexed by modification name.
@@ -449,7 +430,7 @@ public class EngineParameters {
      * 
      * @return the digestion preferences
      */
-    public DigestionPreferences getDigestionPreferences() {
+    public DigestionParameters getDigestionPreferences() {
         return digestionPreferences;
     }
 
@@ -458,7 +439,7 @@ public class EngineParameters {
      * 
      * @param digestionPreferences the digestion preferences
      */
-    public void setDigestionPreferences(DigestionPreferences digestionPreferences) {
+    public void setDigestionPreferences(DigestionParameters digestionPreferences) {
         this.digestionPreferences = digestionPreferences;
     }
 

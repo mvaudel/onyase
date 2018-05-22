@@ -1,6 +1,6 @@
 package no.uib.onyase.applications.engine.model;
 
-import com.compomics.util.experiment.biology.Peptide;
+import com.compomics.util.experiment.biology.proteins.Peptide;
 
 /**
  * This class represents a peptide spectrum match.
@@ -12,17 +12,17 @@ public class Psm {
     /**
      * The peptide.
      */
-    private Peptide peptide;
+    private final Peptide peptide;
     
     /**
      * The charge.
      */
-    private int charge;
+    private final int charge;
 
     /**
      * The score.
      */
-    private double score;
+    private final double score;
 
     /**
      * Constructor.

@@ -2,7 +2,7 @@ package no.uib.onyase.settings;
 
 import com.compomics.software.CompomicsWrapper;
 import com.compomics.software.settings.PathKey;
-import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.software.settings.UtilitiesPathParameters;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -31,20 +31,20 @@ public class OnyasePathPreferences {
         /**
          * The key used to refer to this path.
          */
-        private String id;
+        private final String id;
         /**
          * The description of the path usage.
          */
-        private String description;
+        private final String description;
         /**
          * The default sub directory or file to use in case all paths should be
          * included in a single directory.
          */
-        private String defaultSubDirectory;
+        private final String defaultSubDirectory;
         /**
          * Indicates whether the path should be a folder.
          */
-        private boolean isDirectory;
+        private final boolean isDirectory;
 
         /**
          * Constructor.
@@ -120,16 +120,16 @@ public class OnyasePathPreferences {
      * cannot be found
      */
     public static void loadPathPreferenceFromLine(String line) throws FileNotFoundException {
-        String id = UtilitiesPathPreferences.getPathID(line);
+        String id = UtilitiesPathParameters.getPathID(line);
         if (id.equals("")) {
             throw new IllegalArgumentException("Impossible to parse path in " + line + ".");
         }
         OnyasePathKey onyasePathKey = OnyasePathKey.getKeyFromId(id);
         if (onyasePathKey == null) {
-            UtilitiesPathPreferences.loadPathPreferenceFromLine(line);
+            UtilitiesPathParameters.loadPathParameterFromLine(line);
         } else {
-            String path = UtilitiesPathPreferences.getPath(line);
-            if (!path.equals(UtilitiesPathPreferences.defaultPath)) {
+            String path = UtilitiesPathParameters.getPath(line);
+            if (!path.equals(UtilitiesPathParameters.defaultPath)) {
                 File file = new File(path);
                 if (!file.exists()) {
                     throw new FileNotFoundException("File " + path + " not found.");
@@ -167,9 +167,9 @@ public class OnyasePathPreferences {
     public static void setPathPreference(PathKey pathKey, String path) {
         if (pathKey instanceof OnyasePathKey) {
             setPathPreference((OnyasePathKey) pathKey, path);
-        } else if (pathKey instanceof UtilitiesPathPreferences.UtilitiesPathKey) {
-            UtilitiesPathPreferences.UtilitiesPathKey utilitiesPathKey = (UtilitiesPathPreferences.UtilitiesPathKey) pathKey;
-            UtilitiesPathPreferences.setPathPreference(utilitiesPathKey, path);
+        } else if (pathKey instanceof UtilitiesPathParameters.UtilitiesPathKey) {
+            UtilitiesPathParameters.UtilitiesPathKey utilitiesPathKey = (UtilitiesPathParameters.UtilitiesPathKey) pathKey;
+            UtilitiesPathParameters.setPathParameter(utilitiesPathKey, path);
         } else {
             throw new UnsupportedOperationException("Path " + pathKey.getId() + " not implemented.");
         }
@@ -212,7 +212,7 @@ public class OnyasePathPreferences {
             }
             setPathPreference(searchGUIPathKey, newFile.getAbsolutePath());
         }
-        UtilitiesPathPreferences.setAllPathsIn(path);
+        UtilitiesPathParameters.setAllPathsIn(path);
     }
 
     /**
@@ -244,7 +244,7 @@ public class OnyasePathPreferences {
         for (OnyasePathKey pathKey : OnyasePathKey.values()) {
             writePathToFile(bw, pathKey, jarFilePath);
         }
-        UtilitiesPathPreferences.writeConfigurationToFile(bw);
+        UtilitiesPathParameters.writeConfigurationToFile(bw);
     }
 
     /**
@@ -257,12 +257,12 @@ public class OnyasePathPreferences {
      * @throws IOException thrown of the file cannot be found
      */
     public static void writePathToFile(BufferedWriter bw, OnyasePathKey pathKey, String jarFilePath) throws IOException {
-        bw.write(pathKey.id + UtilitiesPathPreferences.separator);
+        bw.write(pathKey.id + UtilitiesPathParameters.separator);
         switch (pathKey) {
             case tempDirectory:
                 String toWrite = null; // No temporary folder at the moment
                 if (toWrite == null) {
-                    toWrite = UtilitiesPathPreferences.defaultPath;
+                    toWrite = UtilitiesPathParameters.defaultPath;
                 }
                 bw.write(toWrite);
                 break;
@@ -285,14 +285,14 @@ public class OnyasePathPreferences {
      * loading the path configuration
      */
     public static ArrayList<PathKey> getErrorKeys(String jarFilePath) throws IOException {
-        ArrayList<PathKey> result = new ArrayList<PathKey>();
+        ArrayList<PathKey> result = new ArrayList<>();
         for (OnyasePathKey pathKey : OnyasePathKey.values()) {
             String folder = OnyasePathPreferences.getPathPreference(pathKey, jarFilePath);
-            if (folder != null && !UtilitiesPathPreferences.testPath(folder)) {
+            if (folder != null && !UtilitiesPathParameters.testPath(folder)) {
                 result.add(pathKey);
             }
         }
-        result.addAll(UtilitiesPathPreferences.getErrorKeys());
+        result.addAll(UtilitiesPathParameters.getErrorKeys());
         return result;
     }
     

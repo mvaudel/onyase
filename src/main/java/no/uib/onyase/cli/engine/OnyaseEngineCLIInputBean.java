@@ -18,15 +18,15 @@ public class OnyaseEngineCLIInputBean {
     /**
      * The spectrum files.
      */
-    private File spectrumFile;
+    private final File spectrumFile;
     /**
      * The fasta file.
      */
-    private File fastaFile;
+    private final File fastaFile;
     /**
      * The output folder.
      */
-    private File outputFolder;
+    private final File outputFolder;
     /**
      * the path to the exclusion list
      */
@@ -38,7 +38,7 @@ public class OnyaseEngineCLIInputBean {
     /**
      * The path settings.
      */
-    private PathSettingsCLIInputBean pathSettingsCLIInputBean;
+    private final PathSettingsCLIInputBean pathSettingsCLIInputBean;
     /**
      * Number of threads to use. Defaults to the number of cores available.
      */

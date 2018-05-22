@@ -17,15 +17,15 @@ public class SingleModificationIterator implements PeptideModificationsIterator 
     /**
      * An iterator of the possible sites.
      */
-    private ModificationSitesIterator modificationSitesIterator;
+    private final ModificationSitesIterator modificationSitesIterator;
     /**
      * The current map of sites.
      */
-    private HashMap<String, int[]> sitesMap;
+    private final HashMap<String, int[]> sitesMap;
     /**
      * The name of the modification.
      */
-    private String modificationName;
+    private final String modificationName;
 
     /**
      * Constructor.
@@ -41,7 +41,7 @@ public class SingleModificationIterator implements PeptideModificationsIterator 
         } else {
             modificationSitesIterator = new MultipleModificationsSiteIterator(possibleSites, modificationOccurrence, maxSites);
         }
-        sitesMap = new HashMap<String, int[]>(1);
+        sitesMap = new HashMap<>(1);
         this.modificationName = modificationName;
     }
 

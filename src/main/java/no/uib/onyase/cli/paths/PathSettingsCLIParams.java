@@ -1,6 +1,6 @@
 package no.uib.onyase.cli.paths;
 
-import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.software.settings.UtilitiesPathParameters;
 import no.uib.onyase.settings.OnyasePathPreferences;
 import org.apache.commons.cli.Options;
 
@@ -46,7 +46,7 @@ public enum PathSettingsCLIParams {
         for (OnyasePathPreferences.OnyasePathKey pathKey : OnyasePathPreferences.OnyasePathKey.values()) {
             aOptions.addOption(pathKey.getId(), true, pathKey.getDescription());
         }
-        for (UtilitiesPathPreferences.UtilitiesPathKey utilitiesPathKey : UtilitiesPathPreferences.UtilitiesPathKey.values()) {
+        for (UtilitiesPathParameters.UtilitiesPathKey utilitiesPathKey : UtilitiesPathParameters.UtilitiesPathKey.values()) {
             aOptions.addOption(utilitiesPathKey.getId(), true, utilitiesPathKey.getDescription());
         }
     }
@@ -71,7 +71,7 @@ public enum PathSettingsCLIParams {
         for (OnyasePathPreferences.OnyasePathKey pathKey : OnyasePathPreferences.OnyasePathKey.values()) {
             output += "-" + String.format(formatter, pathKey.getId()) + " " + pathKey.getDescription() + System.getProperty("line.separator");
         }
-        for (UtilitiesPathPreferences.UtilitiesPathKey utilitiesPathKey : UtilitiesPathPreferences.UtilitiesPathKey.values()) {
+        for (UtilitiesPathParameters.UtilitiesPathKey utilitiesPathKey : UtilitiesPathParameters.UtilitiesPathKey.values()) {
             output += "-" + String.format(formatter, utilitiesPathKey.getId()) + " " + utilitiesPathKey.getDescription() + System.getProperty("line.separator");
         }
 

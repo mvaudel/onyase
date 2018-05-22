@@ -1,11 +1,11 @@
 package no.uib.onyase.applications.engine.export;
 
 import com.compomics.util.exceptions.ExceptionHandler;
-import com.compomics.util.experiment.biology.Peptide;
+import com.compomics.util.experiment.biology.proteins.Peptide;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
-import com.compomics.util.experiment.io.identifications.idfilereaders.OnyaseIdfileReader;
-import com.compomics.util.experiment.massspectrometry.Precursor;
-import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
+import com.compomics.util.experiment.io.identification.idfilereaders.OnyaseIdfileReader;
+import com.compomics.util.experiment.mass_spectrometry.spectra.Precursor;
+import com.compomics.util.experiment.mass_spectrometry.SpectrumFactory;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,7 +14,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import no.uib.onyase.applications.engine.model.Psm;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
@@ -34,16 +37,16 @@ public class TextExporter {
     /**
      * The spectrum factory.
      */
-    private SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
+    private final SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
     /**
      * A handler for the exceptions.
      */
-    private ExceptionHandler exceptionHandler;
+    private final ExceptionHandler exceptionHandler;
     /**
      * A waiting handler providing feedback to the user and allowing canceling
      * the process.
      */
-    private WaitingHandler waitingHandler;
+    private final WaitingHandler waitingHandler;
 
     /**
      * Constructor.
@@ -58,17 +61,21 @@ public class TextExporter {
     }
 
     /**
-     * Writes all the PSMs to a file. The export represents a table with spaces as separator and every PSM is a line. Spectrum titles are encoded and the table is gziped.
-     * 
+     * Writes all the PSMs to a file. The export represents a table with spaces
+     * as separator and every PSM is a line. Spectrum titles are encoded and the
+     * table is gziped.
+     *
      * @param spectrumFileName the name of the spectrum file
      * @param psmsMap the map of the PSMs
      * @param eValueEstimator an estimator for the e-value
      * @param destinationFile the destination file
-     * 
-     * @throws IOException exception thrown if an error occurred while writing the file
-     * @throws MzMLUnmarshallerException exception thrown if an error occurred while reading an mzML file
+     *
+     * @throws IOException exception thrown if an error occurred while writing
+     * the file
+     * @throws MzMLUnmarshallerException exception thrown if an error occurred
+     * while reading an mzML file
      */
-    public void writePsms(String spectrumFileName, HashMap<String, HashMap<String, Psm>> psmsMap, EValueEstimator eValueEstimator, File destinationFile) throws IOException, MzMLUnmarshallerException {
+    public void writePsms(String spectrumFileName, HashMap<String, HashMap<Long, Psm>> psmsMap, EValueEstimator eValueEstimator, File destinationFile) throws IOException, MzMLUnmarshallerException {
 
         // Set progress bars
         waitingHandler.setSecondaryProgressCounterIndeterminate(false);
@@ -78,23 +85,24 @@ public class TextExporter {
         FileOutputStream fileStream = new FileOutputStream(destinationFile);
         GZIPOutputStream gzipStream = new GZIPOutputStream(fileStream);
         OutputStreamWriter encoder = new OutputStreamWriter(gzipStream, OnyaseIdfileReader.encoding);
-        BufferedWriter bw = new BufferedWriter(encoder);
-        try {
+        try (BufferedWriter bw = new BufferedWriter(encoder)) {
 
             // Write headers
             writeHeaders(bw);
 
             // Iterate all spectra
-            for (String spectrumTitle : psmsMap.keySet()) {
+            for (Entry<String, HashMap<Long, Psm>> entry1 : psmsMap.entrySet()) {
 
                 // Get the PSMs
-                HashMap<String, Psm> spectrumPsms = psmsMap.get(spectrumTitle);
+                String spectrumTitle = entry1.getKey();
+                HashMap<Long, Psm> spectrumPsms = entry1.getValue();
 
                 // Iterate all Psms
                 for (Psm psm : spectrumPsms.values()) {
 
                     // Write to output
                     writePsm(bw, spectrumFileName, spectrumTitle, psm, eValueEstimator);
+                    
                 }
 
                 // Increase progress
@@ -102,8 +110,6 @@ public class TextExporter {
 
             }
 
-        } finally {
-            bw.close();
         }
     }
 
@@ -166,19 +172,11 @@ public class TextExporter {
      * modifications could not be encoded
      */
     private String getModifications(Peptide peptide) throws UnsupportedEncodingException {
-        if (peptide.getModificationMatches() == null) {
-            return "";
-        }
-        StringBuilder stringBuilder = new StringBuilder();
-        for (ModificationMatch modificationMatch : peptide.getModificationMatches()) {
-            if (modificationMatch.getVariable()) {
-                if (stringBuilder.length() > 0) {
-                    stringBuilder.append(Peptide.MODIFICATION_SEPARATOR);
-                }
-                stringBuilder.append(modificationMatch.getTheoreticPtm()).append(Peptide.MODIFICATION_LOCALIZATION_SEPARATOR).append(modificationMatch.getModificationSite());
-            }
-        }
-        String result = URLEncoder.encode(stringBuilder.toString(), "utf-8");
-        return result;
+
+        String result = Arrays.stream(peptide.getVariableModifications())
+                .map(modificationMatch -> String.join(Peptide.MODIFICATION_LOCALIZATION_SEPARATOR, modificationMatch.getModification(), Integer.toString(modificationMatch.getSite())))
+                .collect(Collectors.joining(Peptide.MODIFICATION_SEPARATOR));
+
+        return URLEncoder.encode(result, "utf-8");
     }
 }

@@ -1,8 +1,7 @@
 package no.uib.onyase.applications.engine.modules.precursor_handling;
 
-import com.compomics.util.experiment.massspectrometry.Charge;
-import com.compomics.util.experiment.massspectrometry.Precursor;
-import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
+import com.compomics.util.experiment.mass_spectrometry.spectra.Precursor;
+import com.compomics.util.experiment.mass_spectrometry.indexes.PrecursorMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -113,10 +112,11 @@ public class ExclusionList {
     private void importListFromFile(String exclusionListFilePath, double precursorTolerance, boolean ppm) throws IOException {
 
         File exclusionListFile = new File(exclusionListFilePath);
-        BufferedReader br = new BufferedReader(new FileReader(exclusionListFile));
-        try {
-            HashMap<String, Precursor> precursors = new HashMap<String, Precursor>();
-            ArrayList<Charge> possibleCharges = new ArrayList<Charge>(0);
+        
+        try (BufferedReader br = new BufferedReader(new FileReader(exclusionListFile))) {
+        
+            HashMap<String, Precursor> precursors = new HashMap<>();
+            ArrayList<Integer> possibleCharges = new ArrayList<>(0);
 
             String line;
             while ((line = br.readLine()) != null) {
@@ -135,8 +135,6 @@ public class ExclusionList {
 
             precursorMap = new PrecursorMap(precursors, precursorTolerance, ppm);
 
-        } finally {
-            br.close();
         }
     }
 

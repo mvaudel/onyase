@@ -1,8 +1,8 @@
 package no.uib.onyase.applications.engine.modules.precursor_handling;
 
-import com.compomics.util.experiment.biology.ions.ElementaryIon;
-import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
-import com.compomics.util.experiment.massspectrometry.indexes.PrecursorMap;
+import com.compomics.util.experiment.biology.ions.impl.ElementaryIon;
+import com.compomics.util.experiment.mass_spectrometry.SpectrumFactory;
+import com.compomics.util.experiment.mass_spectrometry.indexes.PrecursorMap;
 import java.io.IOException;
 import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
 
@@ -16,7 +16,7 @@ public class PrecursorProcessor {
     /**
      * The spectrum factory.
      */
-    private SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
+    private final SpectrumFactory spectrumFactory = SpectrumFactory.getInstance();
 
     /**
      * The precursor map.

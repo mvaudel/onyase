@@ -18,7 +18,7 @@ public class ModificationProfileIterator {
     /**
      * A cache for the modification profiles already created.
      */
-    private HashMap<String, ModificationProfile> modificationProfilesCache = new HashMap<String, ModificationProfile>();
+    private HashMap<String, ModificationProfile> modificationProfilesCache = new HashMap<>();
 
     /**
      * Constructor.
@@ -39,11 +39,11 @@ public class ModificationProfileIterator {
      * @return the possible modification profiles in a list
      */
     public ArrayList<ModificationProfile> getPossibleModificationProfiles(HashMap<String, Integer> possibleModifications, HashMap<String, Double> modificationMasses) {
-        ArrayList<ModificationProfile> result = new ArrayList<ModificationProfile>(possibleModifications.size() + 1);
+        ArrayList<ModificationProfile> result = new ArrayList<>(possibleModifications.size() + 1);
         result.add(modificationProfilesCache.get(""));
         for (String modification : possibleModifications.keySet()) {
             Integer occurrenceMax = possibleModifications.get(modification);
-            ArrayList<ModificationProfile> newProfiles = new ArrayList<ModificationProfile>(occurrenceMax * result.size());
+            ArrayList<ModificationProfile> newProfiles = new ArrayList<>(occurrenceMax * result.size());
             for (ModificationProfile modificationProfile : result) {
                 String previousKey = modificationProfile.getKey();
                 for (int occurrence = 1; occurrence <= occurrenceMax; occurrence++) {
@@ -96,7 +96,7 @@ public class ModificationProfileIterator {
          * Constructor for an empty profile.
          */
         public ModificationProfile() {
-            modificationOccurence = new HashMap<String, Integer>(1);
+            modificationOccurence = new HashMap<>(1);
             mass = 0.0;
             key = "";
         }
@@ -157,7 +157,7 @@ public class ModificationProfileIterator {
          * @return a copy of the modification profile
          */
         public ModificationProfile getCopy() {
-            return new ModificationProfile(new HashMap<String, Integer>(modificationOccurence), mass);
+            return new ModificationProfile(new HashMap<>(modificationOccurence), mass);
         }
 
         /**

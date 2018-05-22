@@ -2,10 +2,9 @@ package no.uib.onyase.applications.engine;
 
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
-import com.compomics.util.experiment.biology.EnzymeFactory;
-import com.compomics.util.experiment.biology.PTMFactory;
-import com.compomics.util.experiment.identification.protein_sequences.SequenceFactory;
-import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
+import com.compomics.util.experiment.biology.enzymes.EnzymeFactory;
+import com.compomics.util.experiment.biology.modifications.ModificationFactory;
+import com.compomics.util.experiment.mass_spectrometry.SpectrumFactory;
 import com.compomics.util.waiting.Duration;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
@@ -33,17 +32,13 @@ public class OnyaseEngine {
      */
     private SpectrumFactory spectrumFactory;
     /**
-     * The sequence factory.
-     */
-    private SequenceFactory sequenceFactory;
-    /**
      * The enzyme factory.
      */
     private EnzymeFactory enzymeFactory;
     /**
      * The PTM factory.
      */
-    private PTMFactory ptmFactory;
+    private ModificationFactory ptmFactory;
     /**
      * The module handling the precursors.
      */
@@ -61,9 +56,8 @@ public class OnyaseEngine {
      */
     private void initializeFactories() {
         spectrumFactory = SpectrumFactory.getInstance();
-        sequenceFactory = SequenceFactory.getInstance();
         enzymeFactory = EnzymeFactory.getInstance();
-        ptmFactory = PTMFactory.getInstance();
+        ptmFactory = ModificationFactory.getInstance();
     }
 
     /**
@@ -110,16 +104,21 @@ public class OnyaseEngine {
      *
      * @throws IOException exception thrown if an error occurred while reading
      * or writing a file
-     * @throws ClassNotFoundException exception thrown if an error occurred
-     * while casting an object
-     * @throws SQLException exception thrown if an error occurred while
-     * interacting with a database
      * @throws MzMLUnmarshallerException exception thrown if an error occurred
      * while reading an mzML file
      * @throws InterruptedException exception thrown if a threading error
      * occurred
      */
-    public void launch(File spectrumFile, File psmsFile, File fastaFile, String exclusionListFilePath, EngineParameters engineParameters, int nThreads, WaitingHandler waitingHandler, ExceptionHandler exceptionHandler) throws IOException, ClassNotFoundException, SQLException, MzMLUnmarshallerException, InterruptedException {
+    public void launch(
+            File spectrumFile, 
+            File psmsFile, 
+            File fastaFile, 
+            String exclusionListFilePath, 
+            EngineParameters engineParameters, 
+            int nThreads, 
+            WaitingHandler waitingHandler, 
+            ExceptionHandler exceptionHandler
+    ) throws IOException, MzMLUnmarshallerException, InterruptedException {
 
         Duration totalDuration = new Duration();
         totalDuration.start();
@@ -144,26 +143,17 @@ public class OnyaseEngine {
         localDuration.end();
         waitingHandler.setWaitingText("Loading precursors completed (" + localDuration + ").");
 
-        // Load the sequences in the sequence factory
-        localDuration = new Duration();
-        localDuration.start();
-        String fastaFileName = Util.getFileName(fastaFile);
-        waitingHandler.setWaitingText("Loading sequences from " + fastaFileName + ".");
-        sequenceFactory.loadFastaFile(fastaFile);
-        localDuration.end();
-        waitingHandler.setWaitingText("Loading sequences completed (" + localDuration + ").");
-
         // Get PSMs
         Duration psmDuration = new Duration();
         psmDuration.start();
         waitingHandler.setWaitingText("Getting PSMs according to the identification parameters " + engineParameters.getName() + ".");
         SequencesProcessor sequencesProcessor = new SequencesProcessor(waitingHandler, exceptionHandler);
-        sequencesProcessor.iterateSequences(spectrumFileName, precursorProcessor, exclusionListFilePath, engineParameters, nThreads);
+        sequencesProcessor.iterateSequences(fastaFile, spectrumFileName, precursorProcessor, exclusionListFilePath, engineParameters, nThreads);
         psmDuration.end();
         waitingHandler.setWaitingText("Getting PSMs completed (" + psmDuration + ").");
 
         // Get PSMs
-        HashMap<String, HashMap<String, Psm>> psmsMap = sequencesProcessor.getPsms();
+        HashMap<String, HashMap<Long, Psm>> psmsMap = sequencesProcessor.getPsms();
 
         // Estimate e-values
         localDuration = new Duration();

@@ -1,6 +1,6 @@
 package no.uib.onyase.applications.engine.parameters;
 
-import com.compomics.util.experiment.biology.ions.ReporterIon;
+import com.compomics.util.experiment.biology.ions.impl.ReporterIon;
 
 /**
  * Settings for the annotation of spectra.

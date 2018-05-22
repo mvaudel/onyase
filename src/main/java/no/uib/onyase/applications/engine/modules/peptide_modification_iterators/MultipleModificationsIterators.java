@@ -17,11 +17,11 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     /**
      * Map of the iterators for the sites of the different modifications.
      */
-    private HashMap<String, ModificationSitesIterator> modificationSitesIterators;
+    private final HashMap<String, ModificationSitesIterator> modificationSitesIterators;
     /**
      * Ordered list of modifications to iterate.
      */
-    private ArrayList<String> modifications;
+    private final ArrayList<String> modifications;
     /**
      * Current map of modification sites.
      */
@@ -29,15 +29,15 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     /**
      * Map of possible modification sites.
      */
-    private HashMap<String, Integer[]> possibleModificationSites;
+    private final HashMap<String, Integer[]> possibleModificationSites;
     /**
      * Map of the occurrences of every modification.
      */
-    private HashMap<String, Integer> modificationOccurrence;
+    private final HashMap<String, Integer> modificationOccurrence;
         /**
          * The preferred number of sites to consider for every PTM.
          */
-        private int maxSites;
+        private final int maxSites;
 
     /**
      * Constructor.
@@ -50,7 +50,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
     public MultipleModificationsIterators(HashMap<String, Integer> modificationOccurrence, HashMap<String, Integer[]> possibleModificationSites, ArrayList<String> orderedModifications, int maxSites) {
         this.modificationOccurrence = modificationOccurrence;
         modifications = orderedModifications;
-        modificationSitesIterators = new HashMap<String, ModificationSitesIterator>(modificationOccurrence.size());
+        modificationSitesIterators = new HashMap<>(modificationOccurrence.size());
         for (String modification : modificationOccurrence.keySet()) {
             Integer occurrence = modificationOccurrence.get(modification);
             Integer[] possibleSites = possibleModificationSites.get(modification);
@@ -62,7 +62,7 @@ public class MultipleModificationsIterators implements PeptideModificationsItera
             }
             modificationSitesIterators.put(modification, modificationSitesIterator);
         }
-        modificationSites = new HashMap<String, int[]>(modificationOccurrence.size());
+        modificationSites = new HashMap<>(modificationOccurrence.size());
         this.possibleModificationSites = possibleModificationSites;
         this.maxSites = maxSites;
     }

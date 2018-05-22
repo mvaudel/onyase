@@ -2,12 +2,13 @@ package no.uib.onyase.applications.engine;
 
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
-import com.compomics.util.experiment.biology.PTM;
-import com.compomics.util.experiment.biology.PTMFactory;
-import com.compomics.util.experiment.biology.ions.ReporterIon;
+import com.compomics.util.experiment.biology.modifications.Modification;
+import com.compomics.util.experiment.biology.modifications.ModificationFactory;
+import com.compomics.util.experiment.biology.ions.impl.ReporterIon;
 import com.compomics.util.experiment.identification.spectrum_annotation.spectrum_annotators.SimplePeptideAnnotator;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
-import com.compomics.util.preferences.DigestionPreferences;
+import com.compomics.util.parameters.identification.search.DigestionParameters;
+import com.compomics.util.parameters.identification.search.ModificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
@@ -26,10 +27,11 @@ import uk.ac.ebi.jmzml.xml.io.MzMLUnmarshallerException;
  * @author Marc Vaudel
  */
 public class TutorialExample {
+
     /**
      * The modifications factory.
      */
-    private PTMFactory ptmFactory = PTMFactory.getInstance();
+    private final ModificationFactory ptmFactory = ModificationFactory.getInstance();
 
     private String mgfFilePath = "C:\\Projects\\PeptideShaker\\test files\\1 mgf\\qExactive01819.mgf";
     private String destinationFilePath = "C:\\Projects\\Onyase\\test\\output\\qExactive01819.psm";
@@ -58,7 +60,7 @@ public class TutorialExample {
 
     /**
      * Sets the mgf file path.
-     * 
+     *
      * @param mgfFilePath the mgf file path
      */
     public void setMgfFilePath(String mgfFilePath) {
@@ -67,7 +69,7 @@ public class TutorialExample {
 
     /**
      * Sets the parameters file path.
-     * 
+     *
      * @param fastaFilePath the parameters file path
      */
     public void setFastaFilePath(String fastaFilePath) {
@@ -76,7 +78,7 @@ public class TutorialExample {
 
     /**
      * Sets the destination file path.
-     * 
+     *
      * @param destinationFilePath the destination file path
      */
     public void setDestinationFilePath(String destinationFilePath) {
@@ -102,20 +104,20 @@ public class TutorialExample {
         File spectrumFile = new File(mgfFilePath);
         File destinationFile = new File(destinationFilePath);
         File fastaFile = new File(fastaFilePath);
-        
+
         // Search parameters
         EngineParameters engineParameters = new EngineParameters();
         engineParameters.setName("Test tutorials Onyase");
         // Score
         engineParameters.setPsmScore(PsmScore.snrScore);
         // Modifications
-        ArrayList<String> fixedModifications = new ArrayList<String>(1);
-        fixedModifications.add("Carbamidomethylation of C");
-        engineParameters.setFixedModifications(fixedModifications);
-        String[] variableModifications = new String[]{"Oxidation of M"};
+        ModificationFactory modificationFactory = ModificationFactory.getInstance();
+        ModificationParameters modificationParameters = new ModificationParameters();
+        modificationParameters.addFixedModification(modificationFactory.getModification("Carbamidomethylation of C"));
+        modificationParameters.addVariableModification(modificationFactory.getModification("Oxidation of M"));
+        engineParameters.setModificationParameters(modificationParameters);
 //        String[] variableModifications = new String[]{"Oxidation of M", "Pyrolidone from E", "Pyrolidone from Q", "Pyrolidone from carbamidomethylated C"};
-        engineParameters.setVariableModifications(variableModifications);
-        HashMap<String, Integer> maxModifications = new HashMap<String, Integer>(1);
+        HashMap<String, Integer> maxModifications = new HashMap<>(1);
         maxModifications.put("Oxidation of M", 2);
         engineParameters.setMaxModifications(maxModifications);
         engineParameters.setMaxSites(5);
@@ -134,21 +136,21 @@ public class TutorialExample {
         engineParameters.setMinIsotopicCorrection(0);
         engineParameters.setMaxIsotopicCorrection(1);
         // Digestion
-        engineParameters.setDigestionPreferences(DigestionPreferences.getDefaultPreferences());
+        engineParameters.setDigestionPreferences(DigestionParameters.getDefaultParameters());
         // Fragmentation
         engineParameters.setDominantSeries(SimplePeptideAnnotator.IonSeries.by);
         // Reporter ions
-        HashMap<Double, ReporterIon> reporterIonsMap = new HashMap<Double, ReporterIon>(1);
-        for (String modificationName : variableModifications) {
-            PTM modification = ptmFactory.getPTM(modificationName);
+        HashMap<Double, ReporterIon> reporterIonsMap = new HashMap<>(1);
+        for (String modificationName : modificationParameters.getVariableModifications()) {
+            Modification modification = ptmFactory.getModification(modificationName);
             for (ReporterIon reporterIon : modification.getReporterIons()) {
                 reporterIonsMap.put(reporterIon.getTheoreticMass(), reporterIon);
             }
         }
         ReporterIon[] reporterIons = new ReporterIon[reporterIonsMap.size()];
-        ArrayList<Double> reporterIonsMzs = new ArrayList<Double>(reporterIonsMap.keySet());
+        ArrayList<Double> reporterIonsMzs = new ArrayList<>(reporterIonsMap.keySet());
         Collections.sort(reporterIonsMzs);
-        for (int i = 0 ; i < reporterIonsMzs.size() ; i++) {
+        for (int i = 0; i < reporterIonsMzs.size(); i++) {
             ReporterIon reporterIon = reporterIonsMap.get(reporterIonsMzs.get(i));
             reporterIons[i] = reporterIon;
         }
@@ -163,11 +165,11 @@ public class TutorialExample {
         spectrumAnnotationSettings.setNeutralLossesSequenceDependent(true);
         spectrumAnnotationSettings.setReporterIons(reporterIons);
         engineParameters.setSpectrumAnnotationSettings(spectrumAnnotationSettings);
-        
+
         // Waiting and exception handling
         WaitingHandler waitingHandler = new WaitingHandlerCLIImpl();
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();
-        
+
         // Number of threads
         int nThreads = 4;
 

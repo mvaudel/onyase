@@ -2,7 +2,7 @@ package no.uib.onyase.cli.paths;
 
 import no.uib.onyase.cli.engine.OnyaseEngineCLI;
 import com.compomics.software.CompomicsWrapper;
-import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.software.settings.UtilitiesPathParameters;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -21,7 +21,7 @@ public class PathSettingsCLI {
     /**
      * The input bean containing the user parameters.
      */
-    private PathSettingsCLIInputBean pathSettingsCLIInputBean;
+    private final PathSettingsCLIInputBean pathSettingsCLIInputBean;
 
     /**
      * Constructor.
@@ -67,11 +67,11 @@ public class PathSettingsCLI {
             try {
                 OnyasePathPreferences.OnyasePathKey onyasePathKey = OnyasePathPreferences.OnyasePathKey.getKeyFromId(id);
                 if (onyasePathKey == null) {
-                    UtilitiesPathPreferences.UtilitiesPathKey utilitiesPathKey = UtilitiesPathPreferences.UtilitiesPathKey.getKeyFromId(id);
+                    UtilitiesPathParameters.UtilitiesPathKey utilitiesPathKey = UtilitiesPathParameters.UtilitiesPathKey.getKeyFromId(id);
                     if (utilitiesPathKey == null) {
                         System.out.println("Path id " + id + " not recognized.");
                     } else {
-                        UtilitiesPathPreferences.setPathPreference(utilitiesPathKey, pathInput.get(id));
+                        UtilitiesPathParameters.setPathParameter(utilitiesPathKey, pathInput.get(id));
                     }
                 } else {
                     OnyasePathPreferences.setPathPreference(onyasePathKey, pathInput.get(id));
@@ -83,7 +83,7 @@ public class PathSettingsCLI {
         }
 
         // write path file preference
-        File destinationFile = new File(getJarFilePath(), UtilitiesPathPreferences.configurationFileName);
+        File destinationFile = new File(getJarFilePath(), UtilitiesPathParameters.configurationFileName);
         try {
             OnyasePathPreferences.writeConfigurationToFile(destinationFile, getJarFilePath());
         } catch (Exception e) {

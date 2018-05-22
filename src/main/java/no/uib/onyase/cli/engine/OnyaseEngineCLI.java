@@ -1,16 +1,18 @@
 package no.uib.onyase.cli.engine;
 
+import com.compomics.util.experiment.biology.enzymes.EnzymeFactory;
+import com.compomics.util.experiment.biology.modifications.ModificationFactory;
 import com.compomics.software.CompomicsWrapper;
 import com.compomics.software.settings.PathKey;
-import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.software.settings.UtilitiesPathParameters;
 import com.compomics.util.Util;
 import com.compomics.util.exceptions.ExceptionHandler;
 import com.compomics.util.exceptions.exception_handlers.CommandLineExceptionHandler;
 import com.compomics.util.experiment.biology.*;
-import com.compomics.util.experiment.massspectrometry.SpectrumFactory;
-import com.compomics.util.gui.filehandling.TempFilesManager;
+import com.compomics.util.experiment.mass_spectrometry.SpectrumFactory;
+import com.compomics.util.gui.file_handling.TempFilesManager;
 import com.compomics.util.gui.waiting.waitinghandlers.WaitingHandlerCLIImpl;
-import com.compomics.util.preferences.IdentificationParameters;
+import com.compomics.util.parameters.identification.IdentificationParameters;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,7 +48,7 @@ public class OnyaseEngineCLI implements Callable {
     /**
      * The modifications factory.
      */
-    private PTMFactory ptmFactory;
+    private ModificationFactory ptmFactory;
     /**
      * The spectrum factory.
      */
@@ -103,7 +105,7 @@ public class OnyaseEngineCLI implements Callable {
             pathSettingsCLI.setPathSettings();
         } else {
             try {
-                File pathConfigurationFile = new File(getJarFilePath(), UtilitiesPathPreferences.configurationFileName);
+                File pathConfigurationFile = new File(getJarFilePath(), UtilitiesPathParameters.configurationFileName);
                 if (pathConfigurationFile.exists()) {
                     OnyasePathPreferences.loadPathPreferencesFromFile(pathConfigurationFile);
                 }
@@ -129,7 +131,7 @@ public class OnyaseEngineCLI implements Callable {
         enzymeFactory = EnzymeFactory.getInstance();
 
         // load modifications
-        ptmFactory = PTMFactory.getInstance();
+        ptmFactory = ModificationFactory.getInstance();
 
         // Set exception handler
         ExceptionHandler exceptionHandler = new CommandLineExceptionHandler();

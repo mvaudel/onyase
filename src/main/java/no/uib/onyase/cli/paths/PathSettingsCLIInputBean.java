@@ -1,6 +1,6 @@
 package no.uib.onyase.cli.paths;
 
-import com.compomics.software.settings.UtilitiesPathPreferences;
+import com.compomics.software.settings.UtilitiesPathParameters;
 import java.io.File;
 import java.util.HashMap;
 import no.uib.onyase.settings.OnyasePathPreferences;
@@ -20,7 +20,7 @@ public class PathSettingsCLIInputBean {
     /**
      * The specific paths sets for every option.
      */
-    private HashMap<String, String> paths = new HashMap<String, String>();
+    private final HashMap<String, String> paths = new HashMap<>();
     /**
      * The folder where to save the logs.
      */
@@ -47,7 +47,7 @@ public class PathSettingsCLIInputBean {
                 paths.put(id, aLine.getOptionValue(id));
             }
         }
-        for (UtilitiesPathPreferences.UtilitiesPathKey utilitiesPathKey : UtilitiesPathPreferences.UtilitiesPathKey.values()) {
+        for (UtilitiesPathParameters.UtilitiesPathKey utilitiesPathKey : UtilitiesPathParameters.UtilitiesPathKey.values()) {
             String id = utilitiesPathKey.getId();
             if (aLine.hasOption(id)) {
                 paths.put(id, aLine.getOptionValue(id));
