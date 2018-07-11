@@ -243,15 +243,15 @@
         </repository>
         
         <!-- Maven central repository -->
-    <repository>
-      <id>central</id>
-      <name>Maven Repository Switchboard</name>
-      <layout>default</layout>
-      <url>http://repo1.maven.org/maven2</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <layout>default</layout>
+            <url>http://repo1.maven.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
 
         <!-- UGent snapshot repository -->
         <repository>
@@ -301,11 +301,11 @@
         </dependency>
         
         <!-- https://mvnrepository.com/artifact/com.carrotsearch/java-sizeof -->
-<dependency>
-    <groupId>org.ehcache</groupId>
-<artifactId>sizeof</artifactId>
-<version>0.2.0</version>
-</dependency>
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>sizeof</artifactId>
+            <version>0.2.0</version>
+        </dependency>
 
 
     </dependencies>

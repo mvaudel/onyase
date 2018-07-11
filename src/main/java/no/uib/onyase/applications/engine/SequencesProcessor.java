@@ -15,7 +15,6 @@ import com.compomics.util.experiment.biology.modifications.ModificationType;
 import com.compomics.util.experiment.identification.matches.IonMatch;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.protein_sequences.AaOccurrence;
-import com.compomics.util.experiment.identification.protein_sequences.SingleProteinSequenceProvider;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.IteratorFactory;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.PeptideWithPosition;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.SequenceIterator;
@@ -29,14 +28,13 @@ import com.compomics.util.experiment.mass_spectrometry.spectra.Spectrum;
 import com.compomics.util.experiment.mass_spectrometry.SpectrumFactory;
 import com.compomics.util.experiment.mass_spectrometry.indexes.PrecursorMap;
 import com.compomics.util.experiment.mass_spectrometry.indexes.SpectrumIndex;
-import com.compomics.util.maps.MapMutex;
+import com.compomics.util.threading.MapMutex;
 import com.compomics.util.parameters.identification.search.DigestionParameters;
 import com.compomics.util.parameters.identification.advanced.SequenceMatchingParameters;
 import com.compomics.util.waiting.WaitingHandler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -133,7 +131,7 @@ public class SequencesProcessor {
         FastaIterator fastaIterator = new FastaIterator(fastaFile, false);
         ExecutorService pool = Executors.newFixedThreadPool(nThreads);
         for (int i = 0; i < nThreads; i++) {
-            SequenceProcessor sequenceProcessor = new SequenceProcessor(proteinIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, engineParameters);
+            SequenceProcessor sequenceProcessor = new SequenceProcessor(fastaIterator, spectrumFileName, precursorProcessor, exclusionListFilePath, engineParameters);
             pool.submit(sequenceProcessor);
         }
 
@@ -272,8 +270,7 @@ public class SequencesProcessor {
             iteratorFactory = new IteratorFactory(engineParameters.getModificationParameters().getFixedModifications(), engineParameters.getMaxX());
             switch (psmScore) {
                 case snrScore:
-                    AaOccurrence aaOccurrence = new AaOccurrence(sequenceFactory.getCurrentFastaIndex().getAaOccurrence());
-                    snrScoreEstimator = new SnrScore(aaOccurrence);
+                    snrScoreEstimator = new SnrScore();
                     break;
                 case hyperscore:
                     hyperScoreEstimator = new HyperScore();
@@ -379,7 +376,7 @@ public class SequencesProcessor {
                         int indexOnProtein = peptideWithPosition.getPosition();
 
                         // Spectrum annotators
-                        FragmentAnnotator fragmentAnnotator = new FragmentAnnotator(peptide, engineParameters.getDominantSeries());
+                        FragmentAnnotator fragmentAnnotator = new FragmentAnnotator(peptide, , engineParameters.getDominantSeries());
                         SimplePeptideAnnotator simplePeptideAnnotator = null;
 
                         // Iterate posible charges
@@ -429,16 +426,6 @@ public class SequencesProcessor {
                                                     // Retain only matches yielding fragment ions
                                                     boolean retainedPSM = false;
                                                     if (!ionMatches.isEmpty()) {
-
-//                                                        if (simplePeptideAnnotator == null) {
-//
-//                                                            simplePeptideAnnotator = new SimplePeptideAnnotator(peptide, charge, spectrumAnnotationSettings.isA(),
-//                                                                    spectrumAnnotationSettings.isB(), spectrumAnnotationSettings.isC(), spectrumAnnotationSettings.isX(),
-//                                                                    spectrumAnnotationSettings.isY(), spectrumAnnotationSettings.isZ(), spectrumAnnotationSettings.isPrecursor(),
-//                                                                    spectrumAnnotationSettings.isImmonium(), spectrumAnnotationSettings.isRelated(), spectrumAnnotationSettings.isReporter(),
-//                                                                    spectrumAnnotationSettings.isNeutralLosses(), spectrumAnnotationSettings.isNeutralLossesSequenceDependent(), spectrumAnnotationSettings.getReporterIons());
-//                                                        }
-//                                                        ionMatches = simplePeptideAnnotator.getIonMatches(spectrumIndex, charge, maxIsotope);
 
                                                         // Get the score
                                                         double score;
@@ -594,7 +581,7 @@ public class SequencesProcessor {
                                                         }
                                                         ModificationMatch[] modificationMatches = modList.toArray(new ModificationMatch[modList.size()]);
                                                         Peptide modifiedPeptide = new Peptide(peptideDraft.getSequence(), modificationMatches);
-                                                        FragmentAnnotator modifiedFragmentAnnotator = new FragmentAnnotator(peptide, engineParameters.getDominantSeries());
+                                                        FragmentAnnotator modifiedFragmentAnnotator = new FragmentAnnotator(peptide, , engineParameters.getDominantSeries());
 
                                                         // Iterate all precursor matches
                                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
