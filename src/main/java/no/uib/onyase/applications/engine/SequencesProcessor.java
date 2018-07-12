@@ -370,13 +370,15 @@ public class SequencesProcessor {
                     PeptideWithPosition peptideWithPosition;
                     while ((peptideWithPosition = sequenceIterator.getNextPeptide()) != null) {
 
-                        Peptide peptide = peptideWithPosition.getPeptide();
+                        Peptide peptide = peptideWithPosition.peptide;
+                        int indexOnProtein = peptideWithPosition.position;
+                        String[] fixedModifications = peptideWithPosition.fixedModifications;
+                        
                         long peptideKey = peptide.getMatchingKey(sequenceMatchingPreferences);
                         Double peptideMass = peptide.getMass();
-                        int indexOnProtein = peptideWithPosition.getPosition();
 
                         // Spectrum annotators
-                        FragmentAnnotator fragmentAnnotator = new FragmentAnnotator(peptide, , engineParameters.getDominantSeries());
+                        FragmentAnnotator fragmentAnnotator = new FragmentAnnotator(peptide, fixedModifications, engineParameters.getDominantSeries());
                         SimplePeptideAnnotator simplePeptideAnnotator = null;
 
                         // Iterate posible charges
@@ -581,7 +583,7 @@ public class SequencesProcessor {
                                                         }
                                                         ModificationMatch[] modificationMatches = modList.toArray(new ModificationMatch[modList.size()]);
                                                         Peptide modifiedPeptide = new Peptide(peptideDraft.getSequence(), modificationMatches);
-                                                        FragmentAnnotator modifiedFragmentAnnotator = new FragmentAnnotator(peptide, , engineParameters.getDominantSeries());
+                                                        FragmentAnnotator modifiedFragmentAnnotator = new FragmentAnnotator(peptide, fixedModifications, engineParameters.getDominantSeries());
 
                                                         // Iterate all precursor matches
                                                         for (PrecursorMap.PrecursorWithTitle precursorWithTitle2 : precursorMatches) {
