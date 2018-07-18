@@ -16,7 +16,7 @@ import com.compomics.util.experiment.identification.matches.IonMatch;
 import com.compomics.util.experiment.identification.matches.ModificationMatch;
 import com.compomics.util.experiment.identification.protein_sequences.AaOccurrence;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.IteratorFactory;
-import com.compomics.util.experiment.identification.protein_sequences.digestion.PeptideWithPosition;
+import com.compomics.util.experiment.identification.protein_sequences.digestion.ExtendedPeptide;
 import com.compomics.util.experiment.identification.protein_sequences.digestion.SequenceIterator;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.HyperScore;
 import com.compomics.util.experiment.identification.psm_scoring.psm_scores.SnrScore;
@@ -367,7 +367,7 @@ public class SequencesProcessor {
                     SequenceIterator sequenceIterator = iteratorFactory.getSequenceIterator(sequence, digestionPreferences, massMin, massMax);
 
                     // Iterate all peptides
-                    PeptideWithPosition peptideWithPosition;
+                    ExtendedPeptide peptideWithPosition;
                     while ((peptideWithPosition = sequenceIterator.getNextPeptide()) != null) {
 
                         Peptide peptide = peptideWithPosition.peptide;
