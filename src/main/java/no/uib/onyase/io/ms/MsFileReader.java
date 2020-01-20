@@ -1,5 +1,6 @@
 package no.uib.onyase.io.ms;
 
+import com.compomics.util.threading.SimpleSemaphore;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,11 +24,12 @@ public class MsFileReader implements AutoCloseable {
 
     public final double minMz;
     public final double maxMz;
-    private final String[] titles;
+    public final String[] titles;
     private final HashMap<String, Integer> indexMap;
     private final HashMap<String, Integer> compressedLengthMap;
     private final HashMap<String, Double> precrursorMzMap;
     private final HashMap<String, Integer> nPeaksMap;
+    private final SimpleSemaphore mutex = new SimpleSemaphore(1);
     /**
      * The random access file.
      */
@@ -72,8 +74,6 @@ public class MsFileReader implements AutoCloseable {
         precrursorMzMap = new HashMap<>(titles.length);
         nPeaksMap = new HashMap<>(titles.length);
 
-        fc = raf.getChannel();
-
         long size = footerPosition - MsFileWriter.HEADER_LENGTH;
 
         if (size > Integer.MAX_VALUE) {
@@ -82,13 +82,12 @@ public class MsFileReader implements AutoCloseable {
 
         }
 
+        fc = raf.getChannel();
         mappedByteBuffer = fc.map(FileChannel.MapMode.READ_ONLY, MsFileWriter.HEADER_LENGTH, size);
 
         int index = 0;
 
         for (String title : titles) {
-
-            indexMap.put(title, index);
 
             int compressedLength = mappedByteBuffer.getInt(index);
             index += Integer.BYTES;
@@ -126,8 +125,13 @@ public class MsFileReader implements AutoCloseable {
             int uncompressedLength = nPeaks * 2 * Double.BYTES;
 
             byte[] compressedSpectrum = new byte[compressedLength];
+            
+            mutex.acquire();
+            
             mappedByteBuffer.position(index);
             mappedByteBuffer.get(compressedSpectrum, 0, compressedLength);
+            
+            mutex.release();
 
             byte[] uncompressedSpectrum = uncompress(compressedSpectrum, uncompressedLength);
             ByteBuffer byteBuffer = ByteBuffer.wrap(uncompressedSpectrum);
@@ -149,7 +153,7 @@ public class MsFileReader implements AutoCloseable {
         }
     }
 
-    private byte[] uncompress(byte[] compressedByteArray, int uncompressedLength) throws DataFormatException {
+    public static byte[] uncompress(byte[] compressedByteArray, int uncompressedLength) throws DataFormatException {
 
         byte[] uncompressedByteAray = new byte[uncompressedLength];
 
@@ -174,7 +178,7 @@ public class MsFileReader implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
 
         MsFileUtils.closeBuffer(mappedByteBuffer);
 

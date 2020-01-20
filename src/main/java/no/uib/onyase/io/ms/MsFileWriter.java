@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import static no.uib.onyase.io.ms.MsFileUtils.magicNumber;
 import static no.uib.onyase.io.ms.MsFileUtils.mergeArrays;
+import no.uib.onyase.model.SimpleSpectrum;
 
 /**
  * Writer for an ms file.
@@ -20,12 +22,12 @@ import static no.uib.onyase.io.ms.MsFileUtils.mergeArrays;
  * @author Marc Vaudel
  */
 public class MsFileWriter implements AutoCloseable {
-    
+
     public static final int HEADER_LENGTH = magicNumber.length + Long.BYTES + 2 * Double.BYTES;
 
     private final RandomAccessFile raf;
 
-    private final Deflater deflater = new Deflater();
+    private final Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
 
     private double minMz = Double.MAX_VALUE;
     private double maxMz = 0.0;
@@ -42,46 +44,42 @@ public class MsFileWriter implements AutoCloseable {
     }
 
     public void addSpectrum(
-            Spectrum spectrum
+            SimpleSpectrum spectrum
     ) throws IOException {
-
-        double precursorMz = spectrum.getPrecursor().getMz();
-        double[] mzArray = spectrum.getOrderedMzValues();
-        HashMap<Double, Peak> peakMap = spectrum.getPeakMap();
-        int nPeaks = mzArray.length;
+        
+        int nPeaks = spectrum.mz.length;
 
         ByteBuffer buffer = ByteBuffer.allocate((2 * nPeaks) * Double.BYTES);
 
         for (int i = 0; i < nPeaks; i++) {
 
-            double mz = mzArray[i];
-            buffer.putDouble(mz);
-            buffer.putDouble(peakMap.get(mz).intensity);
+            buffer.putDouble(spectrum.mz[i]);
+            buffer.putDouble(spectrum.intensity[i]);
 
         }
 
         TempByteArray compressedData = compress(buffer.array());
 
-        buffer = ByteBuffer.allocate(compressedData.length + Double.BYTES + Integer.BYTES);
+        buffer = ByteBuffer.allocate(compressedData.length + Double.BYTES + 2 * Integer.BYTES);
         buffer.putInt(compressedData.length)
-                .putDouble(precursorMz)
-                .putInt(mzArray.length)
+                .putDouble(spectrum.precursorMz)
+                .putInt(nPeaks)
                 .put(compressedData.array, 0, compressedData.length);
         byte[] arrayToWrite = buffer.array();
 
         raf.write(arrayToWrite, 0, arrayToWrite.length);
 
-        titles.add(spectrum.getSpectrumTitle());
+        titles.add(spectrum.title);
 
-        if (minMz > precursorMz) {
+        if (minMz > spectrum.precursorMz) {
 
-            minMz = precursorMz;
+            minMz = spectrum.precursorMz;
 
         }
 
-        if (maxMz < precursorMz) {
+        if (maxMz < spectrum.precursorMz) {
 
-            maxMz = precursorMz;
+            maxMz = spectrum.precursorMz;
 
         }
     }
@@ -147,7 +145,7 @@ public class MsFileWriter implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
 
         writeHeaderAndFooter();
 

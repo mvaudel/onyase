@@ -300,11 +300,12 @@
             </exclusions>
         </dependency>
         
-        <!-- https://mvnrepository.com/artifact/com.carrotsearch/java-sizeof -->
         <dependency>
-            <groupId>org.ehcache</groupId>
-            <artifactId>sizeof</artifactId>
-            <version>0.2.0</version>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+            <type>jar</type>
         </dependency>
 
 
