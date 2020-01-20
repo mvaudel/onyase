@@ -1,5 +1,6 @@
 package no.uib.onyase.io.ms;
 
+import com.compomics.util.experiment.mass_spectrometry.spectra.Peak;
 import com.compomics.util.experiment.mass_spectrometry.spectra.Spectrum;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -7,17 +8,20 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import static no.uib.onyase.io.ms.MsFileUtils.magicNumber;
 import static no.uib.onyase.io.ms.MsFileUtils.mergeArrays;
 
 /**
+ * Writer for an ms file.
  *
  * @author Marc Vaudel
  */
 public class MsFileWriter implements AutoCloseable {
+    
+    public static final int HEADER_LENGTH = magicNumber.length + Long.BYTES + 2 * Double.BYTES;
 
     private final RandomAccessFile raf;
 
@@ -25,7 +29,6 @@ public class MsFileWriter implements AutoCloseable {
 
     private double minMz = Double.MAX_VALUE;
     private double maxMz = 0.0;
-    private long footerPosition = 0l;
 
     private final ArrayList<String> titles = new ArrayList<>();
 
@@ -34,7 +37,7 @@ public class MsFileWriter implements AutoCloseable {
     ) throws FileNotFoundException, IOException {
 
         raf = new RandomAccessFile(outputFile, "rw");
-        raf.seek(magicNumber.length + 3 * Long.BYTES);
+        raf.seek(HEADER_LENGTH);
 
     }
 
@@ -44,23 +47,29 @@ public class MsFileWriter implements AutoCloseable {
 
         double precursorMz = spectrum.getPrecursor().getMz();
         double[] mzArray = spectrum.getOrderedMzValues();
-        double[] intensityArray = Arrays.stream(mzArray)
-                .map(mz -> spectrum.getPeakMap().get(mz).intensity)
-                .toArray();
+        HashMap<Double, Peak> peakMap = spectrum.getPeakMap();
         int nPeaks = mzArray.length;
 
-        ByteBuffer buffer = ByteBuffer.allocate((2 * nPeaks + 1) * Double.BYTES);
-
-        buffer.putDouble(precursorMz);
+        ByteBuffer buffer = ByteBuffer.allocate((2 * nPeaks) * Double.BYTES);
 
         for (int i = 0; i < nPeaks; i++) {
 
-            buffer.putDouble(mzArray[i]);
-            buffer.putDouble(intensityArray[i]);
+            double mz = mzArray[i];
+            buffer.putDouble(mz);
+            buffer.putDouble(peakMap.get(mz).intensity);
 
         }
 
-        compressAndWrite(buffer.array());
+        TempByteArray compressedData = compress(buffer.array());
+
+        buffer = ByteBuffer.allocate(compressedData.length + Double.BYTES + Integer.BYTES);
+        buffer.putInt(compressedData.length)
+                .putDouble(precursorMz)
+                .putInt(mzArray.length)
+                .put(compressedData.array, 0, compressedData.length);
+        byte[] arrayToWrite = buffer.array();
+
+        raf.write(arrayToWrite, 0, arrayToWrite.length);
 
         titles.add(spectrum.getSpectrumTitle());
 
@@ -78,6 +87,18 @@ public class MsFileWriter implements AutoCloseable {
     }
 
     private void compressAndWrite(
+            byte[] uncompressedData
+    ) throws IOException {
+
+        TempByteArray compressedData = compress(uncompressedData);
+
+        raf.writeInt(compressedData.length);
+        raf.writeInt(uncompressedData.length);
+        raf.write(compressedData.array, 0, compressedData.length);
+
+    }
+
+    private TempByteArray compress(
             byte[] uncompressedData
     ) throws IOException {
 
@@ -99,18 +120,13 @@ public class MsFileWriter implements AutoCloseable {
 
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(compressedDataLength + Integer.BYTES);
-        buffer.putInt(compressedDataLength)
-                .put(compressedData);
-        byte[] arrayToWrite = buffer.array();
-
-        raf.write(arrayToWrite, 0, arrayToWrite.length);
+        return new TempByteArray(compressedData, compressedDataLength);
 
     }
 
     private void writeHeaderAndFooter() throws IOException {
 
-        footerPosition = raf.getFilePointer();
+        long footerPosition = raf.getFilePointer();
 
         String titleString = titles.stream()
                 .collect(Collectors.joining(MsFileUtils.titleSeparator));
@@ -120,7 +136,7 @@ public class MsFileWriter implements AutoCloseable {
 
         raf.seek(0);
 
-        ByteBuffer buffer = ByteBuffer.allocate(magicNumber.length + 3 * Long.BYTES);
+        ByteBuffer buffer = ByteBuffer.allocate(HEADER_LENGTH);
         buffer.put(magicNumber)
                 .putLong(footerPosition)
                 .putDouble(minMz)
